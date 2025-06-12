@@ -1,0 +1,204 @@
+.pageContainer {
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* 하단 네비게이션 높이만큼 여백 확보 */
+  padding-bottom: 80px; 
+}
+
+.mainContent {
+  padding: 0 20px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 10;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #f5a623; /* 시안의 노란색 */
+}
+
+.headerIcons {
+  display: flex;
+  gap: 16px;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  color: #333;
+}
+
+/* Main Content */
+.titleSection {
+  margin: 16px 0;
+}
+
+.mainTitle {
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+/* Banner */
+.bannerContainer {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 10px 0;
+  /* 스크롤바 숨기기 */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.bannerContainer::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}
+
+.bannerItem {
+  flex: 0 0 80%; /* 배너 너비 */
+  max-width: 300px;
+  height: 200px; /* 배너 높이 */
+  border-radius: 16px;
+}
+
+/* Trending Section */
+.trendingSection {
+  margin-top: 32px;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.sectionSubtitle {
+  font-size: 1rem;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.categoryCard {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  min-height: 100px;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Bottom Navigation */
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  background-color: white;
+  border-top: 1px solid #e9ecef;
+  padding: 8px 0;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom)); /* iOS 하단 바 대응 */
+  z-index: 10;
+}
+
+.navItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+}
+
+.navIcon {
+  width: 28px;
+  height: 28px;
+  color: #adb5bd; /* 비활성 아이콘 색상 */
+}
+
+.navIcon.active {
+  color: #f5a623; /* 활성 아이콘 색상 */
+}
+
+/* 팝업 모달 */
+.popupOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1200; /* 다른 UI 요소들보다 위에 있도록 */
+}
+
+.popupContent {
+  background-color: transparent; /* 이미지와 푸터만 보이도록 */
+  width: 90%;
+  max-width: 320px; /* 최대 너비 제한 */
+  display: flex;
+  flex-direction: column;
+}
+
+.popupImageContainer {
+  width: 100%;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  overflow: hidden; /* 이미지가 둥근 모서리를 넘지 않도록 */
+}
+
+.popupImageContainer img {
+  display: block; /* 이미지 하단 여백 제거 */
+}
+
+.popupFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #212529; /* 시안의 어두운 배경 */
+  color: white;
+  padding: 12px 16px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.popupCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.popupCheckboxLabel input[type="checkbox"] {
+  /* 필요하다면 체크박스 스타일 커스터마이징 */
+  accent-color: #f5a623; /* 시안의 노란색 체크 */
+}
+
+.popupCloseButton {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+}

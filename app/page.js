@@ -1,95 +1,74 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+// /app/page.js (수정)
+'use client';
 
-export default function Home() {
+import React, { useState } from 'react';
+import Link from 'next/link';
+import styles from './auth.module.css';
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
+  const handleLogin = (e) => {
+    e.preventDefault();
+    // TODO: 여기에 실제 Firebase 또는 백엔드 로그인 로직을 구현합니다.
+    console.log({ email, password });
+
+    //일단 /home으로 이동
+    window.location.href = '/home';
+
+    //alert('로그인 시도');
+  };
+
+  // [추가] 이메일과 비밀번호가 모두 입력되었는지 확인하는 변수
+  const isFormValid = email.trim() !== '' && password.trim() !== '';
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.js</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className={styles.container}>
+      <div className={styles.formWrapper}>
+        <h1 className={styles.logo}>UMS SHOP</h1>
+        
+        <form onSubmit={handleLogin} className={styles.form}>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className={styles.input}
+            required
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className={styles.input}
+            required
+          />
+          
+          <div className={styles.options}>
+            <label className={styles.checkboxLabel}>
+              <input type="checkbox" />
+              Stay logged in
+            </label>
+            <Link href="/reset-password" className={styles.link}>
+              Forgot password?
+            </Link>
+          </div>
+          
+          {/* [수정] disabled 속성 추가 */}
+          <button type="submit" className={styles.button} disabled={!isFormValid}>
+            Sign in
+          </button>
+        </form>
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+        <div className={styles.footer} style={{ marginTop: '20px' }}>
+          Don't have an account?
+          <Link href="/register" className={`${styles.link} ${styles.primaryLink}`}>
+            Register
+          </Link>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }

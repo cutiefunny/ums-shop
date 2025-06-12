@@ -1,0 +1,263 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #fff;
+  padding: 20px;
+}
+
+.pageWithFixedFooter {
+  background-color: #fff;
+  /* 하단 고정 푸터의 높이만큼 콘텐츠 아래에 여백을 주어 내용이 가려지지 않게 함 */
+  padding-bottom: 150px; 
+}
+
+.scrollableContent {
+  padding: 20px; /* 좌우 및 상단 여백 */
+}
+
+.fixedFooter {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 24px 32px; /* 하단 여백(safe-area) 고려 */
+  background-color: white;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); /* 상단에 미세한 그림자 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 100;
+}
+
+.formWrapper {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto; /* 중앙 정렬 */
+  text-align: center;
+  position: relative;
+}
+
+.logo {
+  font-size: 2.2rem; /* 로고 크기 조정 */
+  font-weight: 800;
+  margin-bottom: 40px; /* 여백 조정 */
+  color: #212529;
+}
+
+.title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  text-align: left;
+  font-family: 'Montserrat'; /* Montserrat 폰트 적용 */
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: black;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 16px; /* 패딩 조정 */
+  border: 1px solid #e9ecef; /* 테두리를 좀 더 연하게 */
+  background-color: #fff; /* 입력창 배경색 추가 */
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  background-color: #fff;
+  border-color: #86b7fe; /* 포커스 시 테두리 색상 */
+  box-shadow: none;
+}
+
+.inputLabel {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: -8px;
+}
+
+.inputHelper {
+  font-size: 0.8rem;
+  color: #ffffff;
+  margin-top: -8px;
+}
+
+.options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: flex-start; 
+  gap: 8px;
+  color: #495057;
+  cursor: pointer;
+  margin-right: 40px;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  margin-top: 6px; /* 텍스트와 세로 중앙을 맞추기 위한 미세 조정 */
+}
+
+.link {
+  color: #6c757d;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.primaryLink {
+  color: #E9A51F;
+  margin-left: 8px;
+  font-weight: 700;
+}
+
+.requiredText {
+  color: #E9A51F;
+  font-weight: 700;
+}
+
+/* [수정] button 스타일 조정 */
+.button {
+  width: 100%;
+  max-width: 420px; /* formWrapper와 최대 너비 맞춤 */
+  padding: 16px;
+  background-color: #E9A51F;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  /* margin-top -> 제거 */
+}
+
+.button:disabled {
+  background-color: #E7E9EC;
+  color: #B1B8C0;
+  cursor: not-allowed;
+}
+
+/* .button:hover:not(:disabled) {
+  background-color: #00aaff;
+} */
+
+/* [수정] footer 스타일 조정 */
+.footer {
+  width: 100%;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #6c757d;
+  /* margin-top -> 제거 (fixedFooter에서 gap으로 제어) */
+}
+
+.backButton {
+  position: static; /* absolute에서 변경 */
+  padding: 8px;
+  margin-left: -8px; /* 아이콘 위치 보정 */
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.contentPadding {
+  padding:24px 24px 24px; /* 헤더를 제외한 콘텐츠에만 좌우/하단 패딩 적용 */
+}
+
+/* 회원가입 약관 */
+.termsBox {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: left;
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.checkboxLabelFull {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #e9ecef;
+  margin: 0;
+}
+
+.termItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Montserrat';
+}
+
+.viewLink {
+  font-size: 0.8rem;
+  color: #B1B8C0;
+  text-decoration: underline;
+}
+
+/* [신규] 하단 고정 버튼이 있는 페이지를 위한 컨테이너 */
+.pageWithFixedFooter {
+  background-color: #fff;
+  /* 하단 고정 푸터의 높이만큼 아래쪽 패딩을 주어 내용이 가려지지 않게 함 */
+  padding-bottom: 120px; 
+}
+
+/* [신규] 실제 스크롤이 일어나는 콘텐츠 영역 */
+.scrollableContent {
+  /* 기존 padding: 20px 제거 -> contentPadding에서 관리 */
+  padding: 0;
+}
+
+.formWrapper {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  text-align: left; /* 좌측 정렬로 변경 */
+  position: relative;
+}
+
+/* [신규] 하단 고정 푸터 스타일 */
+.fixedFooter {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 24px 32px;
+  background-color: white;
+  box-shadow: none;
+  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 100;
+}
