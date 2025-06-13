@@ -1,6 +1,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: light; /* 이 한 줄을 추가합니다. */
 }
 
 @media (prefers-color-scheme: dark) {
