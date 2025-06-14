@@ -1,26 +1,31 @@
-// /app/page.js (수정)
 'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // useRouter import
 import styles from './auth.module.css';
 
 export default function LoginPage() {
+  const router = useRouter(); // useRouter 훅 사용
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [stayLoggedIn, setStayLoggedIn] = useState(false); // 체크박스 상태 추가
   
   const handleLogin = (e) => {
     e.preventDefault();
     // TODO: 여기에 실제 Firebase 또는 백엔드 로그인 로직을 구현합니다.
-    console.log({ email, password });
+    console.log({ email, password, stayLoggedIn });
 
-    //일단 /home으로 이동
-    window.location.href = '/home';
+    if (stayLoggedIn) {
+      // "Stay logged in"이 체크된 경우 localStorage에 세션 정보 저장
+      // 실제 앱에서는 토큰이나 사용자 정보를 저장합니다.
+      localStorage.setItem('ums-shop-user-session', JSON.stringify({ email: email, isLoggedIn: true }));
+    }
 
-    //alert('로그인 시도');
+    // window.location.href 대신 router.push 사용
+    router.push('/home');
   };
 
-  // [추가] 이메일과 비밀번호가 모두 입력되었는지 확인하는 변수
   const isFormValid = email.trim() !== '' && password.trim() !== '';
 
   return (
@@ -48,7 +53,11 @@ export default function LoginPage() {
           
           <div className={styles.options}>
             <label className={styles.checkboxLabel}>
-              <input type="checkbox" />
+              <input 
+                type="checkbox"
+                checked={stayLoggedIn}
+                onChange={(e) => setStayLoggedIn(e.target.checked)}
+              />
               Stay logged in
             </label>
             <Link href="/reset-password" className={styles.link}>
@@ -56,7 +65,6 @@ export default function LoginPage() {
             </Link>
           </div>
           
-          {/* [수정] disabled 속성 추가 */}
           <button type="submit" className={styles.button} disabled={!isFormValid}>
             Sign in
           </button>

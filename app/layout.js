@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import AuthInitializer from "@/components/AuthInitializer"; // AuthInitializer import
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
+        <AuthInitializer>
+          {children}
+        </AuthInitializer>
       </body>
     </html>
   );
@@ -33,7 +36,6 @@ export const metadata = {
     capable: true,
     statusBarStyle: "default",
     title: "UMS SHOP",
-    // startUpImage: [],
   },
   formatDetection: {
     telephone: false,
