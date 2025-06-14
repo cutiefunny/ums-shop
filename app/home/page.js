@@ -36,7 +36,7 @@ export default function HomePage() {
     <div className={styles.pageContainer}>
         {showPopup && (
         <PopupModal 
-          imageUrl="/path/to/your/banner.png" // TODO: 실제 배너 이미지 경로 입력
+          imageUrl="/images/notice-popup.png" // TODO: 실제 배너 이미지 경로 입력
           onClose={() => setShowPopup(false)} 
         />
       )}
