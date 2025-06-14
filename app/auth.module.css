@@ -302,3 +302,11 @@
   margin-bottom: 12px;
   white-space: pre-line; /* 줄바꿈(\n)을 적용하기 위함 */
 }
+
+.errorMessage {
+  color: #d93025; /* 구글 에러 메시지 색상 */
+  font-size: 0.8rem;
+  text-align: left;
+  margin-top: -8px; /* 입력 필드와 가깝게 조정 */
+  min-height: 1.2rem; /* 메시지가 없을 때도 공간을 차지하여 레이아웃이 밀리지 않도록 함 */
+}

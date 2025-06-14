@@ -54,8 +54,33 @@ const VerificationStep = ({ onBack, formData, handleChange }) => {
   );
 };
 
-// 2단계: 새 비밀번호 설정 컴포넌트 (코드는 이전과 동일)
+// [수정] 2단계: 새 비밀번호 설정 컴포넌트
 const NewPasswordStep = ({ onBack, formData, handleChange }) => {
+  const [error, setError] = useState('');
+
+  // formData의 비밀번호 필드가 변경될 때마다 유효성 검사 실행
+  useEffect(() => {
+    const { password, confirmPassword } = formData;
+
+    // 사용자가 입력을 시작했을 때만 유효성 검사
+    if (password || confirmPassword) {
+      // 1. 비밀번호 조건 검사
+      if (password && !/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password)) {
+        setError("Password must be at least 8 characters and include letters and numbers.");
+      } 
+      // 2. 비밀번호 일치 여부 검사
+      else if (confirmPassword && password !== confirmPassword) {
+        setError("Passwords do not match.");
+      }
+      // 모든 조건을 통과하면 에러 메시지 초기화
+      else {
+        setError('');
+      }
+    } else {
+        setError('');
+    }
+  }, [formData.password, formData.confirmPassword]);
+
   return (
     <>
       <AuthHeader onBack={onBack} />
@@ -85,13 +110,14 @@ const NewPasswordStep = ({ onBack, formData, handleChange }) => {
             onChange={handleChange}
             required 
           />
+          {/* 에러 메시지 표시 영역 */}
+          <p className={styles.errorMessage}>{error}</p>
         </form>
       </div>
     </>
   )
 }
 
-// 메인 페이지 컴포넌트
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -102,7 +128,7 @@ export default function ResetPasswordPage() {
     password: '',
     confirmPassword: ''
   });
-  const [isModalOpen, setIsModalOpen] = useState(false); // 모달 상태 추가
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -114,9 +140,9 @@ export default function ResetPasswordPage() {
     formData.fullName.trim() !== '' && 
     formData.phoneNumber.trim() !== '';
 
+  // [수정] isStep2Valid 유효성 검사 로직 단순화
   const isStep2Valid = 
-    formData.password.length >= 8 &&
-    /^(?=.*[A-Za-z])(?=.*\d)/.test(formData.password) &&
+    /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(formData.password) &&
     formData.password === formData.confirmPassword;
   
   const handleVerificationSubmit = (e) => {
@@ -125,20 +151,28 @@ export default function ResetPasswordPage() {
     setStep(2);
   };
 
-  // [수정] 비밀번호 재설정 제출 시, alert 대신 모달을 띄웁니다.
   const handleResetSubmit = (e) => {
     e.preventDefault();
+    // [수정] "필드 미입력 시" 에러 처리를 위해 조건 추가
+    if (!formData.password || !formData.confirmPassword) {
+      alert("Please enter your new password.");
+      return;
+    }
+    
     if (isStep2Valid) {
       // TODO: 실제 비밀번호 변경 API 호출
       console.log('Resetting password with new password.');
-      setIsModalOpen(true); // 모달 열기
+      setIsModalOpen(true);
+    } else {
+        // isStep2Valid가 false일 경우, alert으로 유효성 검사 실패 알림
+        // (실시간 에러 메시지가 이미 표시되지만, 버튼 클릭 시 추가 피드백 제공)
+        alert("Please check the password requirements.")
     }
   };
 
-  // [추가] 모달의 Login 버튼 클릭 시 실행될 함수
   const handleConfirmAndRedirect = () => {
-    setIsModalOpen(false); // 모달 닫기
-    router.push('/'); // 로그인 페이지로 리디렉션
+    setIsModalOpen(false);
+    router.push('/');
   };
 
   return (
@@ -161,7 +195,6 @@ export default function ResetPasswordPage() {
 
       <div className={styles.fixedFooter}>
         {step === 1 ? (
-          <>
             <button 
               type="button" 
               onClick={handleVerificationSubmit}
@@ -170,21 +203,18 @@ export default function ResetPasswordPage() {
             >
               Next
             </button>
-          </>
         ) : (
           <button 
             type="submit" 
             form="new-password-form"
             onClick={handleResetSubmit}
             className={styles.button} 
-            disabled={!isStep2Valid}
           >
             Reset Password
           </button>
         )}
       </div>
 
-      {/* 모달 컴포넌트 렌더링 */}
       <ConfirmationModal
         isOpen={isModalOpen}
         title="New Password"
