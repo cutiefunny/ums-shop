@@ -23,10 +23,10 @@ export default function HomePage() {
   }, []);
 
   const bannerItems = [
-    { id: 1, color: 'gray' },
-    { id: 2, color: 'lightgray' },
-    { id: 3, color: 'gray' },
-  ];
+  { id: 1, color: 'gray', imageUrl: '/images/home1.jpeg' },
+  { id: 2, color: 'lightgray', imageUrl: '/images/home2.jpeg' },
+  { id: 3, color: 'gray', imageUrl: '/images/home3.jpeg' },
+];
 
   // [FIX] Swiper loop 경고 및 렌더링 오류 해결을 위해 아이템 배열을 3배로 늘립니다.
   const triplicatedBannerItems = [

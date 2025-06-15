@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Image from 'next/image'; // [신규] Image 컴포넌트 import
 import styles from '../home.module.css';
 
 export default function MainBanner({ items }) {
@@ -9,19 +10,43 @@ export default function MainBanner({ items }) {
   const scrollTimeoutRef = useRef(null);
   const isJumpingRef = useRef(false);
 
+  // ... updateScale, useEffect, handleJump, handleScroll 함수는 기존과 동일 ...
   const updateScale = useCallback(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
     const viewportCenter = container.offsetWidth / 2;
 
+    let minDistance = Infinity;
+    let activeItem = null;
+
+    // 모든 자식 요소를 순회하며 스케일 계산 및 활성 아이템 찾기
     for (const item of container.children) {
       const itemRect = item.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
       const itemCenter = itemRect.left - containerRect.left + itemRect.width / 2;
       const distance = Math.abs(viewportCenter - itemCenter);
       const maxDistance = container.offsetWidth / 2;
+      
       const scale = 1 + 0.1 * (1 - Math.min(distance / maxDistance, 1));
+      
       item.style.transform = `scale(${scale})`;
+      // // 중앙에 가까운 아이템이 위로 올라오도록 z-index 동적 조절
+      // item.style.zIndex = `${Math.floor(100 - distance)}`;
+
+      // 가장 중앙에 가까운 아이템을 activeItem으로 설정
+      if (distance < minDistance) {
+        minDistance = distance;
+        activeItem = item;
+      }
+    }
+
+    // 활성 아이템에 activeBanner 클래스 추가, 나머지는 제거
+    for (const item of container.children) {
+      if (item === activeItem) {
+        item.classList.add(styles.activeBanner);
+      } else {
+        item.classList.remove(styles.activeBanner);
+      }
     }
   }, []);
 
@@ -50,7 +75,6 @@ export default function MainBanner({ items }) {
     }
   }, [displayItems, updateScale]);
 
-  // [수정] 스크롤 점프 로직
   const handleJump = useCallback(() => {
     if (!containerRef.current || !items || items.length === 0) return;
 
@@ -69,12 +93,11 @@ export default function MainBanner({ items }) {
             const scrollLeft = targetItem.offsetLeft - (container.offsetWidth / 2) + (targetItem.offsetWidth / 2);
             container.scrollTo({ left: scrollLeft, behavior: 'auto' });
             
-            // [FIX] 점프 직후 스케일을 즉시 업데이트하여 시각적 불일치 해결
             requestAnimationFrame(updateScale);
         }
         setTimeout(() => { isJumpingRef.current = false; }, 50);
     }
-  }, [items, displayItems, updateScale]); // useCallback 의존성 배열에 updateScale 추가
+  }, [items, displayItems, updateScale]);
 
   const handleScroll = () => {
     if (isJumpingRef.current) return;
@@ -97,7 +120,16 @@ export default function MainBanner({ items }) {
           className={styles.bannerItem}
           style={{ backgroundColor: item.color }}
         >
-          {/* 배너 콘텐츠 */}
+          {/* [수정] Image 컴포넌트를 사용하여 배너 이미지 표시 */}
+          {item.imageUrl && (
+            <Image
+              src={item.imageUrl}
+              alt="Main Banner"
+              fill={true} // 부모 요소(div)를 꽉 채우도록 설정
+              style={{ objectFit: 'cover' }} // 이미지가 잘리지 않고 채워지도록 설정
+              priority={item.id === 2} // 중앙에 처음 보이는 이미지는 우선적으로 로드
+            />
+          )}
         </div>
       ))}
     </div>

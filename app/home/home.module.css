@@ -221,18 +221,39 @@
 }
 
 .bannerItem {
-  flex: 0 0 80%; /* 배너 너비 */
+  flex: 0 0 80%;
   max-width: 300px;
-  height: 200px; /* 배너 높이 */
+  height: 200px;
   border-radius: 16px;
-  /* 스크롤 스냅 정렬 위치를 중앙으로 설정 */
   scroll-snap-align: center;
-  /* JavaScript로 실시간 제어하므로 transition과 기본 transform 제거 */
+  position: relative;
+  overflow: hidden;
+  /* [추가] z-index와 transform 변경이 부드럽게 적용되도록 transition 추가 */
+  transition: transform 0.3s ease-out, z-index 0.3s ease-out;
 }
 
 /* [신규] 중앙에 위치한 아이템을 위한 active 클래스 */
-.bannerItem.active {
-  transform: scale(1.1); /* 10% 더 크게 */
+/* .bannerItem.active {
+  transform: scale(1.1);
+} */
+
+/* [신규] 비활성 아이템에 적용될 어두운 오버레이 */
+.bannerItem::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7); /* 오버레이 색상과 투명도 */
+  opacity: 1; /* 기본적으로 보이도록 설정 */
+  transition: opacity 0.3s ease-out; /* 투명도 변경 애니메이션 */
+  z-index: 1; /* 이미지를 덮도록 z-index 설정 */
+}
+
+/* [신규] 활성화된 아이템의 오버레이는 투명하게 만듦 */
+.bannerItem.activeBanner::after {
+  opacity: 0;
 }
 
 .iconButton {
