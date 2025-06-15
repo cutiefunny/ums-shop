@@ -52,7 +52,10 @@ export default function HomePage() {
       )}
       
       {/* [수정] 검색 아이콘 클릭 시 isSearchVisible 상태를 true로 변경하는 함수 전달 */}
-      <HomeHeader onSearchClick={() => setIsSearchVisible(true)} />
+      <HomeHeader 
+        onSearchClick={() => setIsSearchVisible(true)} 
+        isSearchVisible={isSearchVisible}
+      />
 
       {/* [신규] isSearchVisible 상태에 따라 SearchComponent를 렌더링하고, 닫기 함수 전달 */}
       <SearchComponent 
@@ -71,7 +74,7 @@ export default function HomePage() {
         </main>
       {/* )} */}
 
-      <BottomNav />
+      <BottomNav activePath="home" />
     </div>
   );
 }

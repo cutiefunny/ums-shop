@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AuthInitializer from "@/components/AuthInitializer"; // AuthInitializer import
+import { ModalProvider } from "@/contexts/ModalContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,9 +17,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <AuthInitializer>
-          {children}
-        </AuthInitializer>
+        {/* [수정] ModalProvider로 앱 전체를 감쌉니다. */}
+        <ModalProvider>
+          <AuthInitializer>
+            {children}
+          </AuthInitializer>
+        </ModalProvider>
       </body>
     </html>
   );
