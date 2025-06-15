@@ -46,8 +46,8 @@
 }
 
 .mainTitle {
-  font-size: 1.8rem;
-  font-weight: 800;
+  font-size: 1.5rem;
+  font-weight: 500;
 }
 
 /* Banner */
@@ -77,8 +77,8 @@
 }
 
 .sectionTitle {
-  font-size: 1.5rem;
-  font-weight: 800;
+  font-size: 1.3rem;
+  font-weight: 500;
   margin: 0;
 }
 
@@ -201,4 +201,98 @@
   color: white;
   font-size: 0.9rem;
   cursor: pointer;
+}
+
+/* Banner */
+.bannerContainer {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  /* 좌우 패딩을 추가하여 첫번째와 마지막 아이템도 중앙에 올 수 있도록 함 */
+  padding: 10px 10%; 
+  /* 스크롤 시 아이템이 중앙에 멈추도록 스냅 기능 추가 */
+  scroll-snap-type: x mandatory;
+  /* 스크롤바 숨기기 */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.bannerContainer::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}
+
+.bannerItem {
+  flex: 0 0 80%; /* 배너 너비 */
+  max-width: 300px;
+  height: 200px; /* 배너 높이 */
+  border-radius: 16px;
+  /* 스크롤 스냅 정렬 위치를 중앙으로 설정 */
+  scroll-snap-align: center;
+  /* JavaScript로 실시간 제어하므로 transition과 기본 transform 제거 */
+}
+
+/* [신규] 중앙에 위치한 아이템을 위한 active 클래스 */
+.bannerItem.active {
+  transform: scale(1.1); /* 10% 더 크게 */
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  line-height: 0; /* 아이콘 버튼 정렬을 위해 추가 */
+}
+
+/* Search Component Styles */
+.searchContainer {
+  padding: 8px 20px 12px;
+  background-color: white;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.searchBarWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 40px; /* 아이콘과 겹치지 않도록 좌우 패딩 */
+  border-radius: 25px; /* 둥근 모서리 */
+  border: none;
+  background-color: #f1f3f5;
+  font-size: 1rem;
+  -webkit-appearance: none; /* iOS에서 기본 스타일 제거 */
+}
+
+.searchInput:focus {
+  outline: none;
+  background-color: white;
+  box-shadow: 0 0 0 1px #868e96; /* 포커스 시 얇은 테두리 */
+}
+
+.searchIconInBar {
+  position: absolute;
+  left: 12px;
+  width: 22px;
+  height: 22px;
+  color: #495057;
+  pointer-events: none; /* 아이콘이 클릭되지 않도록 설정 */
+}
+
+.searchCloseButton {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+}
+
+.searchCloseIcon {
+    width: 22px;
+    height: 22px;
+    color: #495057;
 }
