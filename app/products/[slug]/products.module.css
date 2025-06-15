@@ -1,0 +1,297 @@
+.pageContainer {
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 10;
+}
+
+.iconButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+}
+
+.headerIcons {
+    display: flex;
+    gap: 8px;
+}
+
+.titleContainer {
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.titleContainer h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.mainContent {
+    padding: 0 16px;
+}
+
+.filterBar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 16px 0;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.filterBar::-webkit-scrollbar {
+    display: none;
+}
+
+.filterChip {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.filterChip.active {
+    background-color: #f5a623;
+    color: white;
+    border-color: #f5a623;
+}
+
+.sortContainer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px 0;
+}
+
+.sortButton {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #495057;
+}
+
+.productGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding-bottom: 24px;
+}
+
+.card {
+    border: 1px solid #f1f3f5;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.imageWrapper {
+    position: relative;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+}
+
+.imageWrapper img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.heartButton {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.info {
+    padding: 12px;
+    flex-grow: 1;
+}
+
+.productName {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #212529;
+    height: 2.7rem;
+    line-height: 1.35rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.priceContainer {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.discount {
+    color: #e57373;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.originalPrice {
+    text-decoration: line-through;
+    color: #adb5bd;
+    font-size: 0.8rem;
+}
+
+.finalPrice {
+    font-size: 1rem;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+.addToCartButton {
+    width: calc(100% - 24px);
+    margin: 0 12px 12px;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    background-color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* 모달을 상단에 위치시킴 */
+  z-index: 1000;
+  padding-top: 40px;
+}
+
+.modalContent {
+  background-color: white;
+  width: 100%;
+  max-width: 500px; /* 데스크탑에서도 보기 좋게 최대 너비 설정 */
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modalHeader h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.modalCategoryList {
+  list-style-type: none;
+  padding: 8px;
+  margin: 0;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.modalCategoryItem {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  text-align: left;
+  font-size: 1rem;
+  color: #212529;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.modalCategoryItem:hover {
+  background-color: #f8f9fa;
+}
+
+.modalCategoryItem.active {
+  color: #f5a623;
+  font-weight: bold;
+}
+
+.sortOptionsContainer {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.radioLabel input[type="radio"] {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ced4da;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.radioLabel input[type="radio"]:checked {
+  border: 6px solid #f5a623;
+  background-color: white;
+}
+
+.radioText {
+  color: #212529;
+}
+
+.applyButton {
+  display: block;
+  width: calc(100% - 40px);
+  margin: 0 20px 20px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f5a623;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
