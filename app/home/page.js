@@ -8,6 +8,7 @@ import MainBanner from './components/MainBanner';
 import TrendingSection from './components/TrendingSection';
 import BottomNav from './components/BottomNav';
 import PopupModal from './components/PopupModal';
+import { categoryData } from '@/data/mockData';
 
 export default function HomePage() {
   const [showPopup, setShowPopup] = useState(false);
@@ -35,12 +36,7 @@ export default function HomePage() {
     ...bannerItems.map(item => ({ ...item, id: `${item.id}-duplicate-2` }))
   ];
 
-  const trendingCategories = [
-    'Safety Equipment',
-    'Navigation Tools',
-    'Food & Provisions',
-    'Maintenance',
-  ];
+  const trendingCategories = categoryData.map(category => category.name);
 
   return (
     <div className={styles.pageContainer}>

@@ -18,5 +18,20 @@ export const mockProducts = [
   { id: 4, name: 'set4', price: 189.99, discount: 30, image: '/images/placeholder4.jpeg' },
 ];
 
+export const devices = [
+  { id: 1, name: 'device1', price: 129.99, discount: 30, image: '/images/device1.jpeg' },
+  { id: 2, name: 'device2', price: 98.99, discount: 30, image: '/images/device2.jpeg' },
+  { id: 3, name: 'device3', price: 59.99, discount: 30, image: '/images/device3.jpeg' },
+  { id: 4, name: 'device4', price: 189.99, discount: 30, image: '/images/device4.jpeg' },
+];
+
+export const generals = [
+  { id: 1, name: 'general1', price: 129.99, discount: 30, image: '/images/general1.jpeg' },
+  { id: 2, name: 'general2', price: 98.99, discount: 30, image: '/images/general2.jpeg' },
+  { id: 3, name: 'general3', price: 59.99, discount: 30, image: '/images/general3.jpeg' },
+  { id: 4, name: 'general4', price: 189.99, discount: 30, image: '/images/general4.jpeg' },
+];
+
+
 // 텍스트를 URL slug 형식으로 변환하는 헬퍼 함수
 export const slugify = (text) => text.toLowerCase().replace(/ & /g, ' ').replace(/_/g, ' ').replace(/\s+/g, '-');
