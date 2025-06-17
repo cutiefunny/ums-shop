@@ -4,20 +4,7 @@ import React, { useState } from 'react';
 import BottomNav from '../home/components/BottomNav';
 import CategoryItem from './components/CategoryItem';
 import styles from './categories.module.css';
-
-// 시안을 바탕으로 카테고리 데이터 구성
-const categoryData = [
-  { name: 'Health_Wellness', code: 'HEA', subCategories: ['Herbal Extracts_Supplements', 'Beauty & Health Devices', 'General Health & Supplements'] },
-  { name: 'Food_Beverages', code: 'FOO / BEV / MFO / MEI', subCategories: ['Subcategory 1', 'Subcategory 2'] },
-  { name: 'Fashion_Lifestyle', code: 'FAS', subCategories: ['Subcategory A', 'Subcategory B'] },
-  { name: 'Electronics_Gadgets', code: 'ELE', subCategories: [] },
-  { name: 'Tech_Communication', code: 'TEC', subCategories: [] },
-  { name: 'Personal Care_Grooming', code: 'PER / COS', subCategories: [] },
-  { name: 'Kids\' Essentials', code: 'KID', subCategories: [] },
-  { name: 'Outdoor, Sports_Leisure', code: 'OUT / SPO', subCategories: [] },
-  { name: 'Cabin Care_Home Comforts', code: 'CLC', subCategories: [] },
-  { name: 'Korean Souvenirs_Gifts', code: 'GIF', subCategories: [] },
-];
+import { categoryData } from '@/data/mockData';
 
 export default function CategoriesPage() {
   // 열려있는 카테고리를 관리하는 상태

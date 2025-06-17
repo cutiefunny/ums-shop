@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import Image from 'next/image';
-import styles from './ProductCard.module.css'; // [수정] 자체 CSS 모듈을 사용합니다.
+import styles from './ProductCard.module.css';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 
@@ -16,12 +16,24 @@ export default function ProductCard({ product, onAddToCart }) {
   const isWishlisted = isProductInWishlist(product.id);
   const discountedPrice = product.price * (1 - product.discount / 100);
 
+  const handleAddToCartClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onAddToCart(product); // 상품 객체 전체를 전달
+  };
+
+  const handleWishlistClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist(product.id);
+  }
+
   return (
     <div className={styles.card}>
       <div className={styles.imageWrapper}>
         <Image src={product.image} alt={product.name} width={150} height={150} />
         {isLoggedIn && (
-          <button onClick={() => toggleWishlist(product.id)} className={styles.heartButton}>
+          <button onClick={handleWishlistClick} className={styles.heartButton}>
             {isWishlisted ? <HeartIcon /> : <HeartOutlineIcon />}
           </button>
         )}
@@ -34,7 +46,7 @@ export default function ProductCard({ product, onAddToCart }) {
         </div>
         <p className={styles.finalPrice}>${discountedPrice.toFixed(2)}</p>
       </div>
-      <button className={styles.addToCartButton} onClick={() => onAddToCart(product.name)}>
+      <button className={styles.addToCartButton} onClick={handleAddToCartClick}>
         Add to Cart
       </button>
     </div>

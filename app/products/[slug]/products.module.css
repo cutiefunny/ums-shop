@@ -295,3 +295,9 @@
   font-weight: bold;
   cursor: pointer;
 }
+
+.productLink {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}

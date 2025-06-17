@@ -1,14 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './category1depth.module.css';
-import ProductCard from '@/components/ProductCard'; // [수정] 공용 ProductCard 경로
+import ProductCard from '@/components/ProductCard';
 import { useModal } from '@/contexts/ModalContext';
 import { categoryData, mockProducts, devices, generals, slugify } from '@/data/mockData';
+import AddToCartModal from '../../products/detail/[slug]/components/AddToCartModal'; // 바텀 시트 모달 import
 
-// ... 아이콘 컴포넌트 및 페이지 로직은 기존과 동일 ...
 // 아이콘 컴포넌트
 const BackIcon = () => <svg width="24" height="24" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41Z" fill="black"/></svg>;
 const SearchIcon = () => <svg width="24" height="24" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="black"/></svg>;
@@ -22,15 +22,25 @@ export default function Category1DepthPage() {
   const { showModal } = useModal();
   const { slug } = params;
 
+  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
   const currentCategory = categoryData.find(cat => slugify(cat.name) === slug);
   const title = currentCategory ? currentCategory.name.replace(/_/g, ' ') : 'Category';
   const subCategories = currentCategory ? currentCategory.subCategories : [];
 
-  const handleAddToCart = (productName) => {
-    showModal(`${productName}\nhas been added to your cart.`);
+  const handleOpenCartModal = (product) => {
+    setSelectedProduct(product);
+    setIsCartModalOpen(true);
   };
 
-return (
+  const handleConfirmAddToCart = (productName, quantity) => {
+      // TODO: 실제 장바구니에 상품을 담는 로직 (e.g. API 호출)
+      console.log(`${productName} ${quantity}개 장바구니에 추가`);
+      showModal(`${productName} has been added to your cart.`);
+  };
+
+  return (
     <div className={styles.pageContainer}>
         <header className={styles.header}>
             <button onClick={() => router.back()} className={styles.iconButton}><BackIcon /></button>
@@ -41,8 +51,8 @@ return (
         </header>
 
         <div className={styles.titleContainer}>
-        <h1 className={styles.title}>{title}</h1>
-      </div>
+            <h1 className={styles.title}>{title}</h1>
+        </div>
         
         <div className={styles.filterBar}>
             <button className={`${styles.filterChip} ${styles.active}`}>ALL</button>
@@ -65,15 +75,26 @@ return (
                         </div>
                         <div className={styles.horizontalProductList}>
                             {products.map(product => (
-                                <div key={product.id} className={styles.productCardWrapper}>
-                                    <ProductCard product={product} onAddToCart={handleAddToCart} />
-                                </div>
+                                <Link href={`/products/detail/${product.slug}`} key={product.id} className={styles.productLink}>
+                                    <div className={styles.productCardWrapper}>
+                                        <ProductCard product={product} onAddToCart={handleOpenCartModal} />
+                                    </div>
+                                </Link>
                             ))}
                         </div>
                     </section>
                 );
             })}
         </main>
+
+        {selectedProduct && (
+            <AddToCartModal
+                isOpen={isCartModalOpen}
+                onClose={() => setIsCartModalOpen(false)}
+                onConfirm={handleConfirmAddToCart}
+                product={selectedProduct}
+            />
+        )}
     </div>
-);
+  );
 }

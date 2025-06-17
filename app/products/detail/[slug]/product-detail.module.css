@@ -1,0 +1,222 @@
+/* Page Layout */
+.pageContainer {
+    background-color: #fff;
+    padding-bottom: 100px; /* Space for fixed footer */
+}
+
+.header {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    padding: 12px 16px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+}
+
+.iconButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.mainContent {
+    /* No padding here, handled by sections */
+}
+
+/* Image Gallery */
+.imageGallery {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background-color: #f8f9fa;
+}
+
+.swiper {
+    width: 100%;
+    height: 100%;
+}
+
+.swiperSlide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.swiperSlide img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Custom Swiper pagination dots */
+.imageGallery :global(.swiper-pagination) {
+    bottom: 16px !important;
+}
+.imageGallery :global(.swiper-pagination-bullet) {
+    width: 8px;
+    height: 8px;
+    background-color: #e9ecef;
+    opacity: 1;
+}
+.imageGallery :global(.swiper-pagination-bullet-active) {
+    background-color: #343a40;
+}
+
+
+/* Info Section */
+.infoSection {
+    padding: 24px 20px;
+    border-bottom: 8px solid #f8f9fa;
+}
+
+.categoryHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.categoryLink {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9rem;
+    color: #495057;
+    font-weight: 500;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.productName {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+}
+
+.codename {
+    font-size: 1rem;
+    color: #868e96;
+    margin-top: 4px;
+    margin-bottom: 16px;
+}
+
+.priceSection {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.originalPrice {
+    font-size: 1rem;
+    color: #adb5bd;
+    text-decoration: line-through;
+}
+
+.discount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #E57373; /* Discount color */
+}
+
+.finalPrice {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #212529;
+}
+
+.extraInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+    font-size: 0.9rem;
+}
+
+.infoItem {
+    display: flex;
+    justify-content: space-between;
+}
+
+.infoLabel {
+    color: #868e96;
+}
+
+.infoValue {
+    color: #212529;
+    font-weight: 500;
+}
+
+.shippingBox {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+
+/* Description Section */
+.descriptionSection {
+    padding: 24px 20px;
+}
+
+.descriptionTitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.descriptionText {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #495057;
+}
+
+
+/* Footer */
+.fixedFooter {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom)); /* For iPhone X etc. */
+    background-color: #fff;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    z-index: 100;
+}
+
+.wishlistButton, .cartButton {
+    flex: 1;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+}
+
+.wishlistButton {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    color: #495057;
+}
+
+.cartButton {
+    background-color: #f5a623; /* Primary yellow color */
+    border: 1px solid #f5a623;
+    color: #fff;
+}

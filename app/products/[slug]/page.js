@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react'; // useMemo import
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link'; // Link import
 import styles from './products.module.css';
 import ProductCard from './components/ProductCard';
 import CategorySwitchModal from './components/CategorySwitchModal'; // 모달 컴포넌트 import
@@ -58,8 +59,9 @@ export default function ProductListPage() {
 
   const [filter, setFilter] = useState('Latest Items');
 
-  const handleAddToCart = (productName) => {
-    // 공통 모달을 사용하여 장바구니 추가 알림
+  const handleAddToCart = (e, productName) => {
+    e.preventDefault(); // Link 이동을 막고 장바구니에만 담기도록
+    e.stopPropagation();
     showModal(`${productName}\nhas been added to your cart.`);
   };
 
@@ -94,9 +96,11 @@ export default function ProductListPage() {
         </div>
 
         <div className={styles.productGrid}>
-          {/* [수정] 정렬된 상품 목록을 렌더링 */}
+          {/* [수정] 정렬된 상품 목록을 Link로 감싸서 렌더링 */}
           {sortedProducts.map(product => (
-            <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
+            <Link href={`/products/detail/${product.slug}`} key={product.id} className={styles.productLink}>
+              <ProductCard product={product} onAddToCart={(productName) => handleAddToCart(event, productName)} />
+            </Link>
           ))}
         </div>
       </main>
