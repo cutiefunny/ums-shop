@@ -8,7 +8,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-end; /* 화면 하단에 정렬 */
-  z-index: 1050; /* 기존 모달보다 위에 표시 */
+  z-index: 1300; /* 다른 UI 요소들보다 위에 표시되도록 z-index 값 상향 */
 }
 
 .bottomSheet {

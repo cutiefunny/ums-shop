@@ -18,14 +18,24 @@ export default function ProductCard({ product, onAddToCart }) {
   const isWishlisted = isProductInWishlist(product.id);
   const discountedPrice = product.price * (1 - product.discount / 100);
 
+  const handleAddToCartClick = (e) => {
+    e.preventDefault();  // Link의 기본 동작(페이지 이동)을 막습니다.
+    e.stopPropagation(); // 이벤트가 상위 요소로 전파되는 것을 막습니다.
+    onAddToCart(product);
+  };
+
+  const handleWishlistClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist(product.id);
+  };
+
   return (
     <div className={styles.card}>
       <div className={styles.imageWrapper}>
         <Image src={product.image} alt={product.name} width={150} height={150} />
-        {/* [수정] 로그인 상태일 때만 하트 버튼을 렌더링합니다. */}
         {isLoggedIn && (
-          <button onClick={() => toggleWishlist(product.id)} className={styles.heartButton}>
-            {/* 위시리스트 포함 여부에 따라 다른 아이콘을 보여줍니다. */}
+          <button onClick={handleWishlistClick} className={styles.heartButton}>
             {isWishlisted ? <HeartIcon /> : <HeartOutlineIcon />}
           </button>
         )}
@@ -38,7 +48,7 @@ export default function ProductCard({ product, onAddToCart }) {
         </div>
         <p className={styles.finalPrice}>${discountedPrice.toFixed(2)}</p>
       </div>
-      <button className={styles.addToCartButton} onClick={() => onAddToCart(product.name)}>
+      <button className={styles.addToCartButton} onClick={handleAddToCartClick}>
         Add to Cart
       </button>
     </div>

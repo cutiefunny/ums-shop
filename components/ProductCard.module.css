@@ -8,4 +8,14 @@
 .discount { color: #e57373; font-weight: bold; font-size: 1rem; }
 .originalPrice { text-decoration: line-through; color: #adb5bd; font-size: 0.8rem; }
 .finalPrice { font-size: 1rem; font-weight: bold; margin-top: 4px; }
-.addToCartButton { width: calc(100% - 24px); margin: 0 12px 12px; padding: 10px; border: 1px solid #ced4da; background-color: #fff; border-radius: 8px; cursor: pointer; font-weight: 600; }
+button.addToCartButton {
+width: calc(100% - 24px);
+margin: 0 12px 12px;
+padding: 10px;
+border: 1px solid #ced4da;
+background-color: #fff;
+color: #212529; /* 텍스트 색상 추가 */
+border-radius: 8px;
+cursor: pointer;
+font-weight: 600;
+}
