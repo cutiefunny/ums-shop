@@ -2,13 +2,14 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { wishlist } from '@/data/mockData'; // 실제 데이터는 API로 가져올 예정
 
 const WishlistContext = createContext(null);
 
 export const useWishlist = () => useContext(WishlistContext);
 
 // 실제로는 API로 가져올 위시리스트 Mock 데이터
-const MOCK_WISHLIST = [1, 3]; // 상품 ID 1, 3번이 위시리스트에 있다고 가정
+const MOCK_WISHLIST = wishlist; 
 
 export const WishlistProvider = ({ children }) => {
   const { isLoggedIn } = useAuth();
@@ -31,6 +32,8 @@ export const WishlistProvider = ({ children }) => {
     );
   };
 
+  const wishlistItems = wishlist; // 위시리스트 아이템들을 외부에서 사용할 수 있도록 제공
+
   const isProductInWishlist = (productId) => {
     return wishlist.includes(productId);
   };
@@ -38,6 +41,7 @@ export const WishlistProvider = ({ children }) => {
   const value = {
     toggleWishlist,
     isProductInWishlist,
+    wishlistItems,
   };
 
   return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;

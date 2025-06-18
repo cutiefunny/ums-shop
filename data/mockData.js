@@ -22,15 +22,19 @@ export const mockProducts = [
 ];
 
 export const devices = [
-  { id: 1, name: 'device1', price: 129.99, discount: 30, image: '/images/device1.jpeg', slug: 'device1-product-slug' },
-  { id: 2, name: 'device2', price: 98.99, discount: 30, image: '/images/device2.jpeg', slug: 'device2-product-slug' },
-  { id: 3, name: 'device3', price: 59.99, discount: 30, image: '/images/device3.jpeg', slug: 'device3-product-slug' },
-  { id: 4, name: 'device4', price: 189.99, discount: 30, image: '/images/device4.jpeg', slug: 'device4-product-slug' },
+  { id: 101, name: 'device1', price: 129.99, discount: 30, image: '/images/device1.jpeg', slug: 'device1-product-slug' },
+  { id: 102, name: 'device2', price: 98.99, discount: 30, image: '/images/device2.jpeg', slug: 'device2-product-slug' },
+  { id: 103, name: 'device3', price: 59.99, discount: 30, image: '/images/device3.jpeg', slug: 'device3-product-slug' },
+  { id: 104, name: 'device4', price: 189.99, discount: 30, image: '/images/device4.jpeg', slug: 'device4-product-slug' },
 ];
 
 export const generals = [
-  { id: 1, name: 'general1', price: 129.99, discount: 30, image: '/images/general1.jpeg', slug: 'general1-product-slug' },
-  { id: 2, name: 'general2', price: 98.99, discount: 30, image: '/images/general2.jpeg', slug: 'general2-product-slug' },
-  { id: 3, name: 'general3', price: 59.99, discount: 30, image: '/images/general3.jpeg', slug: 'general3-product-slug' },
-  { id: 4, name: 'general4', price: 189.99, discount: 30, image: '/images/general4.jpeg', slug: 'general4-product-slug' },
+  { id: 201, name: 'general1', price: 129.99, discount: 30, image: '/images/general1.jpeg', slug: 'general1-product-slug' },
+  { id: 202, name: 'general2', price: 98.99, discount: 30, image: '/images/general2.jpeg', slug: 'general2-product-slug' },
+  { id: 203, name: 'general3', price: 59.99, discount: 30, image: '/images/general3.jpeg', slug: 'general3-product-slug' },
+  { id: 204, name: 'general4', price: 189.99, discount: 30, image: '/images/general4.jpeg', slug: 'general4-product-slug' },
+];
+
+export const wishlist = [
+  1, 3, 102
 ];
