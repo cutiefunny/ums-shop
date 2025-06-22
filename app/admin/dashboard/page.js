@@ -12,7 +12,6 @@ import OrderInfoSection from './modules/OrderInfoSection';
 export default function DashboardPage() {
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Dashboard</h1>
 
       {/* Top Row Widgets */}
       <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
