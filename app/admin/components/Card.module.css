@@ -1,0 +1,18 @@
+/* app/admin/components/Card.module.css */
+.card {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  flex: 1 1 180px; /* 반응형을 위해 flex-grow, flex-shrink, basis 설정 */
+  min-height: 120px; /* 최소 높이 설정 */
+  display: flex; /* 내부 콘텐츠 정렬을 위해 flex 추가 (선택 사항) */
+  flex-direction: column; /* 세로 정렬 */
+}
+
+.cardTitle {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 18px;
+  color: #333;
+}
