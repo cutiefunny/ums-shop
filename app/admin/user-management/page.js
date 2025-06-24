@@ -3,17 +3,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link'; // Next.js Link 컴포넌트 임포트
-
-// DynamoDB 관련 import 제거 (이제 API Route를 통해 통신)
-// import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-// import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
-
-// DynamoDB 클라이언트 초기화 제거 (이제 서버 측 API Route에서 처리)
-// const client = new DynamoDBClient({...});
-// const docClient = DynamoDBDocumentClient.from(client);
-
-// DynamoDB 테이블 이름 환경 변수도 이제 클라이언트 측에서는 필요 없습니다.
-// const USERS_TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_USERS || 'user-management';
+import ApprovalStatusModal from './components/ApprovalStatusModal'; // 새 모달 컴포넌트 임포트
 
 const ITEMS_PER_PAGE = 5; // 페이지당 항목 수
 
@@ -26,17 +16,21 @@ export default function UserManagementPage() {
   const [filterStatus, setFilterStatus] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
 
+  // 팝업 모달 관련 상태
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+  const [selectedUserForApproval, setSelectedUserForApproval] = useState(null); // { seq, currentStatus }
+
   // API를 통해 사용자 데이터를 가져오는 함수
   async function fetchUsers() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('/api/users'); // 새로운 API Route 호출
+      const response = await fetch('/api/users'); // API Route 호출
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      // DynamoDB에서 가져온 데이터로 users 상태 업데이트
       setUsers(data || []);
     } catch (err) {
       console.error("Error fetching users:", err);
@@ -49,12 +43,11 @@ export default function UserManagementPage() {
   // 컴포넌트 마운트 시 사용자 데이터를 가져옵니다.
   useEffect(() => {
     fetchUsers();
-  }, []); // 빈 배열은 컴포넌트가 처음 마운트될 때 한 번만 실행되도록 합니다.
+  }, []);
 
   const filteredUsers = useMemo(() => {
-    if (!users) return []; // users가 null 또는 undefined일 경우 빈 배열 반환
+    if (!users) return [];
     return users.filter(user => {
-      // user.id 대신 user.seq 사용
       const matchesSearch =
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -63,7 +56,7 @@ export default function UserManagementPage() {
         filterStatus === 'All' || user.approvalStatus?.toLowerCase() === filterStatus.toLowerCase();
       return matchesSearch && matchesFilter;
     });
-  }, [users, searchTerm, filterStatus]); // users가 변경될 때마다 재계산
+  }, [users, searchTerm, filterStatus]);
 
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
   const currentUsers = useMemo(() => {
@@ -74,32 +67,34 @@ export default function UserManagementPage() {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // 검색 시 첫 페이지로 리셋
+    setCurrentPage(1);
   };
 
   const handleFilterChange = (e) => {
     setFilterStatus(e.target.value);
-    setCurrentPage(1); // 필터 변경 시 첫 페이지로 리셋
+    setCurrentPage(1);
   };
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
 
-  const handleApprovalChange = async (userSeq, currentStatus) => {
-    const newStatus = (() => {
-      switch (currentStatus) {
-        case 'request':
-          return 'approve';
-        case 'approve':
-          return 'reject';
-        case 'reject':
-          return 'request';
-        default:
-          return currentStatus;
-      }
-    })();
+  // 'Approval' 버튼 클릭 시 모달을 여는 함수
+  const handleOpenApprovalModal = (event, user) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setModalPosition({
+      top: rect.bottom + window.scrollY, // 버튼 바로 아래
+      left: rect.left + window.scrollX,  // 버튼 왼쪽 정렬
+    });
+    setSelectedUserForApproval({ seq: user.seq, currentStatus: user.approvalStatus });
+    setShowApprovalModal(true);
+  };
 
+  // 모달에서 상태 선택 시 실제 API를 호출하는 함수
+  const handleSelectApprovalStatus = async (newStatus) => {
+    if (!selectedUserForApproval) return;
+
+    const userSeq = selectedUserForApproval.seq;
     console.log(`Attempting to change User ${userSeq} approval status to: ${newStatus}`);
 
     try {
@@ -117,8 +112,8 @@ export default function UserManagementPage() {
       }
 
       console.log(`User ${userSeq} approval status updated successfully.`);
-      // 성공적으로 업데이트되면 데이터를 다시 불러와 최신 상태를 반영
-      fetchUsers(); 
+      fetchUsers(); // 성공 시 데이터를 다시 불러와 최신 상태 반영
+      setShowApprovalModal(false); // 모달 닫기
 
     } catch (err) {
       console.error("Error updating user approval status:", err);
@@ -178,39 +173,36 @@ export default function UserManagementPage() {
         </thead>
         <tbody>
           {currentUsers.map(user => (
-            // key prop을 user.seq로 변경
             <tr key={user.seq} style={{ borderBottom: '1px solid #eee' }}>
               <td style={{ padding: '12px 8px' }}>{user.name}</td>
               <td style={{ padding: '12px 8px' }}>{user.email}</td>
               <td style={{ padding: '12px 8px' }}>{user.shipName}</td>
               <td style={{ padding: '12px 8px' }}>{user.phoneNumber}</td>
               <td style={{ padding: '12px 8px' }}>
-                {user.approvalStatus === 'request' && (
-                  <button
-                    onClick={() => handleApprovalChange(user.seq, user.approvalStatus)}
-                    style={{ backgroundColor: '#ffc107', color: 'white', padding: '6px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    request
-                  </button>
-                )}
-                {user.approvalStatus === 'approve' && (
-                  <button
-                    onClick={() => handleApprovalChange(user.seq, user.approvalStatus)}
-                    style={{ backgroundColor: '#28a745', color: 'white', padding: '6px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    Approve
-                  </button>
-                )}
-                {user.approvalStatus === 'reject' && (
-                  <button
-                    onClick={() => handleApprovalChange(user.seq, user.approvalStatus)}
-                    style={{ backgroundColor: '#dc3545', color: 'white', padding: '6px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    Reject
-                  </button>
-                )}
+                {/* Approval 버튼 클릭 시 모달을 열도록 변경 */}
+                <button
+                  onClick={(e) => handleOpenApprovalModal(e, user)}
+                  style={{
+                    backgroundColor: (() => {
+                      switch (user.approvalStatus) {
+                        case 'request': return '#ffc107'; // Yellow
+                        case 'approve': return '#28a745'; // Green
+                        case 'reject': return '#dc3545'; // Red
+                        default: return '#6c757d'; // Gray (기본값 또는 알 수 없는 상태)
+                      }
+                    })(),
+                    color: 'white',
+                    padding: '6px 10px',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    minWidth: '80px', // 버튼 너비를 고정하여 UI 흔들림 방지
+                  }}
+                >
+                  {user.approvalStatus.charAt(0).toUpperCase() + user.approvalStatus.slice(1)}
+                </button>
               </td>
-              <td style={{ padding: '12px 8px' }}>
+              <td style={{ padding: '12px 8px', textAlign: 'center' }}>
                 <Link href={`/admin/user-management/${user.seq}/edit`} passHref>
                   <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -243,6 +235,16 @@ export default function UserManagementPage() {
           </button>
         ))}
       </div>
+
+      {showApprovalModal && selectedUserForApproval && (
+        <ApprovalStatusModal
+          isOpen={showApprovalModal}
+          onClose={() => setShowApprovalModal(false)}
+          onSelectStatus={handleSelectApprovalStatus}
+          currentStatus={selectedUserForApproval.currentStatus}
+          position={modalPosition}
+        />
+      )}
     </div>
   );
 }

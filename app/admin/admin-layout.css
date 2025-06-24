@@ -16,3 +16,109 @@ ul {
 a {
   text-decoration: none;
 }
+
+/* Admin Layout Container */
+.adminLayoutContainer {
+  display: flex;
+  height: 100vh;
+}
+
+/* Sidebar Styles */
+.sidebar {
+  width: 200px;
+  background-color: #e0e0e0; /* 회색 배경 */
+  color: black;
+  padding: 0px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.sidebarContent {
+  flex-grow: 1;
+}
+
+.sidebarHeader {
+  padding-bottom: 30px;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 20px;
+}
+
+.logo {
+  margin: 0;
+  font-size: 24px;
+  text-align: center;
+}
+
+.navItem {
+  margin-bottom: 0px;
+}
+
+.navLink {
+  display: block;
+  padding: 12px 15px;
+  border-radius: 0px;
+  color: black;
+  background-color: #e0e0e0;
+  text-decoration: none;
+  font-weight: normal;
+  border: 1px solid #000;
+  border-left: none;
+  border-bottom: none;
+  border-right: none;
+  text-align: center;
+}
+
+.navLink.active {
+  background-color: #FBC926; /* 활성 링크 배경색 */
+}
+
+.firstNavLink {
+  /* 첫 번째 navItem에만 적용되는 상단 border는 이미 .navLink에 포함되어 있습니다. */
+  /* 필요하다면 여기에서 추가적인 스타일을 정의할 수 있습니다. */
+}
+
+.navDivider {
+  height: 1px;
+  background-color: #000;
+}
+
+.logoutButtonWrapper {
+  padding-top: 20px;
+}
+
+.logoutButton {
+  width: 100%;
+  padding: 10px 15px;
+  background-color: #ccc; /* 이미지에 맞게 회색조 */
+  color: black;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 20px; /* 상단 메뉴와의 간격 */
+}
+
+/* Main Content Area */
+.mainContentArea {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #f0f2f5;
+}
+
+.mainHeader {
+  padding: 20px;
+  background-color: white;
+  border-bottom: 1px solid #ddd;
+  height: 60px;
+  display: flex;
+  align-items: center;
+}
+
+.contentWrapper {
+  flex-grow: 1;
+  padding: 20px;
+  overflow-y: auto;
+}

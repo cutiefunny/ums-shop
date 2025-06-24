@@ -1,0 +1,386 @@
+/* app/admin/order-management/[orderId]/order-detail.module.css */
+
+.container {
+  padding: 20px;
+  background-color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.headerTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section {
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+/* Updated Customer Info Summary Section */
+.customerInfoSummary {
+  display: grid;
+  grid-template-columns: 1fr; /* Default to single column for mobile */
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .customerInfoSummary {
+    grid-template-columns: 1fr 1fr 5fr; /* Three columns for larger screens (Customer | Ship | Shipping) */
+    align-items: start; /* 각 블록의 상단 정렬 */
+    justify-items: start; /* 각 블록의 시작 정렬 */
+    gap : 20px; /* 각 블록 간의 간격 */
+  }
+}
+
+.customerInfoBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 5px; /* 내부 요소 간 간격 */
+}
+
+.customerInfoBlock2 {
+    display: flex;
+    flex-direction: row; /* 가로방향으로 배치 */
+    gap: 30px; /* 내부 요소 간 간격 */
+}
+
+.infoBlockTitle {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.infoValue {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.infoSubValue { /* Secondary values like email, phone, port */
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Original .infoGrid and .infoItem are likely no longer used for basic info, but kept for reference if needed elsewhere */
+/*
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px 20px;
+}
+
+@media (min-width: 768px) {
+  .infoGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.infoLabel {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 3px;
+}
+*/
+
+
+/* Order Summary */
+.orderSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Responsive grid */
+  gap: 15px;
+}
+
+.orderItemCard {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.orderItemImage {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.orderItemDetails {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.productName {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 5px;
+}
+
+.unitPrice, .quantity {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.packingCheckbox {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 20px;
+  height: 20px;
+}
+
+.adminControls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.adminStatusSelect {
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.adminQuantityInput {
+  width: 60px;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.newBadge {
+  background-color: #ffc107; /* Yellow */
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+/* Totals */
+.totalsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.totalAmount {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Message Area */
+.messageArea {
+  display: flex;
+  flex-direction: column;
+  height: 400px; /* 고정 높이 */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.messageThread {
+  flex-grow: 1;
+  padding: 15px;
+  overflow-y: auto;
+  background-color: #fdfdfd;
+}
+
+.messageItem {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.messageItem.admin {
+  align-items: flex-end; /* Admin messages to the right */
+}
+
+.messageItem.user {
+  align-items: flex-start; /* User messages to the left */
+}
+
+.messageBubble {
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  word-wrap: break-word; /* 긴 텍스트 줄바꿈 */
+}
+
+.messageItem.admin .messageBubble {
+  background-color: #dcf8c6; /* Light green for admin */
+  color: #333;
+  border-bottom-right-radius: 2px;
+}
+
+.messageItem.user .messageBubble {
+  background-color: #e0e0e0; /* Light gray for user */
+  color: #333;
+  border-bottom-left-radius: 2px;
+}
+
+.messageSender {
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 3px;
+}
+
+.messageImage {
+  max-width: 150px;
+  max-height: 150px;
+  border-radius: 8px;
+  margin-top: 5px;
+}
+
+.messageInputArea {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-top: 1px solid #eee;
+  background-color: #fff;
+}
+
+.messageInput {
+  flex-grow: 1;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  padding: 10px 15px;
+  margin-right: 10px;
+  font-size: 0.9rem;
+}
+
+.attachButton, .sendButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.attachButton:hover, .sendButton:hover {
+  background-color: #eee;
+}
+
+.sendButton {
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  padding: 8px 15px;
+}
+
+.sendButton:hover {
+  background-color: #0056b3;
+}
+
+/* Note Area */
+.noteArea textarea {
+  width: 100%;
+  min-height: 120px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 0.95rem;
+  resize: vertical; /* Only allow vertical resizing */
+}
+
+/* Bottom Actions */
+.bottomActions {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.downloadButton, .saveButton {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.downloadButton:hover {
+  background-color: #5a6268;
+}
+
+.saveButton {
+  background-color: black; /* Black */
+  color: white;
+}
+
+.saveButton:hover {
+  background-color: #333;
+}
+
+/* Helper styles for error messages */
+.errorText {
+  color: red;
+  font-weight: bold;
+}
