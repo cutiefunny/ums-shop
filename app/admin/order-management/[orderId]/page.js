@@ -329,35 +329,36 @@ export default function OrderDetailPage() {
         <div className={styles.customerInfoSummary}> {/* 새로운 컨테이너 */}
           {/* Customer Information (John Smith, email, phone) */}
           <div className={styles.customerInfoBlock}>
-            <span className={styles.infoBlockTitle}>{order.customer.name}</span>
+            <span className={styles.infoBlockTitle}>Customer Information</span> {/* Added title */}
+            <span className={styles.infoValue}>{order.customer.name}</span>
             <span className={styles.infoSubValue}>{order.customer.email}</span>
             <span className={styles.infoSubValue}>{order.customer.phoneNumber}</span>
           </div>
 
           {/* Ship Information (Ocean Explorer, Port) */}
           <div className={styles.customerInfoBlock}>
-            <span className={styles.infoBlockTitle}>Ship Information</span>
+            <span className={styles.infoBlockTitle}>Ship Information</span> {/* Added title */}
             <span className={styles.infoValue}>{order.shipInfo.shipName}</span>
             <span className={styles.infoSubValue}>{order.shipInfo.port}</span>
           </div>
 
           {/* Shipping Details (Method, Estimated, Tracking, Actual) */}
           <div className={styles.customerInfoBlock}>
-            <span className={styles.infoBlockTitle}>Shipping Details</span>
+            <span className={styles.infoBlockTitle}>Shipping Details</span> {/* Added title */}
             <div className={styles.customerInfoBlock2}>
-              <div className={styles.customerInfoBlock}>
+              <div className={styles.customerInfoRow}>
                 <span className={styles.infoSubValue}>Shipping Method:</span>
                 <span className={styles.infoValue}>{order.shippingDetails.method}</span>
               </div>
-            <div className={styles.customerInfoBlock}>
+              <div className={styles.customerInfoRow}>
                 <span className={styles.infoSubValue}>Estimated Delivery:</span>
                 <span className={styles.infoValue}>{order.shippingDetails.estimatedDelivery}</span>
-            </div>
-              <div className={styles.customerInfoBlock}>
+              </div>
+              <div className={styles.customerInfoRow}>
                 <span className={styles.infoSubValue}>Tracking Number:</span>
                 <span className={styles.infoValue}>{order.shippingDetails.trackingNumber}</span>
-            </div>
-              <div className={styles.customerInfoBlock}>
+              </div>
+              <div className={styles.customerInfoRow}>
                 <span className={styles.infoSubValue}>Actual Delivery:</span>
                 <span className={styles.infoValue}>{order.shippingDetails.actualDelivery}</span>
               </div>
@@ -366,152 +367,171 @@ export default function OrderDetailPage() {
         </div>
       </section>
 
-      {/* 주문 상품 요약 (Order Summary) */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Order Summary</h2>
-        <div className={styles.orderSummaryGrid}>
-          {order.orderItems.map(item => (
-            <div key={item.productId} className={styles.orderItemCard}>
-              <div className={styles.orderItemDetails}>
-                <Image src={item.image} alt={item.name} width={80} height={80} className={styles.orderItemImage} />
-                <div>
-                  <div className={styles.productName}>{item.name}</div>
-                  <div className={styles.unitPrice}>Unit Price: ${item.unitPrice.toFixed(2)}</div>
-                  <div className={styles.quantity}>Quantity: {item.quantity}</div>
+      {/* 주문 상품 요약 (Order Summary), 메시지 영역, 배송 메모 영역을 묶는 컨테이너 */}
+      <div className={styles.bottomSectionGroup}>
+        {/* Order Summary Section */}
+        <section className={`${styles.section} ${styles.orderSummarySection}`}>
+          <h2 className={styles.sectionTitle}>Order Summary</h2>
+          <div className={styles.orderSummaryGrid}>
+            {order.orderItems.map(item => (
+              <div key={item.productId} className={styles.orderItemCard}>
+                <div className={styles.orderItemDetails}>
+                  <Image src={item.image} alt={item.name} width={80} height={80} className={styles.orderItemImage} />
+                  <div>
+                    <div className={styles.productName}>{item.name}</div>
+                    <div className={styles.unitPrice}>Unit Price: ${item.unitPrice.toFixed(2)}</div>
+                    <div className={styles.quantity}>Quantity: {item.quantity}</div>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={item.packingStatus}
+                  onChange={() => handleItemPackingChange(item.productId)}
+                  className={styles.packingCheckbox}
+                  title="Packing Status"
+                />
+                {item.isNewMessage && <span className={styles.newBadge}>[NEW]</span>}
+                <div className={styles.adminControls}>
+                  <select
+                    value={item.adminStatus}
+                    onChange={(e) => handleAdminStatusChange(item.productId, e.target.value)}
+                    className={styles.adminStatusSelect}
+                  >
+                    {ADMIN_STATUS_OPTIONS.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    value={item.adminQuantity}
+                    onChange={(e) => handleAdminQuantityChange(item.productId, e)}
+                    className={styles.adminQuantityInput}
+                    min="0"
+                  />
                 </div>
               </div>
-              {/* Packing 상태 체크 */}
-              <input
-                type="checkbox"
-                checked={item.packingStatus}
-                onChange={() => handleItemPackingChange(item.productId)}
-                className={styles.packingCheckbox}
-                title="Packing Status"
-              />
-              {item.isNewMessage && <span className={styles.newBadge}>[NEW]</span>} {/* NEW 뱃지 */}
-              {/* 관리자 입력 필드 */}
-              <div className={styles.adminControls}>
-                <select
-                  value={item.adminStatus}
-                  onChange={(e) => handleAdminStatusChange(item.productId, e.target.value)}
-                  className={styles.adminStatusSelect}
-                >
-                  {ADMIN_STATUS_OPTIONS.map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  value={item.adminQuantity}
-                  onChange={(e) => handleAdminQuantityChange(item.productId, e)}
-                  className={styles.adminQuantityInput}
-                  min="0"
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Totals */}
-        <div className={styles.totalsSection}>
-          <div className={styles.totalRow}>
-            <span>Subtotal:</span>
-            <span>${order.subtotal.toFixed(2)}</span>
-          </div>
-          <div className={styles.totalRow}>
-            <span>Shipping Fee:</span>
-            <span>${order.shippingFee.toFixed(2)}</span>
-          </div>
-          <div className={styles.totalRow}>
-            <span>Tax:</span>
-            <span>${order.tax.toFixed(2)}</span>
-          </div>
-          <div className={styles.totalRow}>
-            <span className={styles.totalAmount}>Total:</span>
-            <span className={styles.totalAmount}>${order.totalAmount.toFixed(2)}</span>
-          </div>
-        </div>
-      </section>
-
-      {/* 메시지 영역 */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>MESSAGE</h2>
-        <div className={styles.messageArea}>
-          <div className={styles.messageThread}>
-            {order.messages.map(msg => (
-              <div key={msg.id} className={`${styles.messageItem} ${msg.sender === 'Admin' ? styles.admin : styles.user}`}>
-                <span className={styles.messageSender}>
-                  {msg.sender === 'Admin' ? '관리자' : '사용자'} {msg.isNew && <span className={styles.newBadge}>NEW</span>}
-                </span>
-                {msg.text && <div className={styles.messageBubble}>{msg.text}</div>}
-                {msg.imageUrl && (
-                  <img src={msg.imageUrl} alt="Attached" className={styles.messageImage} />
-                )}
-              </div>
             ))}
-            <div ref={messagesEndRef} /> {/* 메시지 하단으로 자동 스크롤을 위한 엘리먼트 */}
           </div>
-          <div className={styles.messageInputArea}>
-            <input
-              type="file"
-              accept="image/jpeg, image/png, image/webp"
-              ref={fileInputRef}
-              style={{ display: 'none' }} // 숨김
-              onChange={handleImageChange}
-            />
-            <button onClick={handleImageAttachClick} className={styles.attachButton}>
-              {/* 첨부 파일 아이콘 (SVG) */}
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 13.5l-3.24-3.24a2.82 2.82 0 0 0-3.96 0L2 17"></path>
-                <path d="M13 7H7a2 2 0 0 0-2 2v6"></path>
-              </svg>
-            </button>
-            <input
-              type="text"
-              placeholder={attachedImage ? `Image attached: ${attachedImage.name}` : "메시지를 작성해주세요."}
-              value={newMessageText}
-              onChange={(e) => setNewMessageText(e.target.value)}
-              className={styles.messageInput}
-              disabled={!!attachedImage} // 이미지가 첨부되면 텍스트 입력 비활성화
-            />
-            <button onClick={handleSendMessage} className={styles.sendButton}>
-              전송
-            </button>
-          </div>
-          {attachedImage && (
-            <div style={{ padding: '10px', backgroundColor: '#f0f0f0', borderTop: '1px solid #ddd' }}>
-              <p style={{ margin: '0', fontSize: '0.85rem' }}>첨부 이미지: {attachedImage.name}
-                <button onClick={() => setAttachedImage(null)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', marginLeft: '10px' }}>x</button>
-              </p>
+
+          {/* Totals - Moved to bottomActions */}
+          {/* <div className={styles.totalsSection}>...</div> */}
+        </section>
+
+        {/* 메시지 영역 */}
+        <section className={`${styles.section} ${styles.messageSection}`}>
+          <h2 className={styles.sectionTitle}>MESSAGE</h2>
+          <div className={styles.messageArea}>
+            <div className={styles.messageThread}>
+              {order.messages.map(msg => (
+                <div key={msg.id} className={`${styles.messageItem} ${msg.sender === 'Admin' ? styles.admin : styles.user}`}>
+                  <span className={styles.messageSender}>
+                    {msg.sender === 'Admin' ? '관리자' : '사용자'} {msg.isNew && <span className={styles.newBadge}>NEW</span>}
+                  </span>
+                  {msg.text && <div className={styles.messageBubble}>{msg.text}</div>}
+                  {msg.imageUrl && (
+                    <img src={msg.imageUrl} alt="Attached" className={styles.messageImage} />
+                  )}
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
             </div>
-          )}
+            <div className={styles.messageInputArea}>
+              <input
+                type="file"
+                accept="image/jpeg, image/png, image/webp"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleImageChange}
+              />
+              <button onClick={handleImageAttachClick} className={styles.attachButton}>
+                {/* 첨부 파일 아이콘 (SVG) */}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 13.5l-3.24-3.24a2.82 2.82 0 0 0-3.96 0L2 17"></path>
+                  <path d="M13 7H7a2 2 0 0 0-2 2v6"></path>
+                </svg>
+              </button>
+              <input
+                type="text"
+                placeholder={attachedImage ? `Image attached: ${attachedImage.name}` : "메시지를 작성해주세요."}
+                value={newMessageText}
+                onChange={(e) => setNewMessageText(e.target.value)}
+                className={styles.messageInput}
+                disabled={!!attachedImage}
+              />
+              <button onClick={handleSendMessage} className={styles.sendButton}>
+                전송
+              </button>
+            </div>
+            {attachedImage && (
+              <div style={{ padding: '10px', backgroundColor: '#f0f0f0', borderTop: '1px solid #ddd' }}>
+                <p style={{ margin: '0', fontSize: '0.85rem' }}>첨부 이미지: {attachedImage.name}
+                  <button onClick={() => setAttachedImage(null)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', marginLeft: '10px' }}>x</button>
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* 배송 메모 영역 (NOTE) */}
+        <section className={`${styles.section} ${styles.noteSection}`}>
+          <h2 className={styles.sectionTitle}>NOTE</h2>
+          <textarea
+            value={order.note}
+            onChange={handleNoteChange}
+            maxLength={500}
+            placeholder="최대 500자까지 입력 가능합니다."
+            className={styles.noteArea}
+          />
+          <p style={{ textAlign: 'right', fontSize: '0.8rem', color: '#666' }}>
+            {order.note.length}/500
+          </p>
+        </section>
+      </div> {/* bottomSectionGroup 끝 */}
+
+      {/* Totals Section */}
+        <div className={styles.totalsSection}> {/* 기존 totalsSection 스타일 재활용 */}
+          <div className={styles.totalRow}>
+            <span className={styles.infoSubValue}>Subtotal:</span> {/* New class for label */}
+            <input
+                type="text"
+                value={`$${order.subtotal.toFixed(2)}`}
+                readOnly
+                className={styles.totalInput}
+            />
+          </div>
+          <div className={styles.totalRow}>
+            <span className={styles.infoSubValue}>Shipping Fee:</span> {/* New class for label */}
+            <input
+                type="text"
+                value={`$${order.shippingFee.toFixed(2)}`}
+                readOnly
+                className={styles.totalInput}
+            />
+          </div>
+          <div className={styles.totalRow}>
+            <span className={styles.infoSubValue}>Tax:</span> {/* New class for label */}
+            <input
+                type="text"
+                value={`$${order.tax.toFixed(2)}`}
+                readOnly
+                className={styles.totalInput}
+            />
+          </div>
+          <div className={`${styles.totalRow} ${styles.finalTotalRow}`}> {/* New class for final total row */}
+            <span className={styles.finalTotalDisplay}>${order.totalAmount.toFixed(2)}</span> {/* New class for display */}
+          </div>
         </div>
-      </section>
-
-      {/* 배송 메모 영역 (NOTE) */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>NOTE</h2>
-        <textarea
-          value={order.note}
-          onChange={handleNoteChange}
-          maxLength={500}
-          placeholder="최대 500자까지 입력 가능합니다."
-          className={styles.noteArea}
-        />
-        <p style={{ textAlign: 'right', fontSize: '0.8rem', color: '#666' }}>
-          {order.note.length}/500
-        </p>
-      </section>
-
-      {/* 하단 액션 버튼들 */}
+        
       <div className={styles.bottomActions}>
-        <button onClick={handleDownload} className={styles.downloadButton}>
-          Download
-        </button>
-        <button onClick={handleSave} className={styles.saveButton}>
-          Save
-        </button>
+        <div className={styles.actionButtonsGroup}> {/* Download and Save buttons group */}
+            <button onClick={handleDownload} className={styles.downloadButton}>
+              Download
+            </button>
+            <button onClick={handleSave} className={styles.saveButton}>
+              Save
+            </button>
+        </div>
       </div>
     </div>
   );
