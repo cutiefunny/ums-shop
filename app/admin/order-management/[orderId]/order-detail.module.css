@@ -364,7 +364,7 @@
   border-radius: 4px;
   padding: 10px;
   font-size: 0.95rem;
-  resize: vertical; /* Only allow vertical resizing */
+  resize: vertical;
 }
 
 /* Bottom Actions */

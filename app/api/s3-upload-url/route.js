@@ -1,78 +1,52 @@
 // app/api/s3-upload-url/route.js
 import { NextResponse } from 'next/server';
 import { S3Client } from '@aws-sdk/client-s3';
-import { createPresignedPost } from '@aws-sdk/s3-request-presigner'; // 업로드에 유용
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'; // 다운로드에 유용
-import { PutObjectCommand } from '@aws-sdk/client-s3'; // PutObject 사용시
+import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
+  region: process.env.AWS_REGION, // .env.local 또는 Vercel 환경 변수
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
 
-const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || 'ums-shop-storage';
 
-// GET: 파일 업로드용 Presigned URL 생성 (POST 요청 방식)
+/**
+ * GET 요청 처리: S3 Presigned URL을 생성하여 반환합니다.
+ * @param {Request} request - 요청 객체 (filename 쿼리 파라미터 포함)
+ * @returns {NextResponse} Presigned URL 및 필드 데이터 또는 오류 응답
+ */
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const filename = searchParams.get('filename');
-  const contentType = searchParams.get('contentType');
-
-  if (!filename || !contentType) {
-    return NextResponse.json({ message: 'Missing filename or contentType' }, { status: 400 });
-  }
-
-  const key = `uploads/<span class="math-inline">\{Date\.now\(\)\}\-</span>{filename}`; // S3에 저장될 경로 및 파일명
-
   try {
-    const { url, fields } = await createPresignedPost(s3Client, {
-      Bucket: S3_BUCKET_NAME,
-      Key: key,
-      Conditions: [
-        ['content-length-range', 0, 10485760], // 0 to 10 MB
-        { 'Content-Type': contentType },
-      ],
-      Expires: 3600, // 1시간 (초 단위)
-    });
-    return NextResponse.json({ url, fields, key }, { status: 200 });
-  } catch (error) {
-    console.error("Error creating presigned URL:", error);
-    return NextResponse.json({ message: 'Failed to create presigned URL' }, { status: 500 });
-  }
-}
+    const { searchParams } = new URL(request.url);
+    const filename = searchParams.get('filename');
 
-// POST: API Route를 통해 직접 파일 업로드 (선택 사항)
-// 이 방식은 파일이 먼저 Next.js 서버로 업로드된 후 S3로 다시 업로드되므로, 대용량 파일에 불리
-/*
-export async function POST(request) {
-  try {
-    const formData = await request.formData();
-    const file = formData.get('file');
-    const filename = formData.get('filename');
-    const contentType = formData.get('contentType');
-
-    if (!file || !filename || !contentType) {
-      return NextResponse.json({ message: 'Missing file, filename, or contentType' }, { status: 400 });
+    if (!filename) {
+      return NextResponse.json({ message: 'Filename is required' }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const key = `uploads/<span class="math-inline">\{Date\.now\(\)\}\-</span>{filename}`;
+    // 파일 확장자 추출 및 고유한 파일 이름 생성
+    const fileExtension = filename.split('.').pop();
+    const uniqueFilename = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExtension}`;
 
-    const command = new PutObjectCommand({
+    const { url, fields } = await createPresignedPost(s3Client, {
       Bucket: S3_BUCKET_NAME,
-      Key: key,
-      Body: buffer,
-      ContentType: contentType,
+      Key: `uploads/${uniqueFilename}`, // S3 버킷 내의 경로
+      Expires: 600, // URL 유효 시간 (초)
+      Fields: {
+        'Content-Type': 'image/*', // 이미지 타입만 허용
+      },
+      Conditions: [
+        ['content-length-range', 0, 5 * 1024 * 1024], // 최대 5MB 파일 크기 제한
+        {'Content-Type': 'image/*'},
+      ],
     });
 
-    await s3Client.send(command);
-    return NextResponse.json({ message: 'File uploaded successfully', key }, { status: 200 });
+    return NextResponse.json({ url, fields }, { status: 200 });
   } catch (error) {
-    console.error("Error uploading file to S3 via API route:", error);
-    return NextResponse.json({ message: 'Failed to upload file' }, { status: 500 });
+    console.error('Error generating S3 presigned URL:', error);
+    return NextResponse.json({ message: 'Failed to generate presigned URL', error: error.message }, { status: 500 });
   }
 }
-*/

@@ -6,106 +6,31 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import styles from './order-detail.module.css'; // CSS Modules 임포트
 
-// Mock 데이터 - 실제로는 API에서 orderId를 기반으로 데이터를 불러옵니다.
-const MOCK_ORDER_DETAIL = {
-  orderId: 'ORD-10001',
-  customer: {
-    name: 'John Smith',
-    email: 'john@example.com',
-    phoneNumber: '+1 555-123-4567',
-    registrationDate: '2025-01-15'
-  },
-  shipInfo: {
-    shipName: 'Ocean Explorer',
-    port: 'Port: Miami Harbor'
-  },
-  shippingDetails: {
-    method: 'Standard Shipping',
-    estimatedDelivery: 'Jun 18, 2025',
-    trackingNumber: 'TRK123456789',
-    actualDelivery: 'Jun 16, 2025' // 이미지에 맞춰 날짜 변경
-  },
-  orderItems: [
-    {
-      productId: 'PROD-001',
-      image: '/images/placeholder_product.png',
-      name: 'Product NameProduct NameProduct Name',
-      unitPrice: 10.00,
-      quantity: 2,
-      packingStatus: true,
-      adminStatus: 'Available',
-      adminQuantity: 2,
-      isNewMessage: false,
-    },
-    {
-      productId: 'PROD-002',
-      image: '/images/placeholder_product.png',
-      name: 'Another Product Name',
-      unitPrice: 15.50,
-      quantity: 1,
-      packingStatus: false,
-      adminStatus: 'Limited',
-      adminQuantity: 1,
-      isNewMessage: true,
-    },
-    {
-      productId: 'PROD-003',
-      image: '/images/placeholder_product.png',
-      name: 'Third Product',
-      unitPrice: 20.00,
-      quantity: 3,
-      packingStatus: true,
-      adminStatus: 'Out of Stock',
-      adminQuantity: 0,
-      isNewMessage: false,
-    },
-  ],
-  subtotal: 309.97, // Calculated from mock items for display consistency
-  shippingFee: 15.00,
-  tax: 0.00,
-  totalAmount: 324.97, // Calculated from mock items for display consistency
+// 엑셀 다운로드 라이브러리 임포트 (xlsx 대신 exceljs 사용)
+import ExcelJS from 'exceljs'; // exceljs 임포트
+import { saveAs } from 'file-saver'; // file-saver는 계속 사용
 
-  messages: [
-    {
-      id: 1,
-      sender: 'Admin',
-      text: 'Please deliver by April 25, 2025.',
-      timestamp: '2025-04-20T10:00:00Z',
-      isNew: false,
-    },
-    {
-      id: 2,
-      sender: 'User',
-      text: 'Order confirmed. Tracking number will be updated soon.',
-      timestamp: '2025-04-20T10:05:00Z',
-      isNew: false,
-    },
-    {
-      id: 3,
-      sender: 'Admin', // Admin can send images
-      text: '확인했습니다. 참고 이미지입니다.',
-      imageUrl: '/images/sample_attachment.png', // 실제 이미지 경로
-      timestamp: '2025-04-20T10:06:00Z',
-      isNew: false,
-    },
-    {
-      id: 4,
-      sender: 'User',
-      text: null, // Image only message from user
-      imageUrl: '/images/sample_user_image.jpg',
-      timestamp: '2025-04-20T10:08:00Z',
-      isNew: false,
-    },
-    {
-      id: 5,
-      sender: 'Admin',
-      text: '상품 중 일부 재고가 부족하여 대체 상품을 제안합니다. [NEW]', // NEW 뱃지 예시
-      timestamp: '2025-06-25T09:00:00Z',
-      isNew: true,
-    }
-  ],
-  note: 'Special handling required for fragile items. Customer prefers early morning delivery.'
-};
+// DynamoDB 관련 import (클라이언트 컴포넌트에서 직접 접근)
+// WARN: 클라이언트 컴포넌트에서 AWS 자격 증명을 직접 사용하는 것은 보안상 위험합니다.
+// 프로덕션 환경에서는 반드시 Next.js API Routes를 통해 서버 사이드에서 통신하도록 리팩토링하세요.
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+
+import { useAdminModal } from '@/contexts/AdminModalContext';
+
+// DynamoDB 클라이언트 초기화
+const client = new DynamoDBClient({
+  region: process.env.NEXT_PUBLIC_AWS_REGION, // .env.local 또는 .env.production에 설정
+  credentials: {
+    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY,
+  },
+});
+const docClient = DynamoDBDocumentClient.from(client);
+
+// DynamoDB 테이블 이름 (환경 변수에서 가져옴)
+const ORDER_MANAGEMENT_TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_ORDERS || 'order-management';
+
 
 const ADMIN_STATUS_OPTIONS = ['Limited', 'Available', 'Alternative Offer', 'Out of Stock'];
 
@@ -122,14 +47,31 @@ export default function OrderDetailPage() {
   const messagesEndRef = useRef(null); // 메시지 스크롤을 위한 Ref
   const fileInputRef = useRef(null); // 파일 입력 Ref
 
-  // DynamoDB API 엔드포인트는 /api/orders/[orderId]가 될 것입니다.
+  const { showAdminNotificationModal, showAdminConfirmationModal } = useAdminModal();
+
+  // API Route를 통해 주문 상세 데이터를 가져오는 함수
   async function fetchOrderDetail() {
+    if (!orderId) return; // orderId가 없으면 호출하지 않음
+
     try {
       setLoading(true);
       setError(null);
-      // 실제 API 호출: await fetch(`/api/orders/${orderId}`);
-      // Mock 데이터 사용
-      setOrder({ ...MOCK_ORDER_DETAIL, orderId: orderId }); // URL의 orderId를 mock에 적용
+      
+      // Next.js API Route를 호출하여 주문 상세 데이터를 가져옵니다.
+      const response = await fetch(`/api/orders/${orderId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch order data');
+      }
+      const data = await response.json();
+      
+      if (!data) { // API가 빈 데이터를 반환할 경우
+        setError("Order not found.");
+        setOrder(null);
+      } else {
+        setOrder(data); // 조회된 항목으로 order 상태 업데이트
+      }
+
     } catch (err) {
       console.error("Error fetching order detail:", err);
       setError(`Failed to load order details: ${err.message}`);
@@ -138,6 +80,7 @@ export default function OrderDetailPage() {
     }
   }
 
+  // 컴포넌트 마운트 시 또는 orderId 변경 시 주문 데이터를 가져옵니다.
   useEffect(() => {
     fetchOrderDetail();
   }, [orderId]); // orderId가 변경될 때마다 데이터를 다시 불러옵니다.
@@ -193,7 +136,7 @@ export default function OrderDetailPage() {
       const file = e.target.files[0];
       // 파일 타입 유효성 검사
       if (!file.type.startsWith('image/')) {
-        alert('이미지 파일만 첨부할 수 있습니다.');
+        showAdminNotificationModal('이미지 파일만 첨부할 수 있습니다.');
         setAttachedImage(null);
         e.target.value = ''; // 같은 파일 재선택을 위해 input 초기화
         return;
@@ -204,15 +147,18 @@ export default function OrderDetailPage() {
 
   const handleSendMessage = async () => {
     if (!newMessageText.trim() && !attachedImage) {
-      alert('메시지 내용을 입력하거나 이미지를 첨부해주세요.');
+      showAdminNotificationModal('메시지 내용을 입력하거나 이미지를 첨부해주세요.');
       return;
     }
 
     setLoading(true);
     setError(null);
 
+    const currentMessages = order.messages || [];
+    const newMessageId = currentMessages.length > 0 ? Math.max(...currentMessages.map(m => m.id)) + 1 : 1;
+
     const newMessage = {
-      id: order.messages.length + 1, // 임시 ID
+      id: newMessageId,
       sender: 'Admin', // 관리자가 보내는 메시지
       text: newMessageText.trim() || null,
       imageUrl: null,
@@ -220,80 +166,221 @@ export default function OrderDetailPage() {
       isNew: false, // 새로 보낸 메시지는 New 뱃지 없음
     };
 
-    try {
-      // 이미지 첨부 시 S3에 업로드
-      if (attachedImage) {
-        // 실제 S3 Presigned URL 요청 및 파일 업로드 로직
-        // 예: const uploadResponse = await fetch('/api/s3-upload-url?filename=...');
-        // const { url, fields } = await uploadResponse.json();
-        // const formData = new FormData();
-        // Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
-        // formData.append('file', attachedImage);
-        // await fetch(url, { method: 'POST', body: formData });
-        // newMessage.imageUrl = `https://your-s3-bucket-url/${fields.key}`; // S3 URL 설정
+    // 이미지 첨부 시 S3에 업로드 (실제 S3 API Route 구현 필요)
+    if (attachedImage) {
+      // 1. S3 Presigned URL 요청
+      const s3UploadUrlResponse = await fetch(`/api/s3-upload-url?filename=${attachedImage.name}`);
+      if (!s3UploadUrlResponse.ok) {
+        const errorData = await s3UploadUrlResponse.json();
+        throw new Error(errorData.message || 'Failed to get S3 upload URL');
+      }
+      const { url, fields } = await s3UploadUrlResponse.json();
 
-        // Mock S3 URL
-        newMessage.imageUrl = URL.createObjectURL(attachedImage); // 미리보기용 로컬 URL
+      // 2. FormData 구성 (Presigned URL의 필드와 실제 파일 포함)
+      const formData = new FormData();
+      Object.entries(fields).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+      formData.append('file', attachedImage); // 실제 파일 추가
+
+      // 3. S3에 파일 업로드 (PUT 요청)
+      const s3Response = await fetch(url, {
+        method: 'POST', // Presigned POST URL이므로 POST 메서드 사용
+        body: formData,
+      });
+
+      if (!s3Response.ok) {
+        throw new Error('Failed to upload image to S3');
       }
 
-      // 실제 API 호출 (예: PUT /api/orders/[orderId]/messages)
-      // 이 API는 주문의 메시지 배열에 새 메시지를 추가해야 합니다.
-      // const response = await fetch(`/api/orders/${order.orderId}/messages`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(newMessage),
-      // });
-      // if (!response.ok) {
-      //   throw new Error('Failed to send message');
-      // }
+      // S3 버킷의 퍼블릭 URL 구성 (또는 S3 Download URL API를 사용)
+      // 여기서는 직접 URL을 구성합니다. S3 버킷 정책에 따라 접근 가능해야 합니다.
+      // `fields.key`는 S3에 저장될 파일의 전체 경로입니다 (예: `uploads/uniqueFilename.jpg`).
+      const s3BaseUrl = `https://${process.env.NEXT_PUBLIC_S3_BUCKET_NAME}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/`;
+      newMessage.imageUrl = `${s3BaseUrl}${fields.key}`; // S3 URL로 업데이트
+    }
 
-      // Mock 데이터 업데이트 (UI 즉시 반영)
-      setOrder(prevOrder => ({
-        ...prevOrder,
-        messages: [...prevOrder.messages, newMessage],
-      }));
+    // 로컬 상태 먼저 업데이트하여 UI에 즉시 반영 (낙관적 업데이트)
+    const updatedMessages = [...currentMessages, newMessage];
+    setOrder(prevOrder => ({
+      ...prevOrder,
+      messages: updatedMessages,
+    }));
 
-      setNewMessageText('');
-      setAttachedImage(null);
+    setNewMessageText('');
+    setAttachedImage(null);
+    if (fileInputRef.current) { // null 체크 추가
       fileInputRef.current.value = ''; // 파일 입력 필드 초기화
+    }
+
+    try {
+      // DynamoDB에 메시지 추가 (API Route 호출)
+      // 메시지 목록만 업데이트하므로, messages 필드만 전송
+      const response = await fetch(`/api/orders/${order.orderId}`, {
+        method: 'PUT', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: updatedMessages }), // 업데이트된 messages 배열 전송
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        // 오류 발생 시 로컬 상태를 이전으로 되돌릴 수 있음 (선택 사항)
+        // setOrder(prevOrder => ({ ...prevOrder, messages: currentMessages }));
+        throw new Error(errorData.message || 'Failed to send message and save order.');
+      }
+
+      console.log('Message sent and order updated successfully!');
+
     } catch (err) {
-      console.error("Error sending message:", err);
+      console.error("Error sending message or saving order:", err);
       setError(`Failed to send message: ${err.message}`);
+      showAdminNotificationModal(`Error sending message: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDownload = () => {
-    alert('Download 기능은 미구현입니다.');
-    // TODO: 주문 정보를 PDF, Excel 등으로 다운로드하는 기능 구현
-  };
+  const handleDeleteMessage = async (messageIdToDelete) => {
+    if (!confirm('Are you sure you want to delete this message?')) {
+      return;
+    }
 
-  const handleSave = async () => {
-    // 현재 OrderSummary, Message, Note 영역의 변경 사항을 DynamoDB에 저장
-    // 이를 위해 /api/orders/[orderId] 에 PUT 요청을 보내야 합니다.
-    alert('Save 기능은 미구현입니다. (Order Summary, Message, Note 저장)');
-    console.log('Saving order data:', order);
+    setLoading(true);
+    setError(null);
 
-    // TODO: 실제 API 호출
-    /*
+    const currentMessages = order.messages || [];
+    const updatedMessages = currentMessages.filter(msg => msg.id !== messageIdToDelete);
+
+    // 로컬 상태 먼저 업데이트 (낙관적 업데이트)
+    setOrder(prevOrder => ({
+      ...prevOrder,
+      messages: updatedMessages,
+    }));
+
     try {
+      // DynamoDB에 메시지 목록 업데이트 (API Route 호출)
       const response = await fetch(`/api/orders/${order.orderId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(order), // 전체 주문 객체 또는 변경된 필드만 전송
+        body: JSON.stringify({ messages: updatedMessages }), // 업데이트된 messages 배열 전송
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        // 오류 발생 시 로컬 상태를 이전으로 되돌릴 수 있음 (선택 사항)
+        // setOrder(prevOrder => ({ ...prevOrder, messages: currentMessages }));
+        throw new Error(errorData.message || 'Failed to delete message.');
+      }
+
+      console.log(`Message ${messageIdToDelete} deleted and order updated successfully!`);
+    } catch (err) {
+      console.error("Error deleting message:", err);
+      setError(`Failed to delete message: ${err.message}`);
+      showAdminNotificationModal(`Error deleting message: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleDownload = async () => { // async 추가
+    if (!order) {
+      showAdminNotificationModal('주문 정보가 없습니다.');
+      return;
+    }
+
+    // 엑셀 워크북 생성
+    const workbook = new ExcelJS.Workbook(); // ExcelJS.Workbook 인스턴스 생성
+
+    // 1. 주문 전체 정보 시트 (상단 요약 정보)
+    const orderInfoSheet = workbook.addWorksheet('Order Summary');
+    const orderInfoData = [
+      ['Order ID:', order.orderId],
+      ['Date:', order.date],
+      ['Customer Name:', order.customer?.name],
+      ['Customer Email:', order.customer?.email],
+      ['Ship Name:', order.shipInfo?.shipName],
+      ['Shipping Method:', order.shippingDetails?.method],
+      ['Tracking Number:', order.shippingDetails?.trackingNumber],
+      ['Estimated Delivery:', order.shippingDetails?.estimatedDelivery],
+      ['Actual Delivery:', order.shippingDetails?.actualDelivery],
+      [], // 빈 줄
+      ['Overall Totals'],
+      ['Subtotal:', `$${order.subtotal?.toFixed(2)}`],
+      ['Shipping Fee:', `$${order.shippingFee?.toFixed(2)}`],
+      ['Tax:', `$${order.tax?.toFixed(2)}`],
+      ['Grand Total:', `$${order.totalAmount?.toFixed(2)}`]
+    ];
+    orderInfoData.forEach(row => {
+      orderInfoSheet.addRow(row);
+    });
+
+    // 2. 개별 상품 목록 시트
+    const productSheet = workbook.addWorksheet('Order Items');
+    const productHeaders = ['순서', '코드넘버', '상품명', '주문 수량', '개별 금액', '총액'];
+    productSheet.addRow(productHeaders); // 헤더 추가
+
+    const productData = order.orderItems?.map((item, index) => [
+      index + 1,
+      item.productId,
+      item.name,
+      item.quantity,
+      parseFloat(item.unitPrice?.toFixed(2)), // Excel에서 숫자로 인식하도록 변환
+      parseFloat((item.unitPrice * item.quantity)?.toFixed(2)) // Excel에서 숫자로 인식하도록 변환
+    ]);
+
+    (productData || []).forEach(row => {
+      productSheet.addRow(row);
+    });
+    
+    // 엑셀 파일 저장
+    try {
+      const buffer = await workbook.xlsx.writeBuffer(); // 비동기 작업
+      const data = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(data, `Order_Detail_${order.orderId}.xlsx`);
+      // showAdminNotificationModal('주문 정보 엑셀 파일 다운로드를 시작합니다.');
+    } catch (excelError) {
+      console.error("Error saving Excel file:", excelError);
+      showAdminNotificationModal('엑셀 파일 생성 중 오류가 발생했습니다: ' + excelError.message);
+    }
+  };
+
+  const handleSave = async () => {
+    console.log('Saving order data:', order);
+
+    try {
+      // DynamoDB에 업데이트할 속성들을 정의
+      // 클라이언트에서 변경 가능한 필드들만 보냅니다. (예: orderItems, messages, note)
+      const updatedFields = {
+        orderItems: order.orderItems, 
+        messages: order.messages,     
+        note: order.note,             
+        // 필요하다면 shippingDetails의 trackingNumber, actualDelivery 등도 여기에 추가
+        shippingDetails: order.shippingDetails // 전체 ShippingDetails 객체를 업데이트하는 경우
+      };
+
+      // Next.js API Route를 호출하여 서버에서 DynamoDB와 통신합니다.
+      const response = await fetch(`/api/orders/${order.orderId}`, {
+        method: 'PUT', // PUT 요청
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedFields), // 변경된 필드만 전송
+      });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to save order data');
       }
-      alert('Order saved successfully!');
+
+      console.log('Order saved successfully!');
+      showAdminNotificationModal('Order data saved successfully!');
+      // router.push('/admin/order-management'); // 저장 후 목록 페이지로 이동 (선택 사항)
     } catch (err) {
       console.error("Error saving order:", err);
-      setError(`Failed to save order: ${err.message}`);
-      alert(`Error saving order: ${err.message}`);
+      setError(`Failed to save order data: ${err.message}`);
+      showAdminNotificationModal(`Error saving data: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
-    */
   };
 
 
@@ -306,7 +393,8 @@ export default function OrderDetailPage() {
   }
 
   if (!order) {
-    return <div className={styles.container}>Order not found.</div>;
+    // orderId는 있지만 항목이 없는 경우 (예: 404 Not Found)
+    return <div className={styles.container}>Order not found. Check order ID in URL.</div>;
   }
 
   return (
@@ -330,16 +418,16 @@ export default function OrderDetailPage() {
           {/* Customer Information (John Smith, email, phone) */}
           <div className={styles.customerInfoBlock}>
             <span className={styles.infoBlockTitle}>Customer Information</span> {/* Added title */}
-            <span className={styles.infoValue}>{order.customer.name}</span>
-            <span className={styles.infoSubValue}>{order.customer.email}</span>
-            <span className={styles.infoSubValue}>{order.customer.phoneNumber}</span>
+            <span className={styles.infoValue}>{order.customer?.name}</span>
+            <span className={styles.infoSubValue}>{order.customer?.email}</span>
+            <span className={styles.infoSubValue}>{order.customer?.phoneNumber}</span>
           </div>
 
           {/* Ship Information (Ocean Explorer, Port) */}
           <div className={styles.customerInfoBlock}>
             <span className={styles.infoBlockTitle}>Ship Information</span> {/* Added title */}
-            <span className={styles.infoValue}>{order.shipInfo.shipName}</span>
-            <span className={styles.infoSubValue}>{order.shipInfo.port}</span>
+            <span className={styles.infoValue}>{order.shipInfo?.shipName}</span>
+            <span className={styles.infoSubValue}>{order.shipInfo?.port}</span>
           </div>
 
           {/* Shipping Details (Method, Estimated, Tracking, Actual) */}
@@ -348,19 +436,19 @@ export default function OrderDetailPage() {
             <div className={styles.customerInfoBlock2}>
               <div className={styles.customerInfoRow}>
                 <span className={styles.infoSubValue}>Shipping Method:</span>
-                <span className={styles.infoValue}>{order.shippingDetails.method}</span>
+                <span className={styles.infoValue}>{order.shippingDetails?.method}</span>
               </div>
               <div className={styles.customerInfoRow}>
                 <span className={styles.infoSubValue}>Estimated Delivery:</span>
-                <span className={styles.infoValue}>{order.shippingDetails.estimatedDelivery}</span>
+                <span className={styles.infoValue}>{order.shippingDetails?.estimatedDelivery}</span>
               </div>
               <div className={styles.customerInfoRow}>
                 <span className={styles.infoSubValue}>Tracking Number:</span>
-                <span className={styles.infoValue}>{order.shippingDetails.trackingNumber}</span>
+                <span className={styles.infoValue}>{order.shippingDetails?.trackingNumber}</span>
               </div>
               <div className={styles.customerInfoRow}>
                 <span className={styles.infoSubValue}>Actual Delivery:</span>
-                <span className={styles.infoValue}>{order.shippingDetails.actualDelivery}</span>
+                <span className={styles.infoValue}>{order.shippingDetails?.actualDelivery}</span>
               </div>
             </div>
           </div>
@@ -368,21 +456,21 @@ export default function OrderDetailPage() {
       </section>
 
       {/* 주문 상품 요약 (Order Summary), 메시지 영역, 배송 메모 영역을 묶는 컨테이너 */}
-      <div className={styles.bottomSectionGroup}>
-        {/* Order Summary Section */}
+      <div className={styles.bottomSectionGroup}> {/* 추가된 그룹 컨테이너 */}
         <section className={`${styles.section} ${styles.orderSummarySection}`}>
           <h2 className={styles.sectionTitle}>Order Summary</h2>
           <div className={styles.orderSummaryGrid}>
-            {order.orderItems.map(item => (
+            {order.orderItems?.map(item => ( // orderItems가 없을 경우를 대비하여 ?. 추가
               <div key={item.productId} className={styles.orderItemCard}>
                 <div className={styles.orderItemDetails}>
-                  <Image src={item.image} alt={item.name} width={80} height={80} className={styles.orderItemImage} />
+                  {item.image && <Image src={item.image} alt={item.name} width={80} height={80} className={styles.orderItemImage} />}
                   <div>
                     <div className={styles.productName}>{item.name}</div>
-                    <div className={styles.unitPrice}>Unit Price: ${item.unitPrice.toFixed(2)}</div>
+                    <div className={styles.unitPrice}>Unit Price: ${item.unitPrice?.toFixed(2)}</div>
                     <div className={styles.quantity}>Quantity: {item.quantity}</div>
                   </div>
                 </div>
+                {/* Packing 상태 체크 */}
                 <input
                   type="checkbox"
                   checked={item.packingStatus}
@@ -390,7 +478,8 @@ export default function OrderDetailPage() {
                   className={styles.packingCheckbox}
                   title="Packing Status"
                 />
-                {item.isNewMessage && <span className={styles.newBadge}>[NEW]</span>}
+                {item.isNewMessage && <span className={styles.newBadge}>[NEW]</span>} {/* NEW 뱃지 */}
+                {/* 관리자 입력 필드 */}
                 <div className={styles.adminControls}>
                   <select
                     value={item.adminStatus}
@@ -422,10 +511,18 @@ export default function OrderDetailPage() {
           <h2 className={styles.sectionTitle}>MESSAGE</h2>
           <div className={styles.messageArea}>
             <div className={styles.messageThread}>
-              {order.messages.map(msg => (
+              {order.messages?.map(msg => ( // messages가 없을 경우를 대비하여 ?. 추가
                 <div key={msg.id} className={`${styles.messageItem} ${msg.sender === 'Admin' ? styles.admin : styles.user}`}>
+                  {/* 삭제 아이콘 (사용자 요청에 따라 제거됨) */}
+                  {/* <button onClick={() => handleDeleteMessage(msg.id)} className={styles.deleteMessageButton}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button> */}
                   <span className={styles.messageSender}>
-                    {msg.sender === 'Admin' ? '관리자' : '사용자'} {msg.isNew && <span className={styles.newBadge}>NEW</span>}
+                    {/* 발신자 텍스트 '관리자' 제거 (단순히 sender 표시) */}
+                    {msg.sender} {msg.isNew && <span className={styles.newBadge}>NEW</span>}
                   </span>
                   {msg.text && <div className={styles.messageBubble}>{msg.text}</div>}
                   {msg.imageUrl && (
@@ -433,14 +530,14 @@ export default function OrderDetailPage() {
                   )}
                 </div>
               ))}
-              <div ref={messagesEndRef} />
+              <div ref={messagesEndRef} /> {/* 메시지 하단으로 자동 스크롤을 위한 엘리먼트 */}
             </div>
             <div className={styles.messageInputArea}>
               <input
                 type="file"
                 accept="image/jpeg, image/png, image/webp"
                 ref={fileInputRef}
-                style={{ display: 'none' }}
+                style={{ display: 'none' }} // 숨김
                 onChange={handleImageChange}
               />
               <button onClick={handleImageAttachClick} className={styles.attachButton}>
@@ -457,7 +554,7 @@ export default function OrderDetailPage() {
                 value={newMessageText}
                 onChange={(e) => setNewMessageText(e.target.value)}
                 className={styles.messageInput}
-                disabled={!!attachedImage}
+                disabled={!!attachedImage} // 이미지가 첨부되면 텍스트 입력 비활성화
               />
               <button onClick={handleSendMessage} className={styles.sendButton}>
                 전송
@@ -484,46 +581,48 @@ export default function OrderDetailPage() {
             className={styles.noteArea}
           />
           <p style={{ textAlign: 'right', fontSize: '0.8rem', color: '#666' }}>
-            {order.note.length}/500
+            {order.note ? order.note.length : 0}/500 {/* order.note가 undefined일 경우 0으로 표시 */}
           </p>
         </section>
       </div> {/* bottomSectionGroup 끝 */}
 
-      {/* Totals Section */}
+      {/* 하단 액션 버튼들 - Totals Section이 이 안으로 들어옴 */}
+      <div className={styles.bottomActions}>
+        {/* Totals Section */}
         <div className={styles.totalsSection}> {/* 기존 totalsSection 스타일 재활용 */}
           <div className={styles.totalRow}>
-            <span className={styles.infoSubValue}>Subtotal:</span> {/* New class for label */}
+            <span className={styles.totalLabel}>Subtotal:</span>
             <input
                 type="text"
-                value={`$${order.subtotal.toFixed(2)}`}
+                value={`$${order.subtotal?.toFixed(2)}`} // total 값 안전하게 접근
                 readOnly
                 className={styles.totalInput}
             />
           </div>
           <div className={styles.totalRow}>
-            <span className={styles.infoSubValue}>Shipping Fee:</span> {/* New class for label */}
+            <span className={styles.totalLabel}>Shipping Fee:</span>
             <input
                 type="text"
-                value={`$${order.shippingFee.toFixed(2)}`}
+                value={`$${order.shippingFee?.toFixed(2)}`} // shippingFee 값 안전하게 접근
                 readOnly
                 className={styles.totalInput}
             />
           </div>
           <div className={styles.totalRow}>
-            <span className={styles.infoSubValue}>Tax:</span> {/* New class for label */}
+            <span className={styles.totalLabel}>Tax:</span>
             <input
                 type="text"
-                value={`$${order.tax.toFixed(2)}`}
+                value={`$${order.tax?.toFixed(2)}`} // tax 값 안전하게 접근
                 readOnly
                 className={styles.totalInput}
             />
           </div>
-          <div className={`${styles.totalRow} ${styles.finalTotalRow}`}> {/* New class for final total row */}
-            <span className={styles.finalTotalDisplay}>${order.totalAmount.toFixed(2)}</span> {/* New class for display */}
+          <div className={`${styles.totalRow} ${styles.finalTotalRow}`}>
+            <span className={styles.totalLabel}>Total:</span> {/* "Total:" 라벨 추가 */}
+            <span className={styles.finalTotalDisplay}>${order.totalAmount?.toFixed(2)}</span> {/* totalAmount 값 안전하게 접근 */}
           </div>
         </div>
-        
-      <div className={styles.bottomActions}>
+
         <div className={styles.actionButtonsGroup}> {/* Download and Save buttons group */}
             <button onClick={handleDownload} className={styles.downloadButton}>
               Download
