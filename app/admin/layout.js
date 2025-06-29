@@ -131,11 +131,13 @@ function AdminLayoutContent({ children }) {
       )}
       {modalState.type === 'confirmation' && (
         <ConfirmationModal
-          isVisible={modalState.isOpen}
+          isOpen={modalState.isOpen}
+          title={modalState.title || '확인'}
           message={modalState.message}
+          buttonText='확인'
           onConfirm={() => { modalState.onConfirm && modalState.onConfirm(); closeAdminModal(); }}
           onCancel={() => { modalState.onCancel && modalState.onCancel(); closeAdminModal(); }}
-          onClose={closeAdminModal} // 외부 클릭 또는 ESC 키 처리 (모달 컴포넌트 내부에서 구현되어야 함)
+          //onClose={closeAdminModal} // 외부 클릭 또는 ESC 키 처리 (모달 컴포넌트 내부에서 구현되어야 함)
         />
       )}
     </div>

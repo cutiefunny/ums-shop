@@ -1,0 +1,208 @@
+/* app/admin/product-management/new/product-add-edit.module.css */
+
+.container {
+  padding: 20px;
+  background-color: #fff;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.headerTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.section {
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .formGrid {
+    grid-template-columns: 1fr 1fr; /* Two columns for larger screens */
+  }
+}
+
+/* Specific grid for prices, images etc. */
+.priceExchangeGrid {
+  display: grid;
+  grid-template-columns: 1fr; /* Default to single column */
+  gap: 15px;
+}
+
+@media (min-width: 768px) {
+  .priceExchangeGrid {
+    grid-template-columns: 1fr 1fr; /* Two columns */
+  }
+}
+
+.inputGroup {
+  margin-bottom: 0px; /* Gap handled by grid/flex */
+}
+
+.label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.requiredLabel::after {
+  content: ' *';
+  color: red;
+  margin-left: 3px;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.textarea {
+  resize: vertical;
+  height: 150px;
+  overflow-y: auto;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.radioGroup label {
+  font-weight: normal;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.imageUploadGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+}
+
+.imageUploadBox {
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  cursor: pointer;
+  background-color: #f0f0f0;
+  position: relative; /* For image preview */
+  overflow: hidden;
+}
+
+.imageUploadBox img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.imageUploadBox span {
+  font-size: 0.8rem;
+  color: #666;
+  text-align: center;
+}
+
+.deleteImageButton {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(255, 255, 255, 0.7);
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #333;
+  z-index: 1;
+}
+
+
+.footerActions {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.saveButton {
+  padding: 12px 30px;
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.saveButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: #333;
+}
+
+.calculatedPriceDisplay {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #007bff;
+  margin-top: 10px;
+}
+
+.errorMessage {
+  color: red;
+  font-size: 0.85rem;
+  margin-top: 5px;
+}

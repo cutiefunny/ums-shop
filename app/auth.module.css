@@ -262,47 +262,6 @@
   z-index: 100;
 }
 
-/* Confirmation Modal Styles */
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1100; /* 다른 UI 요소들보다 위에 있도록 설정 */
-}
-
-.modalContent {
-  background: white;
-  padding: 32px 24px;
-  border-radius: 16px;
-  text-align: center;
-  width: 90%;
-  max-width: 320px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.modalTitle {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #212529;
-}
-
-.modalMessage {
-  font-size: 1rem;
-  color: #495057;
-  line-height: 1.5;
-  margin-bottom: 12px;
-  white-space: pre-line; /* 줄바꿈(\n)을 적용하기 위함 */
-}
-
 .errorMessage {
   color: #d93025; /* 구글 에러 메시지 색상 */
   font-size: 0.8rem;
