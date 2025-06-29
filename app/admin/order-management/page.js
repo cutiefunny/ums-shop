@@ -5,83 +5,30 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import styles from './order-management.module.css'; // CSS Modules 임포트
 import OrderStatusModal from './components/OrderStatusModal'; // 새 모달 컴포넌트 임포트
+import StatusHistoryModal from './components/StatusHistoryModal'; // 히스토리 모달 컴포넌트 임포트
 import { useRouter } from 'next/navigation'; // Next.js router 임포트
 
-// Mock 데이터 (실제로는 API에서 가져올 데이터)
-const MOCK_ORDERS = [
-  {
-    orderId: 'ORD-10001',
-    date: '2025.06.12',
-    userName: 'John Smith',
-    userEmail: 'john@example.com',
-    shipName: 'Ocean Explorer',
-    total: 324.97,
-    status: 'Delivered',
+// DynamoDB 관련 import (클라이언트 컴포넌트에서 직접 접근)
+// WARN: 클라이언트 컴포넌트에서 AWS 자격 증명을 직접 사용하는 것은 보안상 위험합니다.
+// 프로덕션 환경에서는 반드시 Next.js API Routes를 통해 서버 사이드에서 통신하도록 리팩토링하세요.
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+
+import { useAdminModal } from '@/contexts/AdminModalContext';
+
+// DynamoDB 클라이언트 초기화
+const client = new DynamoDBClient({
+  region: process.env.NEXT_PUBLIC_AWS_REGION, // .env.local 또는 .env.production에 설정
+  credentials: {
+    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY,
   },
-  {
-    orderId: 'ORD-10002',
-    date: '2025.06.11',
-    userName: 'Sarah Johnson',
-    userEmail: 'sarah@example.com',
-    shipName: 'Sea Voyager',
-    total: 512.50,
-    status: 'Order',
-  },
-  {
-    orderId: 'ORD-10003',
-    date: '2025.06.10',
-    userName: 'Michael Brown',
-    userEmail: 'michael@example.com',
-    shipName: 'Coastal Cruiser',
-    total: 120.00,
-    status: 'Paypal',
-  },
-  {
-    orderId: 'ORD-10004',
-    date: '2025.06.09',
-    userName: 'Emily Davis',
-    userEmail: 'emily@example.com',
-    shipName: 'Wave Rider',
-    total: 89.99,
-    status: 'PayInCash',
-  },
-  {
-    orderId: 'ORD-10005',
-    date: '2025.06.08',
-    userName: 'David Wilson',
-    userEmail: 'david@example.com',
-    shipName: 'Starlight',
-    total: 750.00,
-    status: 'EMS',
-  },
-  {
-    orderId: 'ORD-10006',
-    date: '2025.06.07',
-    userName: 'Olivia Martinez',
-    userEmail: 'olivia@example.com',
-    shipName: 'Golden Sun',
-    total: 199.99,
-    status: 'Delivered',
-  },
-  {
-    orderId: 'ORD-10007',
-    date: '2025.06.06',
-    userName: 'James Garcia',
-    userEmail: 'james@example.com',
-    shipName: 'Blue Ocean',
-    total: 45.00,
-    status: 'Order',
-  },
-  {
-    orderId: 'ORD-10008',
-    date: '2025.06.05',
-    userName: 'Sophia Rodriguez',
-    userEmail: 'sophia@example.com',
-    shipName: 'Sea Breeze',
-    total: 999.00,
-    status: 'Paypal',
-  },
-];
+});
+const docClient = DynamoDBDocumentClient.from(client);
+
+// DynamoDB 테이블 이름 (환경 변수에서 가져옴)
+const ORDER_MANAGEMENT_TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_ORDERS || 'order-management';
+
 
 const ITEMS_PER_PAGE = 5;
 const ORDER_STATUS_OPTIONS = ['All', 'Order', 'Paypal', 'PayInCash', 'EMS', 'Delivered'];
@@ -98,30 +45,37 @@ export default function OrderManagementPage() {
   // 주문 상태 모달 관련 상태
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
-  const [selectedOrderForStatus, setSelectedOrderForStatus] = useState(null); // { orderId, currentStatus }
+  const [selectedOrderForStatus, setSelectedOrderForStatus] = useState(null); // { orderId, currentStatus, statusHistory }
+
+  // 주문 히스토리 모달 관련 상태
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [selectedHistoryData, setSelectedHistoryData] = useState(null); // { orderId, historyArray }
 
   // Next.js router를 임포트합니다.
   const router = useRouter();
 
+  // AdminModalContext 훅 사용
+  const { showAdminNotificationModal, showAdminConfirmationModal } = useAdminModal();
 
-  // API를 통해 주문 데이터를 가져오는 함수 (mock data 대신 사용 예정)
+
+  // API를 통해 주문 데이터를 가져오는 함수 (Next.js API Route를 호출하도록 수정)
   async function fetchOrders() {
     try {
       setLoading(true);
       setError(null);
-      // 실제 API 엔드포인트: /api/orders (이 API는 별도로 구현해야 함)
-      // const response = await fetch('/api/orders');
-      // if (!response.ok) {
-      //   throw new Error(`HTTP error! status: ${response.status}`);
-      // }
-      // const data = await response.json();
-      // setOrders(data || []);
-
-      // Mock 데이터 사용
-      setOrders(MOCK_ORDERS);
+      
+      // Next.js API Route를 호출합니다. 이 API Route는 서버에서 DynamoDB와 통신합니다.
+      const response = await fetch('/api/orders'); // GET /api/orders 호출
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setOrders(data || []);
+      
     } catch (err) {
       console.error("Error fetching orders:", err);
-      setError("Failed to load orders. Please check your network or server configuration.");
+      setError(`Failed to load orders: ${err.message}`);
+      showAdminNotificationModal(`주문 목록을 불러오는 데 실패했습니다: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -136,11 +90,11 @@ export default function OrderManagementPage() {
     if (!orders) return [];
     return orders.filter(order => {
       const matchesSearch =
-        order.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.shipName.toLowerCase().includes(searchTerm.toLowerCase());
+        order.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.shipName?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesFilter =
-        filterStatus === 'All' || order.status.toLowerCase() === filterStatus.toLowerCase();
+        filterStatus === 'All' || order.status?.toLowerCase() === filterStatus.toLowerCase();
       return matchesSearch && matchesFilter;
     });
   }, [orders, searchTerm, filterStatus]);
@@ -173,42 +127,52 @@ export default function OrderManagementPage() {
       top: rect.bottom + window.scrollY,
       left: rect.left + window.scrollX,
     });
-    setSelectedOrderForStatus({ orderId: order.orderId, currentStatus: order.status });
+    // 현재 주문의 statusHistory도 함께 전달
+    setSelectedOrderForStatus({ orderId: order.orderId, currentStatus: order.status, statusHistory: order.statusHistory || [] }); 
     setShowStatusModal(true);
   };
 
-  // 모달에서 상태 선택 시 실제 API를 호출하는 함수
+  // 모달에서 상태 선택 시 실제 API를 호출하는 함수 (Next.js API Route를 호출하도록 수정)
   const handleSelectStatus = async (newStatus) => {
     if (!selectedOrderForStatus) return;
 
-    const orderId = selectedOrderForStatus.orderId;
-    console.log(`Order ${orderId} status changed to: ${newStatus}`);
+    const { orderId, currentStatus, statusHistory } = selectedOrderForStatus;
+    console.log(`Order ${orderId} status changed from ${currentStatus} to: ${newStatus}`);
     
-    // 실제 API 호출 로직 (예: PUT /api/orders/[orderId])
-    try {
-      // const response = await fetch(`/api/orders/${orderId}`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ status: newStatus }),
-      // });
-      // if (!response.ok) {
-      //   const errorData = await response.json();
-      //   throw new Error(errorData.message || `Failed to update status for order ${orderId}`);
-      // }
-      // console.log('Status updated successfully in DB:', newStatus);
+    // 새 상태 히스토리 항목 생성
+    const newHistoryEntry = {
+        timestamp: new Date().toISOString(),
+        oldStatus: currentStatus,
+        newStatus: newStatus,
+        changedBy: 'Admin', // 또는 로그인한 관리자 정보
+    };
+    const updatedStatusHistory = [...statusHistory, newHistoryEntry]; // 기존 히스토리에 새 항목 추가
 
-      // Mock 데이터 업데이트 (UI 즉시 반영)
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.orderId === orderId ? { ...order, status: newStatus } : order
-        )
-      );
-      alert(`Order ${orderId} status updated to ${newStatus}.`); // 사용자에게 알림
-      setShowStatusModal(false); // 모달 닫기
+    try {
+      // Next.js API Route를 호출합니다. 이 API Route는 서버에서 DynamoDB와 통신합니다.
+      const response = await fetch(`/api/orders/${orderId}`, { // PUT /api/orders/[orderId] 호출
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        // 'status' 필드와 'statusHistory' 필드를 모두 업데이트 요청
+        body: JSON.stringify({ status: newStatus, statusHistory: updatedStatusHistory }), 
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to update status for order ${orderId}`);
+      }
+
+      console.log('Status and history updated successfully in DB:', newStatus);
+
+      // UI 업데이트 (API 호출 후 데이터 재요청)
+      fetchOrders(); // 전체 목록을 다시 불러와서 최신 상태 반영
+      showAdminNotificationModal(`주문 ${orderId}의 상태가 ${newStatus}로 업데이트되었습니다.`);
+      setShowStatusModal(false); 
+
     } catch (err) {
       console.error("Error updating order status:", err);
       setError(`Failed to update status: ${err.message}`);
-      alert(`Error updating status: ${err.message}`);
+      showAdminNotificationModal(`상태 업데이트 중 오류가 발생했습니다: ${err.message}`);
     }
   };
 
@@ -218,25 +182,49 @@ export default function OrderManagementPage() {
     router.push(`/admin/order-management/${orderId}`); // orderId를 동적 경로로 전달
   };
 
-  const handleHistoryClick = (orderId) => {
-    alert(`Order ${orderId} 히스토리 확인 (미구현)`);
-    // router.push(`/admin/order-management/${orderId}/history`);
+  const handleHistoryClick = (orderId, historyData) => { // historyData 파라미터 추가
+    setSelectedHistoryData(historyData);
+    setShowHistoryModal(true);
+    // showAdminNotificationModal(`Order ${orderId} 히스토리 확인 기능은 미구현입니다.`); // 기존 alert 대신 모달 사용
+    // router.push(`/admin/order-management/${orderId}/history`); // 히스토리 상세 페이지로 이동
   };
 
-  const handleDeleteClick = (orderId) => {
-    if (confirm(`Are you sure you want to delete order ${orderId}?`)) {
-      console.log(`Deleting order ${orderId}`);
-      // 실제 API 호출 로직 (예: DELETE /api/orders/[orderId])
-      // setOrders(prevOrders => prevOrders.filter(order => order.orderId !== orderId));
-      alert(`Order ${orderId} deleted (미구현).`);
-    }
+  const handleDeleteClick = async (orderId) => { // 비동기 함수로 변경
+    showAdminConfirmationModal(
+      `정말로 주문 ${orderId}를 삭제하시겠습니까?`,
+      async () => { // onConfirm 콜백
+        console.log(`Deleting order ${orderId}`);
+        try {
+          // Next.js API Route를 호출하여 서버에서 DynamoDB와 통신합니다.
+          const response = await fetch(`/api/orders/${orderId}`, {
+            method: 'DELETE', // DELETE /api/orders/[orderId] 호출
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Failed to delete order ${orderId}`);
+          }
+
+          console.log(`Order ${orderId} deleted successfully.`);
+          fetchOrders(); // 삭제 후 목록 다시 불러오기
+          showAdminNotificationModal(`주문 ${orderId}이(가) 삭제되었습니다.`);
+        } catch (err) {
+          console.error("Error deleting order:", err);
+          setError(`Failed to delete order: ${err.message}`);
+          showAdminNotificationModal(`주문 삭제 중 오류가 발생했습니다: ${err.message}`);
+        }
+      },
+      () => { // onCancel 콜백 (취소 시 아무것도 안 함)
+        console.log('주문 삭제 취소됨');
+      }
+    );
   };
 
   const getStatusColorClass = (status) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) { // status가 undefined일 경우를 대비하여 ?. 추가
       case 'order': return styles.statusOrder;
       case 'paypal': return styles.statusPaypal;
-      case 'payincash': return styles.statusPayInCash;
+      case 'pay in cash': return styles.statusPayInCash;
       case 'ems': return styles.statusEms;
       case 'delivered': return styles.statusDelivered;
       default: return '';
@@ -292,18 +280,19 @@ export default function OrderManagementPage() {
           </tr>
         </thead>
         <tbody>
-          {currentOrders.length > 0 ? (
+          {/* currentOrders가 null일 때 렌더링 방지 */}
+          {currentOrders && currentOrders.length > 0 ? (
             currentOrders.map(order => (
               <tr key={order.orderId}>
                 <td>{order.orderId}</td>
                 <td>{order.date}</td>
                 <td>{order.userName} <br/> {order.userEmail}</td>
                 <td>{order.shipName}</td>
-                <td>${order.total.toFixed(2)}</td>
+                <td>${order.total?.toFixed(2)}</td>
                 {/* Status 셀을 클릭 가능하게 변경하고 모달을 띄웁니다. */}
                 <td onClick={(e) => handleOpenStatusModal(e, order)} style={{ cursor: 'pointer' }}>
                   <span className={`${styles.statusSelect} ${getStatusColorClass(order.status)}`}>
-                    {order.status}
+                    {order.status.replace(/ /g, '')} {/* 공백 제거 */}
                   </span>
                 </td>
                 <td>
@@ -312,7 +301,7 @@ export default function OrderManagementPage() {
                       {/* 상세 보기 아이콘: /images/write.png */}
                       <img src="/images/write.png" alt="Detail" style={{ width: 25, height: 25 }} />
                     </button>
-                    <button onClick={() => handleHistoryClick(order.orderId)} className={styles.actionButton}>
+                    <button onClick={() => handleHistoryClick(order.orderId, order.statusHistory)} className={styles.actionButton}> {/* statusHistory 전달 */}
                       {/* 히스토리 확인 아이콘: /images/history.png */}
                       <img src="/images/history.png" alt="History" style={{ width: 25, height: 25 }} />
                     </button>
@@ -353,6 +342,14 @@ export default function OrderManagementPage() {
           onSelectStatus={handleSelectStatus}
           currentStatus={selectedOrderForStatus.currentStatus}
           position={modalPosition}
+        />
+      )}
+
+      {showHistoryModal && selectedHistoryData && (
+        <StatusHistoryModal
+          isOpen={showHistoryModal}
+          onClose={() => setShowHistoryModal(false)}
+          historyData={selectedHistoryData}
         />
       )}
     </div>

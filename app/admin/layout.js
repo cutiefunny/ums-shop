@@ -5,9 +5,17 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation'; // useRouter 임포트
 import './admin-layout.css'; // 이 레이아웃을 위한 별도 CSS 파일
 
-export default function AdminLayout({ children }) {
+// Admin Modal Context 및 컴포넌트 임포트
+import { AdminModalContextProvider, useAdminModal } from '@/contexts/AdminModalContext'; // 새로 생성한 AdminModalContext 임포트
+import NotificationModal from '@/components/NotificationModal'; // 기존 NotificationModal 임포트
+import ConfirmationModal from '@/components/ConfirmationModal'; // 기존 ConfirmationModal 임포트
+
+
+// AdminLayout의 실제 내용을 담을 내부 컴포넌트 (Context 사용을 위해 분리)
+function AdminLayoutContent({ children }) {
   const pathname = usePathname(); // 현재 경로를 가져와서 활성 링크 스타일링
   const router = useRouter(); // useRouter 훅 초기화
+  const { modalState, showAdminNotificationModal, showAdminConfirmationModal, closeAdminModal } = useAdminModal(); // AdminModalContext에서 상태와 함수 가져오기
 
   const navItems = [
     { name: 'Dashboard', href: '/admin/dashboard' },
@@ -26,38 +34,46 @@ export default function AdminLayout({ children }) {
 
   const handleLogout = async () => { // 비동기 함수로 변경
     console.log('로그아웃 버튼 클릭됨');
-    try {
-      const response = await fetch('/api/admin/logout', { // /api/admin/logout API 호출
-        method: 'POST',
-      });
+    
+    // 로그아웃 확인 모달 표시
+    showAdminConfirmationModal(
+      '정말로 로그아웃 하시겠습니까?',
+      async () => { // onConfirm 콜백
+        try {
+          const response = await fetch('/api/admin/logout', { // /api/admin/logout API 호출
+            method: 'POST',
+          });
 
-      if (response.ok) {
-        console.log('로그아웃 성공!');
-        alert('로그아웃 되었습니다.'); // 사용자에게 알림
-        router.push('/admin'); // 로그아웃 후 로그인 페이지로 리다이렉트
-      } else {
-        const errorData = await response.json();
-        console.error('로그아웃 실패:', errorData.message);
-        alert('로그아웃에 실패했습니다: ' + (errorData.message || '알 수 없는 오류'));
+          if (response.ok) {
+            console.log('로그아웃 성공!');
+            showAdminNotificationModal('로그아웃 되었습니다.'); // NotificationModal로 변경
+            router.push('/admin'); // 로그아웃 후 로그인 페이지로 리다이렉트
+          } else {
+            const errorData = await response.json();
+            console.error('로그아웃 실패:', errorData.message);
+            showAdminNotificationModal('로그아웃에 실패했습니다: ' + (errorData.message || '알 수 없는 오류')); // NotificationModal로 변경
+          }
+        } catch (error) {
+          console.error('로그아웃 중 네트워크 오류:', error);
+          showAdminNotificationModal('네트워크 오류로 로그아웃에 실패했습니다.'); // NotificationModal로 변경
+        }
+      },
+      () => { // onCancel 콜백 (취소 시 아무것도 안 함)
+        console.log('로그아웃 취소됨');
       }
-    } catch (error) {
-      console.error('로그아웃 중 네트워크 오류:', error);
-      alert('네트워크 오류로 로그아웃에 실패했습니다.');
-    }
+    );
   };
 
   return (
     <div className="adminLayoutContainer">
       {/* Sidebar */}
       <aside className="sidebar">
-        {/* 이 div에 flexGrow를 추가하여 남은 공간을 채우도록 합니다. */}
         <div className="sidebarContent">
           <div className="sidebarHeader">
             <h2 className="logo">LOGO</h2>
           </div>
           <nav>
             <ul>
-              {/* 첫 번째 항목을 위해 별도의 상단 경계선이 있는 Link */}
               <li className="navItem">
                 <Link
                   href={navItems[0].href}
@@ -66,7 +82,6 @@ export default function AdminLayout({ children }) {
                   {navItems[0].name}
                 </Link>
               </li>
-              {/* 나머지 항목들은 상단 경계선 없이 렌더링 */}
               {navItems.slice(1).map((item) => (
                 <li key={item.name} className="navItem">
                   <Link
@@ -77,7 +92,6 @@ export default function AdminLayout({ children }) {
                   </Link>
                 </li>
               ))}
-              {/* 경계선 추가 */}
               <li className="navItem">
                 <div className="navDivider"></div>
               </li>
@@ -106,6 +120,35 @@ export default function AdminLayout({ children }) {
           {children}
         </div>
       </main>
+
+      {/* 전역 모달 렌더링 */}
+      {modalState.type === 'notification' && (
+        <NotificationModal
+          isVisible={modalState.isOpen}
+          message={modalState.message}
+          onClose={closeAdminModal}
+        />
+      )}
+      {modalState.type === 'confirmation' && (
+        <ConfirmationModal
+          isOpen={modalState.isOpen}
+          title={modalState.title || '확인'}
+          message={modalState.message}
+          buttonText='확인'
+          onConfirm={() => { modalState.onConfirm && modalState.onConfirm(); closeAdminModal(); }}
+          onCancel={() => { modalState.onCancel && modalState.onCancel(); closeAdminModal(); }}
+          //onClose={closeAdminModal} // 외부 클릭 또는 ESC 키 처리 (모달 컴포넌트 내부에서 구현되어야 함)
+        />
+      )}
     </div>
   );
+}
+
+// AdminModalContextProvider로 AdminLayoutContent를 감싸는 Root Layout
+export default function AdminLayout({ children }) {
+    return (
+        <AdminModalContextProvider> {/* AdminModalContextProvider로 감싸기 */}
+            <AdminLayoutContent>{children}</AdminLayoutContent>
+        </AdminModalContextProvider>
+    );
 }

@@ -1,0 +1,128 @@
+/* app/admin/product-management/components/product-modal.module.css */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6); /* 어두운 배경 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  min-width: 300px;
+  max-width: 500px;
+  width: 90%;
+  box-sizing: border-box;
+  text-align: center; /* 내부 콘텐츠 중앙 정렬 */
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  flex-grow: 1; /* 제목이 공간을 차지하도록 */
+  text-align: center;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #888;
+  padding: 0; /* 패딩 제거 */
+  line-height: 1; /* 높이 조정 */
+}
+
+.closeButton:hover {
+  color: #333;
+}
+
+.modalBody {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* 버튼 그룹 간격 */
+  align-items: center; /* 자식 요소 중앙 정렬 */
+}
+
+.modalBody p {
+  margin: 0;
+  line-height: 1.5;
+  color: #333;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-direction: column; /* 세로 배치 */
+  gap: 10px;
+  width: 100%; /* 폭 전체 사용 */
+}
+
+.modalOptionButton {
+  width: 100%;
+  padding: 12px 15px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+  transition: background-color 0.2s;
+}
+
+.modalOptionButton:hover {
+  background-color: #e0e0e0;
+}
+
+.modalInput {
+  width: calc(100% - 22px); /* 패딩 고려 */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  text-align: center; /* 입력 텍스트 중앙 정렬 */
+}
+
+
+.modalFooter {
+  display: flex;
+  justify-content: center; /* 버튼을 중앙으로 */
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.modalOkayButton { /* ConfirmationModal의 confirmButton과 유사 */
+  padding: 8px 15px;
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.modalOkayButton:hover {
+  background-color: #333;
+}

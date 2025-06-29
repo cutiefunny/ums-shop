@@ -1,0 +1,114 @@
+/* app/admin/order-management/components/history-modal.module.css */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure it's above other content */
+}
+
+.modalContent {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  min-width: 350px;
+  max-width: 450px;
+  width: 90%;
+  max-height: 80vh; /* 스크롤 가능하도록 최대 높이 설정 */
+  overflow-y: auto; /* 내용이 넘칠 경우 스크롤 */
+  box-sizing: border-box;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #888;
+}
+
+.closeButton:hover {
+  color: #333;
+}
+
+.modalBody {
+  padding-bottom: 10px;
+}
+
+.historyList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.historyItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed #eee; /* 점선 구분선 */
+}
+
+.historyItem:last-child {
+  border-bottom: none; /* 마지막 항목 하단 선 제거 */
+}
+
+.historyStatus {
+  display: flex;
+  align-items: center;
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.checkmarkIcon {
+  color: #28a745; /* 녹색 체크마크 */
+  margin-right: 8px;
+  font-size: 1.1rem;
+}
+
+.newStatusText {
+  /* 새로운 상태 텍스트 스타일 */
+  /* text-transform: capitalize; */
+}
+
+.changedByText {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-left: 5px;
+  font-weight: normal;
+}
+
+.historyTimestamp {
+  font-size: 0.85rem;
+  color: #888;
+  white-space: nowrap; /* 줄바꿈 방지 */
+}
+
+.noHistoryMessage {
+  text-align: center;
+  color: #6c757d;
+  padding: 20px;
+}

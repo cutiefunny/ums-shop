@@ -44,3 +44,67 @@
 .okButton:hover {
   background-color: #d88e1a;
 }
+
+.cancelButton {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background-color: #e0e0e0; /* 취소 버튼은 연한 회색 */
+  color: #333;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancelButton:hover {
+  background-color: #bdbdbd; /* 취소 버튼 호버 시 색상 변경 */
+}
+
+.buttonContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 5px; /* 버튼 간격 */
+}
+
+/* Confirmation Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100; /* 다른 UI 요소들보다 위에 있도록 설정 */
+}
+
+.modalContent {
+  background: white;
+  padding: 32px 24px;
+  border-radius: 16px;
+  text-align: center;
+  width: 90%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modalTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #212529;
+}
+
+.modalMessage {
+  font-size: 1rem;
+  color: #495057;
+  line-height: 1.5;
+  margin-bottom: 12px;
+  white-space: pre-line; /* 줄바꿈(\n)을 적용하기 위함 */
+}
