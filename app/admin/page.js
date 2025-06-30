@@ -54,8 +54,9 @@ export default function AdminLoginPage() {
       }
 
       console.log('Login successful!');
-      // 로그인 성공 시 관리자 대시보드로 리다이렉트
-      router.push('/admin/dashboard'); 
+      // 로그인 성공 시 새로고침
+      window.location.reload();
+      //router.push('/admin/dashboard'); 
     } catch (err) {
       console.error('Login error:', err);
       setError(err.message || 'An unexpected error occurred during login.');
