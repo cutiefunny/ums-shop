@@ -17,24 +17,23 @@ export default function AdminLoginPage() {
     const checkAuthStatus = async () => {
       try {
         setLoading(true);
-        // 클라이언트에서 직접 Auth.currentAuthenticatedUser()를 호출하거나,
-        // 미들웨어에서 인증을 처리하고 리다이렉트되지 않았다면 이미 인증된 것으로 간주할 수 있습니다.
-        // 여기서는 예시로 `/api/admin/check-auth`를 호출합니다.
-        const response = await fetch('/api/admin/check-auth'); // 인증 확인 API 호출 (이전 안내의 8단계)
+        // 클라이언트에서 서버의 /api/admin/check-auth API를 호출하여
+        // HttpOnly 쿠키(admin_jwt)의 존재 및 유효성을 간접적으로 확인합니다.
+        const response = await fetch('/api/admin/check-auth');
         if (response.ok) {
-          router.push('/admin/dashboard'); // 이미 로그인되어 있다면 대시보드로 이동
+          // 쿠키가 유효하여 인증된 상태라면 대시보드로 이동
+          router.push('/admin/dashboard'); 
         }
       } catch (err) {
         console.error("Auth check failed:", err);
+        // 에러 발생 시 (예: 네트워크 문제) 로딩 상태만 해제
       } finally {
         setLoading(false);
       }
     };
-    // Amplify 라이브러리가 설정된 후에만 인증 상태 확인 시도
-    // (Auth 객체가 제대로 초기화되지 않았을 경우 오류 방지)
-    if (typeof window !== 'undefined' && typeof Auth !== 'undefined' && Auth.configure) {
-      checkAuthStatus();
-    }
+    
+    // AWS Amplify 관련 코드 제거 [수정]
+    checkAuthStatus();
   }, [router]);
 
   const handleLogin = async (e) => {
@@ -55,7 +54,8 @@ export default function AdminLoginPage() {
       }
 
       console.log('Login successful!');
-      router.push('/admin/dashboard'); // 로그인 성공 시 관리자 대시보드로 리다이렉트
+      // 로그인 성공 시 관리자 대시보드로 리다이렉트
+      router.push('/admin/dashboard'); 
     } catch (err) {
       console.error('Login error:', err);
       setError(err.message || 'An unexpected error occurred during login.');
@@ -65,17 +65,16 @@ export default function AdminLoginPage() {
   };
 
   return (
-    // style 대신 className 사용
     <div className={styles.container}>
       <div className={styles.formWrapper}>
-        <h1 className={styles.logo}>ADMIN LOGIN</h1> {/* 오류 발생 라인 수정 */}
+        <h1 className={styles.logo}>ADMIN LOGIN</h1>
         <form onSubmit={handleLogin} className={styles.form}>
           <input
             type="text"
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className={styles.input} // style 대신 className 사용
+            className={styles.input}
             required
           />
           <input
@@ -83,11 +82,11 @@ export default function AdminLoginPage() {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={styles.input} // style 대신 className 사용
+            className={styles.input}
             required
           />
-          {error && <p className={styles.errorMessage}>{error}</p>} {/* style 대신 className 사용 */}
-          <button type="submit" className={styles.button} disabled={loading}> {/* style 대신 className 사용 */}
+          {error && <p className={styles.errorMessage}>{error}</p>}
+          <button type="submit" className={styles.button} disabled={loading}>
             {loading ? 'Logging in...' : 'Sign In'}
           </button>
         </form>
