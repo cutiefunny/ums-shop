@@ -17,7 +17,7 @@ const client = new DynamoDBClient({
 });
 const docClient = DynamoDBDocumentClient.from(client);
 
-const TABLE_ORDER_ITEMS = process.env.DYNAMODB_TABLE_ORDER_ITEMS || 'ums-shop-order-items';
+const TABLE_ORDER_ITEMS = process.env.DYNAMODB_TABLE_ORDER_ITEMS || 'order-items';
 
 // 폰트 파일 경로 정의 (public/fonts 폴더에 폰트 파일을 놓았다고 가정)
 const FONT_PATH_REGULAR = path.resolve(process.cwd(), 'public', 'fonts', 'arial.ttf'); 
