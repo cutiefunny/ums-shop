@@ -337,12 +337,22 @@ export default function CategoryManagementPage() {
         }
 
         // 추가 성공 후 데이터 새로고침
-        if (newCategoryData.type === 'main') {
+        // if (newCategoryData.type === 'main') {
+        //     fetchCategories('main');
+        // } else if (newCategoryData.type === 'surve1' && newCategoryData.mainCategoryId) {
+        //     fetchCategories('surve1', newCategoryData.mainCategoryId);
+        // } else if (newCategoryData.type === 'surve2' && newCategoryData.surve1CategoryId) {
+        //     fetchCategories('surve2', newCategoryData.surve1CategoryId);
+        // }
+
+        showAdminNotificationModal(`카테고리가 성공적으로 추가되었습니다.`);
+
+        if (activeTab === 'main') {
             fetchCategories('main');
-        } else if (newCategoryData.type === 'surve1' && newCategoryData.mainCategoryId) {
-            fetchCategories('surve1', newCategoryData.mainCategoryId);
-        } else if (newCategoryData.type === 'surve2' && newCategoryData.surve1CategoryId) {
-            fetchCategories('surve2', newCategoryData.surve1CategoryId);
+        } else if (activeTab === 'surve1' && mainCategoryParentId) {
+            fetchCategories('surve1', mainCategoryParentId);
+        } else if (activeTab === 'surve2' && surve1ParentId) {
+            fetchCategories('surve2', surve1ParentId);
         }
 
     } catch (err) {
