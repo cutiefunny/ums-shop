@@ -17,24 +17,17 @@ const client = new DynamoDBClient({
 });
 const docClient = DynamoDBDocumentClient.from(client);
 
-const TABLE_ORDER_ITEMS = process.env.DYNAMODB_TABLE_ORDER_ITEMS || 'order-items';
+const TABLE_ORDER_ITEMS = process.env.DYNAMODB_TABLE_ORDER_ITEMS || 'ums-shop-order-items';
 
 // 폰트 파일 경로 정의 (public/fonts 폴더에 폰트 파일을 놓았다고 가정)
 const FONT_PATH_REGULAR = path.resolve(process.cwd(), 'public', 'fonts', 'arial.ttf'); 
 const FONT_PATH_BOLD = path.resolve(process.cwd(), 'public', 'fonts', 'arialbd.ttf'); 
 
-let regularFontBuffer;
-let boldFontBuffer;
-
-try {
-  regularFontBuffer = fs.readFileSync(FONT_PATH_REGULAR);
-  boldFontBuffer = fs.readFileSync(FONT_PATH_BOLD);
-  console.log("PDFKit TTF fonts loaded successfully from public/fonts.");
-} catch (fontError) {
-  console.error("Error loading PDFKit TTF font files. Please ensure arial.ttf and arialbd.ttf are in public/fonts/", fontError);
-  // 폰트 로드 실패 시 API가 PDF 생성을 시도하지 않도록 오류를 throw 합니다.
-  return NextResponse.json({ message: 'PDF 폰트 로드에 실패하여 PDF를 생성할 수 없습니다. 폰트 파일을 확인해주세요.', error: fontError.message }, { status: 500 });
-}
+// 폰트 버퍼를 전역 스코프에서 직접 로드합니다.
+// fs.readFileSync가 실패하면 이곳에서 에러를 던지고 모듈 로드가 실패하여 빌드가 중단됩니다.
+const regularFontBuffer = fs.readFileSync(FONT_PATH_REGULAR); 
+const boldFontBuffer = fs.readFileSync(FONT_PATH_BOLD);       
+console.log("PDFKit TTF fonts loaded successfully from public/fonts."); 
 
 
 /**
@@ -49,11 +42,10 @@ export async function GET(request) {
   const shipNameFilter = searchParams.get('shipName');
   const packingStatusFilter = searchParams.get('packingStatus');
 
-  // packingItems 변수를 미리 선언하고 초기화
-  let packingItems = []; 
+  let packingItems = []; // packingItems 변수를 함수 상단에 선언하여 스코프 보장
 
   try {
-    // ... (DynamoDB 데이터 조회 로직은 동일)
+    // 1. DynamoDB에서 데이터 조회
     const filterExpressions = [];
     const expressionAttributeValues = {};
     const expressionAttributeNames = {};
@@ -69,13 +61,13 @@ export async function GET(request) {
       expressionAttributeNames['#shipName'] = 'shipName';
     }
     if (shipNameFilter && shipNameFilter !== 'All') {
-      filterExpressions.push('#shipName = :shipNameFilter');
-      expressionAttributeValues[':shipNameFilter'] = shipNameFilter;
+      filterExpressions.push('#shipName = :shipNameVal');
+      expressionAttributeValues[':shipNameVal'] = shipNameFilter;
       expressionAttributeNames['#shipName'] = 'shipName';
     }
     if (packingStatusFilter && packingStatusFilter !== 'All') {
-      filterExpressions.push('#packingStatus = :packingStatusFilter');
-      expressionAttributeValues[':packingStatusFilter'] = packingStatusFilter === 'true';
+      filterExpressions.push('#packingStatus = :packingStatusVal');
+      expressionAttributeValues[':packingStatusVal'] = packingStatusFilter; 
       expressionAttributeNames['#packingStatus'] = 'packingStatus';
     }
 
@@ -85,16 +77,26 @@ export async function GET(request) {
       scanParams.ExpressionAttributeNames = expressionAttributeNames;
     }
 
-    const command = new ScanCommand(scanParams);
-    const { Items } = await docClient.send(command);
+    let response;
+    try {
+        response = await docClient.send(new ScanCommand(scanParams));
+        console.log("DynamoDB Scan RAW Response:", response);
+    } catch (sendError) {
+        console.error("Error directly from docClient.send(command):", sendError);
+        // docClient.send()에서 오류 발생 시, 해당 오류를 상위 catch 블록으로 다시 던집니다.
+        throw sendError; 
+    }
 
-    // Items가 null 또는 undefined일 경우 빈 배열로 처리하여 map 호출을 안전하게 함
-    packingItems = (Items || []).map(item => ({
+    // response.Items가 null 또는 undefined일 수 있으므로 안전하게 처리합니다.
+    const fetchedItems = (response && response.Items) ? response.Items : [];
+
+    // fetchedItems를 사용하여 packingItems를 할당합니다.
+    packingItems = fetchedItems.map(item => ({
       order_id: item.orderId,
       shipName: item.shipName,
       product: item.productName,
       stock: item.quantity,
-      packing: item.packingStatus || false,
+      packing: item.packingStatus || 'false', 
     })).sort((a, b) => (a.order_id < b.order_id ? -1 : 1));
 
     // 2. PDF 생성
@@ -111,14 +113,14 @@ export async function GET(request) {
     });
 
     if (!regularFontBuffer || !boldFontBuffer) {
-        return NextResponse.json({ message: 'PDF 폰트 로드에 실패하여 PDF를 생성할 수 없습니다. (내부 오류)', error: 'Font buffers are not loaded.' }, { status: 500 });
+        console.error("Attempted PDF generation without loaded font buffers.");
+        return NextResponse.json({ message: 'PDF 폰트 로드에 실패하여 PDF를 생성할 수 없습니다. (내부 초기화 오류)', error: 'Font files not properly loaded at initialization.' }, { status: 500 });
     }
 
-    // 로드된 TTF 폰트 버퍼를 명시적으로 사용합니다.
     doc.font(boldFontBuffer).fontSize(20).text('Packing Status Report', { align: 'center' }); 
     doc.moveDown();
 
-    // 데이터가 없을 경우 메시지 표시
+    // packingItems가 비어 있을 경우 메시지 출력
     if (packingItems.length === 0) {
         doc.font(regularFontBuffer).fontSize(12).text('No items found for this report.', { align: 'center' });
     } else {
@@ -127,14 +129,12 @@ export async function GET(request) {
 
         let currentY = doc.y; 
 
-        // 헤더 출력 (Bold 폰트 사용)
         doc.font(boldFontBuffer).fontSize(10); 
         headers.forEach((header, i) => {
             doc.text(header, columnPositions[i], currentY, { width: columnPositions[i+1] ? columnPositions[i+1] - columnPositions[i] : undefined, align: 'left' });
         });
         doc.moveDown(); 
 
-        // 데이터 출력 (Regular 폰트 사용)
         doc.font(regularFontBuffer).fontSize(9); 
         packingItems.forEach(item => { // 이제 packingItems는 항상 유효한 배열입니다.
             currentY = doc.y; 
