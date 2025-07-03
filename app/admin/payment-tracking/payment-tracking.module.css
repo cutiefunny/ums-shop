@@ -1,4 +1,4 @@
-/* components/admin/packing-status/packing-status.module.css */
+/* app/admin/payment-tracking/payment-tracking.module.css */
 
 .container {
   padding: 2rem;
@@ -12,8 +12,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  flex-wrap: wrap; /* 반응형을 위해 추가 */
-  gap: 1rem; /* 요소 간 간격 */
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .searchGroup {
@@ -26,7 +26,7 @@
   border: 1px solid #ced4da;
   border-radius: 6px;
   font-size: 1rem;
-  flex-grow: 1; /* 검색창이 유연하게 늘어나도록 */
+  flex-grow: 1;
 }
 
 .searchButton {
@@ -50,21 +50,6 @@
   align-items: center;
 }
 
-.downloadButton {
-  padding: 0.75rem 1.25rem;
-  background-color: black;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s ease;
-}
-
-.downloadButton:hover {
-  background-color: #333;
-}
-
 .filterSelect {
   padding: 0.75rem 1rem;
   border: 1px solid #ced4da;
@@ -74,13 +59,28 @@
   cursor: pointer;
 }
 
+.downloadButton { /* 현재 PDF 다운로드 API 미구현이지만 버튼 스타일 추가 */
+  padding: 0.75rem 1.25rem;
+  background-color: #28a745; /* Green for download */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.downloadButton:hover {
+  background-color: #218838;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 2rem;
   background-color: white;
   border-radius: 8px;
-  overflow: hidden; /* border-radius 적용을 위해 */
+  overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -88,7 +88,7 @@
 .table td {
   padding: 1rem;
   text-align: left;
-  border-bottom: 1px solid #e9ecef;
+  /* border-bottom: 1px solid #e9ecef; */
 }
 
 .table th {
@@ -103,13 +103,16 @@
   background-color: #f1f3f5;
 }
 
-.checkbox {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
+.newMessageIndicator {
+  background-color: #ffc107; /* Yellow */
+  color: #343a40;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
 }
 
-.detailButton {
+.viewButton {
   padding: 0.5rem 1rem;
   background-color: #FBC926;
   color: white;
@@ -120,8 +123,8 @@
   transition: background-color 0.2s ease;
 }
 
-.detailButton:hover {
-  background-color: #ffc107;
+.viewButton:hover {
+  background-color: #e0b423;
 }
 
 .pagination {
@@ -157,4 +160,20 @@
   font-weight: bold;
   text-align: center;
   padding: 20px;
+}
+
+.status {
+  border-radius: 20px;
+  font-size : 0.9rem;
+  padding: 0.3rem 0.6rem;
+}
+
+.completed {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.failed {
+  background-color: #f8d7da;
+  color: #721c24;
 }

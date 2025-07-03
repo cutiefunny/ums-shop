@@ -1,0 +1,170 @@
+/* app/admin/payment-tracking/payment-detail.module.css */
+
+/* 기존 modal.module.css의 스타일을 재활용하거나 여기에 직접 정의 */
+.modalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  overflow-y: auto; /* 내용이 길어지면 스크롤 가능 */
+  padding: 20px 0; /* 상하 패딩 */
+}
+
+.modalContent {
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  position: relative;
+  width: 700px; /* 이미지에 맞게 너비 조정 */
+  max-width: 95%; /* 반응형 */
+  max-height: 95vh; /* 뷰포트 높이에 맞게 */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.closeButton {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #333;
+}
+
+.placedOnDate {
+  font-size: 14px;
+  color: #666;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.infoSectionContainer {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap; /* 반응형 */
+}
+
+.infoSection {
+  flex: 1;
+  min-width: 280px; /* 최소 너비 */
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  background-color: #fdfdfd;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.infoSection p {
+  margin-bottom: 8px;
+  font-size: 15px;
+  color: #555;
+}
+
+.infoSection p strong {
+  color: #333;
+}
+
+.orderItemsSection {
+  margin-top: 30px;
+}
+
+.orderItemsTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.orderItemsTable th,
+.orderItemsTable td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.orderItemsTable th {
+  background-color: #f2f2f2;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.orderItemsTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.sku {
+  font-size: 0.8rem;
+  color: #888;
+  display: block; /* SKU를 새 줄에 표시 */
+  margin-top: 2px;
+}
+
+.totalsSection {
+  margin-top: 30px;
+  text-align: right;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.totalsSection p {
+  margin-bottom: 8px;
+  font-size: 16px;
+  color: #555;
+}
+
+.totalsSection p strong {
+  color: #333;
+}
+
+.grandTotal {
+  font-size: 20px;
+  font-weight: bold;
+  color: #000;
+  margin-top: 15px;
+}
+
+.saveButton {
+  display: block;
+  width: 150px;
+  padding: 12px 20px;
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 20px;
+  margin-left: auto; /* 오른쪽 정렬 */
+}
+
+.saveButton:hover {
+  background-color: #333;
+}
+
+.errorText {
+  color: #dc3545;
+  font-weight: bold;
+  text-align: center;
+  padding: 20px;
+}
