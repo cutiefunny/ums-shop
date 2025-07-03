@@ -1,0 +1,345 @@
+/* app/admin/delivery-status/delivery-status.module.css */
+.container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: calc(100vh - 60px); /* 헤더 높이 고려 */
+  font-family: 'Inter', sans-serif;
+  color: #343a40;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.searchGroup {
+  display: flex;
+  gap: 10px;
+}
+
+.searchInput {
+  padding: 10px 15px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1em;
+  width: 250px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.searchButton {
+  background-color: #FBC926;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.searchButton:hover {
+  background-color: #cfa61d;
+}
+
+.filterGroup {
+  display: flex;
+  gap: 10px;
+}
+
+.filterSelect {
+  padding: 10px 15px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1em;
+  background-color: white;
+  cursor: pointer;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 30px;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden; /* 라운드 코너 적용 */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.table th, .table td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.table th {
+  background-color: #e9ecef;
+  color: #495057;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.9em;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background-color: #f2f2f2;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: bold;
+  color: white;
+  text-transform: uppercase;
+}
+
+.statusBadge.InDelivery {
+  background-color: #ffc107; /* Warning yellow */
+  color: #343a40;
+}
+
+.statusBadge.Delivered {
+  background-color: #28a745; /* Success green */
+}
+
+/* 배송 완료 버튼 */
+.actionButton {
+  background-color: #6c757d; /* Default gray */
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.actionButton.markDelivered {
+  background-color: #007bff; /* Primary blue for marking delivered */
+}
+
+.actionButton.markDelivered:hover {
+  background-color: #0056b3;
+}
+
+.actionButton.markInDelivery {
+  background-color: #6c757d; /* Gray for marking in delivery */
+}
+
+.actionButton.markInDelivery:hover {
+  background-color: #5a6268;
+}
+
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.paginationButton {
+  background-color: #e9ecef;
+  color: #495057;
+  border: 1px solid #dee2e6;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.paginationButton:hover {
+  background-color: #dee2e6;
+}
+
+.paginationButton.active {
+  background-color: #FBC926;
+  color: white;
+  border-color: #FBC926;
+}
+
+.paginationButton.active:hover {
+  background-color: #cfa61d;
+  border-color: #cfa61d;
+}
+
+.note {
+  text-align: center;
+  font-size: 0.9em;
+  color: #6c757d;
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px dashed #ced4da;
+}
+
+.errorText {
+  color: #dc3545;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Modal Styles */
+.updateModalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.updateModalContent {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 450px;
+  position: relative;
+  font-family: 'Inter', sans-serif;
+  text-align: center;
+}
+
+.updateModalCloseButton {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #6c757d;
+  transition: color 0.2s ease-in-out;
+}
+
+.updateModalCloseButton:hover {
+  color: #343a40;
+}
+
+.updateModalTitle {
+  font-size: 1.8em;
+  color: #343a40;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.updateModalSubtitle {
+  font-size: 1em;
+  color: #6c757d;
+  margin-bottom: 25px;
+}
+
+.updateModalField {
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.updateModalField label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+.updateModalInput {
+  width: calc(100% - 20px);
+  padding: 12px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1em;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.updateModalInput:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  outline: none;
+}
+
+.updateModalActions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.updateModalCancelButton,
+.updateModalSaveButton {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+}
+
+.updateModalCancelButton {
+  background-color: #6c757d;
+  color: white;
+}
+
+.updateModalCancelButton:hover {
+  background-color: #5a6268;
+}
+
+.updateModalSaveButton {
+  background-color: #FBC926;
+  color: white;
+}
+
+.updateModalSaveButton:hover {
+  background-color: #cfa61d;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .searchInput {
+    width: 100%;
+  }
+  .searchGroup, .filterGroup {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .table th, .table td {
+    padding: 10px;
+    font-size: 0.9em;
+  }
+  .statusBadge, .actionButton {
+    font-size: 0.8em;
+    padding: 5px 10px;
+  }
+  .updateModalContent {
+    padding: 20px;
+  }
+  .updateModalTitle {
+    font-size: 1.5em;
+  }
+  .updateModalActions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .updateModalCancelButton,
+  .updateModalSaveButton {
+    width: 100%;
+  }
+}
