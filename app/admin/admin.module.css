@@ -40,7 +40,7 @@
 
 .button {
   padding: 12px;
-  background-color: #007bff;
+  background-color: #FBC926;
   color: white;
   border: none;
   border-radius: 5px;
@@ -51,7 +51,7 @@
 }
 
 .button:hover {
-  background-color: #0056b3;
+  background-color: #cfa61d;
 }
 
 .errorMessage {

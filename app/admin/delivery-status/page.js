@@ -205,7 +205,7 @@ export default function DeliveryStatusPage() {
         <div className={styles.searchGroup}>
           <input
             type="text"
-            placeholder="이름, 선박명 검색"
+            placeholder="Name, Ship Name"
             value={searchTerm}
             onChange={handleSearchChange}
             className={styles.searchInput}
@@ -214,7 +214,7 @@ export default function DeliveryStatusPage() {
             className={styles.searchButton} 
             onClick={() => fetchDeliveryItems({searchTerm, status: statusFilter})}
           >
-            검색
+            search
           </button>
         </div>
         <div className={styles.filterGroup}>
@@ -229,12 +229,12 @@ export default function DeliveryStatusPage() {
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>주문 ID</th> 
-            <th>이름</th> 
-            <th>날짜</th>
-            <th>상태</th> 
-            <th>운송장 번호</th> 
-            <th>액션</th>
+            <th>Order ID</th> 
+            <th>Name</th> 
+            <th>Date</th>
+            <th>Status</th> 
+            <th>Tracking #</th> 
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
