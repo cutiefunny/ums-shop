@@ -1,7 +1,8 @@
 // app/api/products/[productId]/route.js
 import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand, PutCommand } from '@aws-sdk/lib-dynamodb'; // PutCommand 추가
+import { v4 as uuidv4 } from 'uuid'; // uuidv4 추가
 
 // AWS SDK 클라이언트 초기화
 const client = new DynamoDBClient({
@@ -15,6 +16,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 // DynamoDB 테이블 이름 (환경 변수에서 가져옴)
 const PRODUCTS_TABLE_NAME = process.env.DYNAMODB_TABLE_PRODUCTS;
+const HISTORY_TABLE_NAME = process.env.DYNAMODB_TABLE_HISTORY || 'history'; // History 테이블 이름 추가
 
 /**
  * GET 요청 처리: 특정 상품 데이터를 조회합니다.
@@ -65,6 +67,13 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ message: 'Missing product ID' }, { status: 400 });
     }
 
+    // 기존 상품 정보를 가져와서 변경 내용을 비교 (선택 사항, 상세 기록을 위해)
+    const getCommand = new GetCommand({
+        TableName: PRODUCTS_TABLE_NAME,
+        Key: { productId: productId },
+    });
+    const { Item: oldProduct } = await docClient.send(getCommand);
+    
     // DynamoDB UpdateExpression을 동적으로 생성
     let UpdateExpression = 'SET';
     const ExpressionAttributeNames = {};
@@ -96,10 +105,6 @@ export async function PUT(request, { params }) {
       first = false;
     }
 
-    if (Object.keys(body).length === 0 || (Object.keys(body).length === 1 && body.hasOwnProperty('productId'))) {
-      return NextResponse.json({ message: 'No fields provided for update' }, { status: 400 });
-    }
-
     // updatedAt 필드 자동 업데이트
     if (!UpdateExpression.includes('#updatedAt')) {
         if (!first) UpdateExpression += ',';
@@ -108,17 +113,55 @@ export async function PUT(request, { params }) {
         ExpressionAttributeValues[':updatedAt'] = new Date().toISOString();
     }
 
+    if (Object.keys(body).length === 0 || (Object.keys(body).length === 1 && body.hasOwnProperty('productId'))) {
+      return NextResponse.json({ message: 'No fields provided for update' }, { status: 400 });
+    }
 
     const updateCommand = new UpdateCommand({
       TableName: PRODUCTS_TABLE_NAME,
       Key: { productId: productId }, // 'productId'가 파티션 키라고 가정
       UpdateExpression,
       ExpressionAttributeNames,
-      ExpressionAttributeValues,
+    //   ExpressionAttributeValues: Object.keys(ExpressionAttributeValues).length > 0 ? ExpressionAttributeValues : undefined,
+       ExpressionAttributeValues,
       ReturnValues: "ALL_NEW", // 업데이트된 항목의 모든 속성을 반환
     });
 
     const { Attributes } = await docClient.send(updateCommand);
+
+    // History 테이블에 기록
+    let details = `상품 '${Attributes?.productName || productId}' (SKU: ${Attributes?.sku || 'N/A'})이(가) 수정되었습니다.`;
+    // 특정 필드 변경 시 상세 내용 추가 (예: 가격, 상태, 재고 등)
+    if (oldProduct) {
+        const changes = [];
+        for (const key in body) {
+            if (key === 'productId' || key === 'updatedAt') continue;
+            const oldValue = oldProduct[key];
+            const newValue = body[key];
+            if (String(oldValue) !== String(newValue)) { // 값 변경 감지
+                changes.push(`${key}: '${oldValue}' -> '${newValue}'`);
+            }
+        }
+        if (changes.length > 0) {
+            details += ` 변경 내용: ${changes.join(', ')}.`;
+        }
+    }
+
+    const historyItem = {
+        id: uuidv4(),
+        timestamp: new Date().toISOString(),
+        manager: "시스템 관리자", // TODO: 실제 로그인한 관리자 정보로 대체
+        deviceInfo: "백엔드 API (Product Management)", // TODO: 클라이언트 기기 정보로 대체
+        actionType: "상품 수정",
+        details: details,
+    };
+    const putHistoryCommand = new PutCommand({
+        TableName: HISTORY_TABLE_NAME,
+        Item: historyItem,
+    });
+    await docClient.send(putHistoryCommand);
+
+
     return NextResponse.json({ message: 'Product updated successfully', product: Attributes }, { status: 200 });
   } catch (error) {
     console.error(`Error updating product ${params.productId} in DynamoDB:`, error);
@@ -141,6 +184,14 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ message: 'Missing product ID' }, { status: 400 });
     }
 
+    // 삭제될 상품 정보를 미리 가져옴 (로그 기록용)
+    const getCommand = new GetCommand({
+        TableName: PRODUCTS_TABLE_NAME,
+        Key: { productId: productId },
+    });
+    const { Item: deletedProduct } = await docClient.send(getCommand);
+
+
     const command = new DeleteCommand({
       TableName: PRODUCTS_TABLE_NAME,
       Key: {
@@ -148,6 +199,23 @@ export async function DELETE(request, { params }) {
       },
     });
     await docClient.send(command);
+
+    // History 테이블에 기록
+    const historyItem = {
+        id: uuidv4(),
+        timestamp: new Date().toISOString(),
+        manager: "시스템 관리자", // TODO: 실제 로그인한 관리자 정보로 대체
+        deviceInfo: "백엔드 API (Product Management)", // TODO: 클라이언트 기기 정보로 대체
+        actionType: "상품 삭제",
+        details: `상품 '${deletedProduct?.productName || productId}' (SKU: ${deletedProduct?.sku || 'N/A'})이(가) 삭제되었습니다.`,
+    };
+    const putHistoryCommand = new PutCommand({
+        TableName: HISTORY_TABLE_NAME,
+        Item: historyItem,
+    });
+    await docClient.send(putHistoryCommand);
+
+
     return NextResponse.json({ message: 'Product deleted successfully' }, { status: 200 });
   } catch (error) {
     console.error(`Error deleting product ${params.productId} from DynamoDB:`, error);

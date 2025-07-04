@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { v4 as uuidv4 } from 'uuid'; // uuidv4 추가
 
 // AWS SDK 클라이언트 초기화
 const client = new DynamoDBClient({
@@ -14,6 +15,7 @@ const client = new DynamoDBClient({
 const docClient = DynamoDBDocumentClient.from(client);
 
 const PRODUCTS_TABLE_NAME = process.env.DYNAMODB_TABLE_PRODUCTS;
+const HISTORY_TABLE_NAME = process.env.DYNAMODB_TABLE_HISTORY || 'history'; // History 테이블 이름 추가
 
 // GET: 모든 상품 조회
 export async function GET() {
@@ -36,7 +38,7 @@ export async function POST(request) {
     const {
       id,
       name,
-      price,
+      price, // 이 price는 priceWon과 다를 수 있으나, 기존 코드 흐름에 따라 그대로 둠
       mainCategory,
       subCategory1,
       subCategory2,
@@ -99,6 +101,22 @@ export async function POST(request) {
       },
     });
     await docClient.send(command);
+
+    // History 테이블에 기록
+    const historyItem = {
+        id: uuidv4(),
+        timestamp: new Date().toISOString(),
+        manager: "시스템 관리자", // TODO: 실제 로그인한 관리자 정보로 대체
+        deviceInfo: "백엔드 API (Product Management)", // TODO: 클라이언트 기기 정보로 대체
+        actionType: "상품 등록",
+        details: `새 상품 '${name}' (SKU: ${sku})이(가) 등록되었습니다.`,
+    };
+    const putHistoryCommand = new PutCommand({
+        TableName: HISTORY_TABLE_NAME,
+        Item: historyItem,
+    });
+    await docClient.send(putHistoryCommand);
+
     return NextResponse.json({ message: 'Product created successfully', product: body }, { status: 201 });
   } catch (error) {
     console.error("Error creating product in DynamoDB:", error);

@@ -1,7 +1,8 @@
 // app/api/users/route.js
 import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand, UpdateCommand, PutCommand } from '@aws-sdk/lib-dynamodb'; // PutCommand 추가
+import { v4 as uuidv4 } from 'uuid'; // uuidv4 추가
 
 // 디버깅을 위해 환경 변수 값들을 콘솔에 출력
 console.log("API Route Environment Variables:");
@@ -22,6 +23,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 // DynamoDB 테이블 이름 (환경 변수에서 가져옴)
 const USERS_TABLE_NAME = process.env.DYNAMODB_TABLE_USERS || 'user-management';
+const HISTORY_TABLE_NAME = process.env.DYNAMODB_TABLE_HISTORY || 'history'; // History 테이블 이름 추가
 
 /**
  * GET 요청 처리: 모든 사용자 데이터를 조회합니다.
@@ -45,13 +47,13 @@ export async function GET() {
 
 /**
  * PUT 요청 처리: 특정 사용자의 승인 상태를 업데이트합니다.
- * @param {Request} request - 요청 객체 (seq, newStatus 포함)
+ * @param {Request} request - 요청 객체 (seq, newStatus, userNameFromRequest 포함)
  * @returns {NextResponse} 업데이트 결과 또는 오류 응답
  */
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { seq, newStatus } = body;
+    const { seq, newStatus, userName } = body; // userName 필드 추가 (로그 기록용)
 
     // 필수 필드 유효성 검사
     if (seq === undefined || !newStatus) {
@@ -70,6 +72,22 @@ export async function PUT(request) {
     });
 
     const { Attributes } = await docClient.send(updateCommand);
+
+    // History 테이블에 기록
+    const historyItem = {
+        id: uuidv4(),
+        timestamp: new Date().toISOString(),
+        manager: "시스템 관리자", // TODO: 실제 로그인한 관리자 정보로 대체
+        deviceInfo: "백엔드 API (User Management)", // TODO: 클라이언트 기기 정보로 대체
+        actionType: "회원 승인/거절",
+        details: `${userName || Attributes?.name || '알 수 없는 회원'}님의 승인 상태가 ${newStatus}로 변경되었습니다.`,
+    };
+    const putHistoryCommand = new PutCommand({
+        TableName: HISTORY_TABLE_NAME,
+        Item: historyItem,
+    });
+    await docClient.send(putHistoryCommand);
+
     return NextResponse.json({ message: 'User approval status updated successfully', user: Attributes }, { status: 200 });
   } catch (error) {
     console.error("Error updating user approval status in DynamoDB:", error);

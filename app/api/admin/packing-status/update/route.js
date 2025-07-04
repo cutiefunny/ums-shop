@@ -1,7 +1,7 @@
 // app/api/admin/packing-status/update/route.js
 import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, UpdateCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, UpdateCommand, PutCommand, GetCommand } from '@aws-sdk/lib-dynamodb'; // GetCommand 추가
 import { v4 as uuidv4 } from 'uuid';
 
 // AWS SDK v3 설정
@@ -17,6 +17,8 @@ const docClient = DynamoDBDocumentClient.from(client);
 // DynamoDB 테이블 이름 (환경 변수)
 const TABLE_ORDER_ITEMS = process.env.DYNAMODB_TABLE_ORDER_ITEMS || 'order-items';
 const TABLE_PACKING_HISTORY = process.env.DYNAMODB_TABLE_PACKING_HISTORY || 'packing-history';
+const HISTORY_TABLE_NAME = process.env.DYNAMODB_TABLE_HISTORY || 'history'; // History 테이블 이름 추가
+
 
 /**
  * PATCH handler for /api/admin/packing-status/update
@@ -82,6 +84,22 @@ export async function PATCH(request) {
         await docClient.send(putHistoryCommand);
         console.log('Packing status history recorded:', historyItem);
     }
+
+    // 3. History 테이블에 기록 (새롭게 추가)
+    const historyEntry = {
+        id: uuidv4(),
+        timestamp: new Date().toISOString(),
+        manager: "시스템 관리자", // TODO: 실제 로그인한 관리자 정보로 대체
+        deviceInfo: "백엔드 API (Packing Management)", // TODO: 클라이언트 기기 정보로 대체
+        actionType: "포장 상태 변경",
+        details: `주문 ${orderId}의 상품 '${updatedItem?.productName || '알 수 없음'}' 포장 상태가 '${newPackingStatusString === 'true' ? '완료' : '미완료'}'로 변경되었습니다.`,
+    };
+    const putHistoryEntryCommand = new PutCommand({
+        TableName: HISTORY_TABLE_NAME,
+        Item: historyEntry,
+    });
+    await docClient.send(putHistoryEntryCommand);
+
 
     return NextResponse.json({ message: 'Packing status updated and history recorded successfully.', updatedItem }, { status: 200 });
   } catch (error) {

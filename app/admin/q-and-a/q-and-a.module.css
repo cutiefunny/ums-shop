@@ -1,0 +1,367 @@
+/* /admin/q-and-a/q-and-a.module.css */
+
+.container {
+    display: flex;
+    height: 100vh;
+    background-color: #f3f4f6; /* bg-gray-100 */
+}
+
+/* Sidebar Styles (as per q-and-a/page.js structure) */
+.sidebar {
+    width: 256px; /* w-64 */
+    background-color: #1f2937; /* bg-gray-800 */
+    color: #ffffff; /* text-white */
+    display: flex;
+    flex-direction: column;
+}
+
+.logo {
+    padding: 16px; /* p-4 */
+    font-size: 24px; /* text-2xl */
+    font-weight: bold;
+    border-bottom: 1px solid #374151; /* border-b border-gray-700 */
+}
+
+.nav {
+    flex: 1;
+    padding: 16px; /* p-4 */
+}
+
+.nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav li {
+    margin-bottom: 8px; /* mb-2 */
+}
+
+.navLink {
+    display: block;
+    padding: 8px 16px; /* py-2 px-4 */
+    border-radius: 6px; /* rounded */
+    color: #ffffff;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.navLink:hover {
+    background-color: #374151; /* hover:bg-gray-700 */
+}
+
+.navLinkActive {
+    background-color: #6d28d9; /* bg-purple-700 */
+    color: #ffffff;
+    border-radius: 6px;
+}
+
+/* Main Content Styles */
+.mainContent {
+    flex: 1;
+    padding: 32px; /* p-8 */
+    overflow-y: auto; /* 내용이 길어질 경우 스크롤 가능 */
+}
+
+.pageTitle {
+    font-size: 30px; /* text-3xl */
+    font-weight: bold;
+    margin-bottom: 32px; /* mb-8 */
+    color: #212529; /* text-gray-900 */
+}
+
+/* Search and Filter Section */
+.searchFilterContainer {
+    display: flex;
+    align-items: center;
+    gap: 16px; /* space-x-4 */
+    margin-bottom: 24px; /* mb-6 */
+    flex-wrap: wrap; /* 반응형을 위해 추가 */
+}
+
+.searchInput {
+    border: 1px solid #d1d5db; /* border border-gray-300 */
+    padding: 10px 15px; /* p-2 */
+    border-radius: 8px; /* rounded-md */
+    width: 320px; /* w-80 */
+    box-sizing: border-box; /* 패딩이 너비에 포함되도록 */
+    font-size: 1em;
+}
+
+.searchButton {
+    background-color: #1f2937; /* bg-gray-800 */
+    color: #ffffff;
+    padding: 10px 20px; /* px-4 py-2 */
+    border-radius: 8px; /* rounded-md */
+    cursor: pointer;
+    border: none;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+.searchButton:hover {
+    background-color: #374151; /* hover:bg-gray-700 */
+}
+
+.selectFilter {
+    border: 1px solid #d1d5db; /* border border-gray-300 */
+    padding: 10px 15px; /* p-2 */
+    border-radius: 8px; /* rounded-md */
+    background-color: #ffffff;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+/* Q&A Table Section */
+.tableContainer {
+    background-color: #ffffff; /* bg-white */
+    padding: 24px; /* p-6 */
+    border-radius: 8px; /* rounded-lg */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+    overflow-x: auto; /* 테이블이 너무 넓을 경우 스크롤 */
+}
+
+.table {
+    min-width: 800px; /* 테이블 최소 너비 설정 (모바일에서 너무 좁아지는 것 방지) */
+    width: 100%;
+    border-collapse: collapse;
+    /* divide-y divide-gray-200는 각 td/th에 border-bottom으로 대체 */
+}
+
+.tableThead {
+    background-color: #f9fafb; /* bg-gray-50 */
+}
+
+.tableTh {
+    padding: 12px 24px; /* px-6 py-3 */
+    text-align: left;
+    font-size: 12px; /* text-xs */
+    font-weight: 500; /* font-medium */
+    color: #6b7280; /* text-gray-500 */
+    text-transform: uppercase;
+    letter-spacing: 0.05em; /* tracking-wider */
+    border-bottom: 1px solid #e5e7eb; /* divide-gray-200 */
+    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+}
+
+.tableTbody {
+    background-color: #ffffff; /* bg-white */
+}
+
+.tableTd {
+    padding: 16px 24px; /* px-6 py-4 */
+    white-space: nowrap;
+    font-size: 14px; /* text-sm */
+    color: #111827; /* text-gray-900 */
+    border-bottom: 1px solid #e5e7eb; /* divide-gray-200 */
+}
+
+.tableTbody tr:last-child .tableTd {
+    border-bottom: none; /* 마지막 행의 하단 테두리 제거 */
+}
+
+/* Status Badges */
+.statusPending {
+    background-color: #fffbeb; /* bg-yellow-100 */
+    color: #92400e; /* text-yellow-800 */
+    padding: 4px 10px; /* px-2 py-1 */
+    display: inline-flex;
+    font-size: 12px; /* text-xs */
+    line-height: 1; /* leading-5 */
+    font-weight: 600; /* font-semibold */
+    border-radius: 9999px; /* rounded-full */
+    align-items: center;
+    justify-content: center;
+}
+
+.statusAnswered {
+    background-color: #d1fae5; /* bg-green-100 */
+    color: #065f46; /* text-green-800 */
+    padding: 4px 10px;
+    display: inline-flex;
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 600;
+    border-radius: 9999px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Actions Button */
+.actionButton {
+    color: #4f46e5; /* text-indigo-600 */
+    text-decoration: none;
+    font-weight: 500; /* font-medium */
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+
+.actionButton:hover {
+    color: #3730a3; /* hover:text-indigo-900 */
+}
+
+/* Pagination */
+.paginationContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 24px; /* mt-6 */
+    gap: 8px; /* mx-1 대신 gap 사용 */
+}
+
+.paginationButton {
+    padding: 8px 12px; /* px-3 py-1 */
+    border-radius: 6px; /* rounded */
+    background-color: #e5e7eb; /* bg-gray-200 */
+    cursor: pointer;
+    border: none;
+    color: #495057; /* text-gray-800 */
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.paginationButton:hover:not(:disabled) {
+    background-color: #d1d5db; /* hover:bg-gray-300 */
+}
+
+.paginationButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.paginationButtonActive {
+    background-color: #7c3aed; /* bg-purple-600 */
+    color: #ffffff;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .mainContent {
+        padding: 20px;
+    }
+    .pageTitle {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+    .searchFilterContainer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .searchInput,
+    .searchButton,
+    .selectFilter {
+        width: 100%;
+    }
+    .tableContainer {
+        padding: 15px;
+    }
+    .table th,
+    .table td {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+    .statusPending,
+    .statusAnswered {
+        padding: 3px 8px;
+        font-size: 11px;
+    }
+    .actionButton {
+        font-size: 13px;
+    }
+    .paginationButton {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+}
+
+/* Specific styles for Q&A Detail page (reusing common form styles) */
+/* The detail page elements like .formGroup, .label, .input, .textarea, .saveButton
+   are already covered by the generic styles above. */
+
+.header { /* for Q&A Detail page header */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px; /* Adjust as needed */
+}
+
+.closeButton { /* for Q&A Detail page close button */
+  background: none;
+  border: none;
+  font-size: 24px; /* Adjust size to fit 'x' icon or similar */
+  cursor: pointer;
+  color: #333;
+  padding: 5px; /* Adjust padding as needed */
+}
+
+.closeButton:hover {
+  color: #000;
+}
+
+.sectionTitle { /* for Reply section title */
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    color: #212529;
+}
+
+.formGroup { /* Common form field grouping */
+    margin-bottom: 15px;
+}
+
+.label { /* Common label style */
+    display: block;
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+.input, .textarea { /* Common input and textarea styles */
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    font-size: 1em;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input:focus, .textarea:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+.textarea {
+    resize: vertical; /* Allow vertical resizing */
+}
+
+.saveButton { /* Common save button style */
+    background-color: black;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 20px;
+}
+
+.saveButton:hover {
+    background-color: #333;
+}
+
+.errorText { /* Common error text style */
+    color: red;
+    font-weight: bold;
+    text-align: center;
+    padding: 20px;
+}

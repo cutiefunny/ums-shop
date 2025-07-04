@@ -1,0 +1,297 @@
+/* /admin/manager/manager.module.css */
+
+.container {
+    padding: 20px;
+    background-color: #f3f4f6; /* light gray background */
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap; /* responsive wrapping */
+    gap: 15px; /* spacing between items */
+}
+
+.searchGroup {
+    display: flex;
+    gap: 10px;
+}
+
+.searchInput {
+    padding: 10px 15px;
+    border: 1px solid #d1d5db; /* gray-300 */
+    border-radius: 8px;
+    font-size: 1em;
+    width: 250px;
+    box-sizing: border-box; /* include padding in width */
+}
+
+.searchButton {
+    background-color: black;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+.searchButton:hover {
+    background-color: #333;
+}
+
+.actionsGroup {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.addButton {
+    background-color: black;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+.addButton:hover {
+    background-color: #333;
+}
+
+.filterSelect {
+    padding: 10px 15px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1em;
+    background-color: white;
+    cursor: pointer;
+}
+
+.tableContainer {
+    background-color: #ffffff; /* white background */
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* subtle shadow */
+    overflow-x: auto; /* horizontal scroll for narrow screens */
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    min-width: 1000px; /* ensure table is readable */
+}
+
+.table th,
+.table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb; /* light gray border */
+    white-space: nowrap; /* prevent text wrapping in cells */
+}
+
+.table thead tr {
+    background-color: #f9fafb; /* very light gray header background */
+}
+
+.table th {
+    font-size: 12px; /* text-xs */
+    font-weight: 500; /* font-medium */
+    color: #6b7280; /* gray-500 */
+    text-transform: uppercase;
+    letter-spacing: 0.05em; /* tracking-wider */
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none; /* remove border from last row */
+}
+
+.table tbody tr:hover {
+    background-color: #f5f5f5; /* hover effect */
+}
+
+/* Checkbox/Icon for permissions */
+.permissionCheck {
+    display: block;
+    width: 24px; /* Icon size */
+    height: 24px;
+    margin: 0 auto; /* Center in cell */
+}
+
+/* Settings column buttons */
+.settingButtons {
+    display: flex;
+    gap: 5px;
+}
+
+.settingButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settingButton img {
+    width: 22px;
+    height: 22px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+}
+
+.paginationButton {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background-color: #e5e7eb; /* gray-200 */
+    cursor: pointer;
+    border: none;
+    color: #495057; /* gray-800 */
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.paginationButton:hover:not(:disabled) {
+    background-color: #d1d5db; /* gray-300 on hover */
+}
+
+.paginationButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.paginationButtonActive {
+    background-color: #7c3aed; /* purple-600 for active */
+    color: #ffffff;
+}
+
+.errorText {
+    color: red;
+    font-weight: bold;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Modal styles (reuse from category-management/modals/modal.module.css or create new) */
+/* Assuming modal styles will be consistent and can be imported if needed, or defined here */
+.modalBackdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+    width: 500px; /* Adjusted for manager modal content */
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.modalCloseButton { /* Use a distinct name for modal close button */
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+}
+
+.modalTitle {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.formGroup {
+    margin-bottom: 15px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+}
+
+.formGroup input[type="text"],
+.formGroup input[type="password"],
+.formGroup input[type="email"],
+.formGroup select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+    color: #333;
+}
+
+.permissionGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Two columns for permissions */
+    gap: 10px;
+}
+
+.permissionItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.permissionItem label {
+    margin: 0; /* Override default label margin */
+}
+
+.permissionItem input[type="checkbox"] {
+    transform: scale(1.2); /* Make checkbox slightly larger */
+}
+
+
+.modalButton {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    background-color: black;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 10px;
+}
+
+.modalButton:hover {
+    background-color: #333;
+}
