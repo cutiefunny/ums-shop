@@ -462,3 +462,265 @@
     width: 100%;
   }
 }
+
+/* Modal styles (reuse from category-management/modals/modal.module.css or create new) */
+/* Assuming modal styles will be consistent and can be imported if needed, or defined here */
+.modalBackdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+    width: 500px; /* Adjusted for manager modal content */
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.modalCloseButton { /* Use a distinct name for modal close button */
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+}
+
+.modalTitle {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.formGroup {
+    margin-bottom: 15px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+}
+
+.formGroup input[type="text"],
+.formGroup input[type="password"],
+.formGroup input[type="email"],
+.formGroup select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+    color: #333;
+}
+
+.permissionGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Two columns for permissions */
+    gap: 10px;
+}
+
+.permissionItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.permissionItem label {
+    margin: 0; /* Override default label margin */
+}
+
+.permissionItem input[type="checkbox"] {
+    transform: scale(1.2); /* Make checkbox slightly larger */
+}
+
+
+.modalButton {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    background-color: black;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 10px;
+}
+
+.modalButton:hover {
+    background-color: #333;
+}
+
+/* 배너 모달 스타일 */
+/* Modal specific styles (for Add/Edit Banner Modal) */
+.modalBackdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+    width: 450px;
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.closeButton {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+}
+
+.modalTitle {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.formGroup {
+    margin-bottom: 15px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+}
+
+.formGroup input[type="text"],
+.formGroup input[type="url"],
+.formGroup input[type="number"],
+.formGroup select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+    color: #333;
+}
+
+.formGroup input[type="file"] {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.fileUploadInfo {
+    font-size: 13px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.imagePreviewContainer {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    height: 150px; /* 고정 높이 */
+    overflow: hidden;
+    position: relative;
+    background-color: #f8f8f8;
+}
+
+.imagePreview {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* 이미지가 잘리지 않게 조정 */
+    display: block;
+}
+
+.noImageText {
+    color: #888;
+    font-size: 0.9em;
+}
+
+.modalButton {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    background-color: black;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 10px;
+}
+
+.modalButton:hover {
+    background-color: #333;
+}
+
+/* 배너 상태 버튼 스타일 */
+.statusButton {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.statusActive {
+    background-color: #28a745; /* Bootstrap success color */
+    color: white;
+}
+
+.statusHidden {
+    background-color: #dc3545; /* Bootstrap danger color */
+    color: white;
+}

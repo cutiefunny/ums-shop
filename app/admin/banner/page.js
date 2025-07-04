@@ -384,8 +384,7 @@ export default function BannerManagementPage() {
                     />
                     <button onClick={handleSearch} className={styles.searchButton}>Search</button>
                 </div>
-                <div className={styles.actionsGroup}>
-                    <button onClick={handleAddBannerClick} className={styles.addButton}>+ Add banner</button>
+                <div className={styles.filterGroup}>
                     <select
                         value={filterLocation}
                         onChange={handleFilterLocationChange}
@@ -395,6 +394,7 @@ export default function BannerManagementPage() {
                             <option key={loc} value={loc}>{loc}</option>
                         ))}
                     </select>
+                    <button onClick={handleAddBannerClick} className={styles.addButton}>+ Add</button>
                 </div>
             </header>
 

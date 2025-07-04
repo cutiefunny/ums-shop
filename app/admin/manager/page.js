@@ -399,8 +399,7 @@ export default function ManagerPage() {
                     />
                     <button onClick={handleSearch} className={styles.searchButton}>Search</button>
                 </div>
-                <div className={styles.actionsGroup}>
-                    <button onClick={handleAddManagerClick} className={styles.addButton}>+ Manager</button>
+                <div className={styles.filterGroup}>
                     <select
                         value={filterAction}
                         onChange={(e) => setFilterAction(e.target.value)}
@@ -413,6 +412,7 @@ export default function ManagerPage() {
                         <option value="CS Manager">CS Manager</option>
                         {/* Add more role filters as needed */}
                     </select>
+                    <button onClick={handleAddManagerClick} className={styles.addButton}>+ Add</button>
                 </div>
             </header>
 
@@ -444,11 +444,11 @@ export default function ManagerPage() {
                                     <td>{manager.canManageQnA ? <CheckIcon /> : <XIcon />}</td>
                                     <td>{manager.canManageBanner ? <CheckIcon /> : <XIcon />}</td>
                                     <td>
-                                        <div className={styles.settingButtons}>
-                                            <button onClick={() => handleEditManagerClick(manager)} className={styles.settingButton}>
+                                        <div className={styles.actionButtons}>
+                                            <button onClick={() => handleEditManagerClick(manager)} className={styles.actionButton}>
                                                 <img src="/images/write.png" alt="수정" />
                                             </button>
-                                            <button onClick={() => handleDeleteManager(manager.username)} className={styles.settingButton}>
+                                            <button onClick={() => handleDeleteManager(manager.username)} className={styles.actionButton}>
                                                 <img src="/images/delete.png" alt="삭제" />
                                             </button>
                                         </div>
