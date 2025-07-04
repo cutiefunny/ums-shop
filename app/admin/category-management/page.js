@@ -5,7 +5,7 @@ import Link from 'next/link';
 // Image 컴포넌트 사용을 위해 임포트 (src 직접 사용 시 img 태그로 대체)
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import styles from './category-management.module.css';
+import styles from '../common.module.css';
 
 // AdminModalContext 훅 사용
 import { useAdminModal } from '@/contexts/AdminModalContext';
@@ -617,7 +617,14 @@ const handleReorder = useCallback(async (categoryId, direction) => {
           />
           <button className={styles.searchButton}>Search</button>
         </div>
+        <div className={styles.filterGroup}>
+          <select value={filterStatus} onChange={handleFilterStatusChange} className={styles.filterSelect}>
+            <option value="All">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
         <button onClick={handleAddCategoryClick} className={styles.addButton}>+ Add</button> {/* 변경된 핸들러 호출 */}
+        </div>
       </header>
       
 
@@ -643,13 +650,6 @@ const handleReorder = useCallback(async (categoryId, direction) => {
           >
             Surve Category 2
           </button>
-        </div>
-        <div className={styles.filterGroup}>
-          <select value={filterStatus} onChange={handleFilterStatusChange} className={styles.filterSelect}>
-            <option value="All">All Status</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
         </div>
       </div>
       

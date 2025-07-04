@@ -1,0 +1,464 @@
+/* app/admin/common.module.css */
+
+.container {
+  padding: 20px;
+  background-color: #fff;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.headerLeft {
+  display: flex;
+  gap: 10px;
+}
+
+.uploadButton,
+.excelButton,
+.downloadButton,
+.pdfButton {
+  padding: 8px 15px;
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.uploadButton:hover,
+.excelButton:hover,
+.downloadButton:hover,
+.pdfButton:hover {
+  background-color: #e0e0e0;
+}
+
+.detailButton {
+  padding: 8px 15px;
+  background-color: #7e7e7e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.detailButton:hover {
+  background-color: #5a5a5a;
+}
+
+.reorderButtons {
+  display: flex;
+  gap: 5px;
+}
+
+.reorderButton {
+  padding: 2px 3px;
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.headerRight {
+  display: flex;
+  gap: 10px;
+}
+
+.editButton,
+.addButton {
+  padding: 8px 15px;
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.editButton:hover,
+.addButton:hover {
+  background-color: #333;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  gap: 15px;
+}
+
+.controlsOnlyFilter {
+  display: flex;
+  /* flex-direction: column;  이 줄이 있다면 제거하거나 flex-direction: row로 변경 */
+  justify-content: right;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap; /* 반응형을 위해 유지 */
+  gap: 15px; /* 요소 간 간격 */
+}
+
+.searchGroup {
+  display: flex;
+  gap: 10px;
+}
+
+.searchInput {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 200px;
+}
+
+.searchButton {
+  padding: 8px 15px;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.filterGroup {
+  display: flex;
+  gap: 10px;
+}
+
+.filterSelect {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 150px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.table th,
+.table td {
+  padding: 12px 8px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  white-space: nowrap; /* Prevent text wrapping in table headers */
+}
+
+.table thead tr {
+  background-color: #f8f8f8;
+}
+
+.table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+.statusToggle {
+  /* This is for the eye/eye-slash icon */
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statusToggle svg {
+  width: 20px;
+  height: 20px;
+  color: #555;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 5px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actionButton img {
+  width: 25px; /* Adjust size for small icons */
+  height: 25px;
+}
+
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.paginationButton {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.paginationButton.active {
+  background-color: #f0f0f0;
+  border-color: #000;
+  font-weight: bold;
+}
+
+.errorText {
+  color: red;
+  font-weight: bold;
+} 
+
+/* New Tab styles */
+.tabNav {
+    display: flex;
+    /* border-bottom: 2px solid #e0e0e0; /* 이미지처럼 하단 border 제거 */
+    margin-bottom: 20px; /* Space between tabs and table */
+    width: 50%; /* 탭 영역이 부모 너비를 꽉 채우도록 */
+}
+
+.tabButton {
+    background: none; /* 배경색 없음 */
+    border: none; /* 테두리 없음 */
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #868e96; /* 비활성 탭 텍스트 색상 */
+    border-bottom: 2px solid transparent; /* 기본 하단 투명 선 */
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-grow: 1; /* 탭 버튼이 공간을 균등하게 차지하도록 */
+    text-align: center; /* 탭 텍스트 중앙 정렬 */
+}
+
+.tabButton:hover {
+    color: #495057;
+}
+
+.tabButton.activeTab {
+    color: black; /* 활성 탭 텍스트 색상 */
+    font-weight: bold;
+    border-bottom: 2px solid #000; /* 활성 탭 하단 선 */
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+}
+
+.markInDelivery {
+    padding: 8px 15px;
+    background-color: #696969; /* Bootstrap primary color */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.markInDelivery:hover {
+    background-color: #414141; /* Darker shade on hover */
+}
+
+.markDelivered {
+    padding: 8px 15px;
+    background-color: #ffffff; /* Bootstrap success color */
+    color: rgb(0, 0, 0);
+    border: 1px solid #696969; /* Bootstrap success border */
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.markDelivered:hover {
+    background-color: #dfdfdf; /* Darker shade on hover */
+}
+
+.InDelivery {
+  background-color: #f0f2f5; /* Light gray background */
+  padding: 2px;
+  border-radius: 5px;
+  color: #000000; /* Bootstrap primary color */
+  font-size : 0.9rem;
+}
+
+.Delivered {
+  background-color: #696969; /* Light gray background */
+  padding: 2px;
+  border-radius: 5px;
+  color: #ffffff; /* White text */
+  font-size : 0.9rem;
+}
+
+/* Modal Styles */
+.updateModalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.updateModalContent {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 450px;
+  position: relative;
+  font-family: 'Inter', sans-serif;
+  text-align: center;
+}
+
+.updateModalCloseButton {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #6c757d;
+  transition: color 0.2s ease-in-out;
+}
+
+.updateModalCloseButton:hover {
+  color: #343a40;
+}
+
+.updateModalTitle {
+  font-size: 1.8em;
+  color: #343a40;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.updateModalSubtitle {
+  font-size: 1em;
+  color: #6c757d;
+  margin-bottom: 25px;
+}
+
+.updateModalField {
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.updateModalField label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+.updateModalInput {
+  width: calc(100% - 20px);
+  padding: 12px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1em;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.updateModalInput:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  outline: none;
+}
+
+.updateModalActions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.updateModalCancelButton,
+.updateModalSaveButton {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+}
+
+.updateModalCancelButton {
+  background-color: #6c757d;
+  color: white;
+}
+
+.updateModalCancelButton:hover {
+  background-color: #5a6268;
+}
+
+.updateModalSaveButton {
+  background-color: #FBC926;
+  color: white;
+}
+
+.updateModalSaveButton:hover {
+  background-color: #cfa61d;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .searchInput {
+    width: 100%;
+  }
+  .searchGroup, .filterGroup {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .table th, .table td {
+    padding: 10px;
+    font-size: 0.9em;
+  }
+  .statusBadge, .actionButton {
+    font-size: 0.8em;
+    padding: 5px 10px;
+  }
+  .updateModalContent {
+    padding: 20px;
+  }
+  .updateModalTitle {
+    font-size: 1.5em;
+  }
+  .updateModalActions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .updateModalCancelButton,
+  .updateModalSaveButton {
+    width: 100%;
+  }
+}

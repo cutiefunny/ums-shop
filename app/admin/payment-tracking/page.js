@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import styles from './payment-tracking.module.css'; 
+import styles from '../common.module.css'; 
 
 // AdminModalContext 훅 사용 (알림/확인 모달)
 import { useAdminModal } from '@/contexts/AdminModalContext';
@@ -221,12 +221,12 @@ export default function PaymentTrackingPage() {
                 <td>{order.customerName || 'N/A'}</td> 
                 <td>{order.paymentMethod || 'N/A'}</td>
                 <td>
-                  <span className={`${styles.status} ${styles[order.status?.toLowerCase()==='completed' ? 'completed' : 'failed']}`}>
+                  <span className={`${styles.status} ${styles[order.status?.toLowerCase()==='completed' ? 'Delivered' : 'InDelivery']}`}>
                     {order.status || 'N/A'}
                   </span>
                 </td>
                 <td>
-                  <button onClick={() => handleViewDetails(order.orderId)} className={styles.viewButton}>
+                  <button onClick={() => handleViewDetails(order.orderId)} className={styles.detailButton}>
                     View
                   </button>
                 </td>

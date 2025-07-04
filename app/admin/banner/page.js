@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import styles from './banner.module.css'; // 배너 페이지 전용 CSS Modules
+import styles from '../common.module.css'; // 배너 페이지 전용 CSS Modules
 import modalStyles from '../category-management/modals/modal.module.css'; // 공통 모달 스타일 재사용
 import { useAdminModal } from '@/contexts/AdminModalContext'; // AdminModalContext 사용
 

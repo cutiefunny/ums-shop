@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import styles from './product-management.module.css';
+import styles from '../common.module.css';
 
 // 엑셀 다운로드 라이브러리 임포트
 import ExcelJS from 'exceljs';
@@ -562,18 +562,6 @@ export default function ProductManagementPage() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <button onClick={handleUpload} className={styles.uploadButton}>Upload</button>
-          <button onClick={handleExcelDownload} className={styles.excelButton}>EXCELL</button>
-          <button onClick={handlePdfDownload} className={styles.pdfButton}>PDF</button>
-        </div>
-        <div className={styles.headerRight}>
-          <button onClick={handleBulkEdit} className={styles.editButton}>수정하기</button>
-          <button onClick={handleAddProduct} className={styles.addButton}>+ Add</button>
-        </div>
-      </header>
-
-      <div className={styles.controls}>
         <div className={styles.searchGroup}>
           <input
             type="text"
@@ -584,9 +572,23 @@ export default function ProductManagementPage() {
           />
           <button className={styles.searchButton}>Search</button>
         </div>
+        
+        <div className={styles.headerRight}>
+          <button onClick={handleUpload} className={styles.uploadButton}>Upload</button>
+          <button onClick={handleExcelDownload} className={styles.excelButton}>EXCELL</button>
+          <button onClick={handlePdfDownload} className={styles.pdfButton}>PDF</button>
+          <button onClick={handleBulkEdit} className={styles.editButton}>수정하기</button>
+          <button onClick={handleAddProduct} className={styles.addButton}>+ Add</button>
+        </div>
+      </header>
+
+      <div className={styles.controlsOnlyFilter}>
         <div className={styles.filterGroup}>
           <select value={mainCategoryFilter} onChange={handleMainCategoryFilterChange} className={styles.filterSelect}>
             {MAIN_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+          </select>
+          <select value={subCategoryFilter} onChange={handleSubCategoryFilterChange} className={styles.filterSelect}>
+            {SUB_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
           </select>
           <select value={subCategoryFilter} onChange={handleSubCategoryFilterChange} className={styles.filterSelect}>
             {SUB_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}

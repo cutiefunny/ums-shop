@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link'; // Next.js Link 컴포넌트 임포트
 import ApprovalStatusModal from './components/ApprovalStatusModal'; // 새 모달 컴포넌트 임포트
+import styles from '../common.module.css';
 
 const ITEMS_PER_PAGE = 5; // 페이지당 항목 수
 
@@ -130,28 +131,25 @@ export default function UserManagementPage() {
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1 style={{ marginBottom: '20px' }}>User Management</h1>
+    <div className={styles.container}>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', gap: '10px' }}>
+      <div className={styles.header}>
+        <div className={styles.searchGroup}>
           <input
             type="text"
             placeholder="Name, Email, Shipname"
             value={searchTerm}
             onChange={handleSearchChange}
-            style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '250px' }}
+            className={styles.searchInput}
           />
-          <button
-            style={{ padding: '8px 15px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
+          <button className={styles.searchButton}>
             Search
           </button>
         </div>
         <select
           value={filterStatus}
           onChange={handleFilterChange}
-          style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+          className={styles.filterSelect}
         >
           <option value="All">All</option>
           <option value="Request">Request</option>
@@ -160,26 +158,25 @@ export default function UserManagementPage() {
         </select>
       </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
+      <table className={styles.table}>
         <thead>
-          <tr style={{ borderBottom: '1px solid #eee', backgroundColor: '#f8f8f8' }}>
-            <th style={{ padding: '12px 8px', textAlign: 'left' }}>Name</th>
-            <th style={{ padding: '12px 8px', textAlign: 'left' }}>Email</th>
-            <th style={{ padding: '12px 8px', textAlign: 'left' }}>Ship Name</th>
-            <th style={{ padding: '12px 8px', textAlign: 'left' }}>Phone Number</th>
-            <th style={{ padding: '12px 8px', textAlign: 'left' }}>Approval</th>
-            <th style={{ padding: '12px 8px', textAlign: 'left' }}>Setting</th>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Ship Name</th>
+            <th>Phone Number</th>
+            <th>Approval</th>
+            <th>Setting</th>
           </tr>
         </thead>
         <tbody>
           {currentUsers.map(user => (
-            <tr key={user.seq} style={{ borderBottom: '1px solid #eee' }}>
-              <td style={{ padding: '12px 8px' }}>{user.name}</td>
-              <td style={{ padding: '12px 8px' }}>{user.email}</td>
-              <td style={{ padding: '12px 8px' }}>{user.shipName}</td>
-              <td style={{ padding: '12px 8px' }}>{user.phoneNumber}</td>
-              <td style={{ padding: '12px 8px' }}>
-                {/* Approval 버튼 클릭 시 모달을 열도록 변경 */}
+            <tr key={user.seq}>
+              <td>{user.name}</td>
+              <td>{user.email}</td>
+              <td>{user.shipName}</td>
+              <td>{user.phoneNumber}</td>
+              <td>
                 <button
                   onClick={(e) => handleOpenApprovalModal(e, user)}
                   style={{
@@ -202,7 +199,7 @@ export default function UserManagementPage() {
                   {user.approvalStatus.charAt(0).toUpperCase() + user.approvalStatus.slice(1)}
                 </button>
               </td>
-              <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+              <td>
                 <Link href={`/admin/user-management/${user.seq}/edit`} passHref>
                   <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

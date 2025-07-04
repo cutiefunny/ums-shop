@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import styles from './delivery-status.module.css'; // 새로운 CSS 모듈 생성 필요
+import styles from '../common.module.css';
 
 // AdminModalContext 훅 사용 (알림/확인 모달)
 import { useAdminModal } from '@/contexts/AdminModalContext';
@@ -253,7 +253,7 @@ export default function DeliveryStatusPage() {
                 <td>
                   <button 
                     onClick={() => handleUpdateDeliveryStatus(item.orderId, item.status, item.trackingNumber)} 
-                    className={`${styles.actionButton} ${item.status === 'Delivered' ? styles.markInDelivery : styles.markDelivered}`}
+                    className={`${styles.actionButton} ${item.status === 'Delivered' ? styles.markDelivered : styles.markInDelivery}`}
                   >
                     {item.status === 'Delivered' ? 'Mark as Delivered' : 'Mark as In Delivery'}
                   </button>

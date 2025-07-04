@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import styles from './order-management.module.css'; // CSS Modules 임포트
+import styles from '../common.module.css'; // CSS Modules 임포트
 import OrderStatusModal from './components/OrderStatusModal'; // 새 모달 컴포넌트 임포트
 import StatusHistoryModal from './components/StatusHistoryModal'; // 히스토리 모달 컴포넌트 임포트
 import { useRouter } from 'next/navigation'; // Next.js router 임포트
@@ -242,10 +242,6 @@ export default function OrderManagementPage() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Order Management</h1>
-      </header>
-
-      <div className={styles.controls}>
         <div className={styles.searchGroup}>
           <input
             type="text"
@@ -256,6 +252,7 @@ export default function OrderManagementPage() {
           />
           <button className={styles.searchButton}>Search</button>
         </div>
+      <div className={styles.filterGroup}>
         <select
           value={filterStatus}
           onChange={handleFilterChange}
@@ -266,6 +263,7 @@ export default function OrderManagementPage() {
           ))}
         </select>
       </div>
+      </header>
 
       <table className={styles.table}>
         <thead>

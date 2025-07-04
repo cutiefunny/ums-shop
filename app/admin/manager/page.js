@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import styles from './manager.module.css'; // 새로 생성한 CSS Modules
+import styles from '../common.module.css'; // 새로 생성한 CSS Modules
 import { useAdminModal } from '@/contexts/AdminModalContext'; // AdminModalContext 사용
 
 const ITEMS_PER_PAGE = 5;

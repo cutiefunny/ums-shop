@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import styles from './q-and-a.module.css'; // CSS Modules import
+import styles from '../common.module.css'; // CSS Modules import
 
 export default function AdminQandAPage() {
     const [qnaList, setQnaList] = useState([]);
@@ -78,12 +78,8 @@ export default function AdminQandAPage() {
 
     return (
         <div className={styles.container}>
-
-            {/* Main content */}
-            <main className={styles.mainContent}>
-
-                {/* Search and Filter */}
-                <div className={styles.searchFilterContainer}>
+            <div className={styles.header}>
+                <div className={styles.searchGroup}>
                     <input
                         type="text"
                         placeholder="Name, Ship Name"
@@ -98,8 +94,10 @@ export default function AdminQandAPage() {
                         Search
                     </button>
 
+                </div>
+                <div className={styles.controlsOnlyFilter}>
                     <select
-                        className={styles.selectFilter}
+                        className={styles.filterSelect}
                         value={categoryFilter}
                         onChange={handleCategoryChange}
                     >
@@ -113,7 +111,7 @@ export default function AdminQandAPage() {
                     </select>
 
                     <select
-                        className={styles.selectFilter}
+                        className={styles.filterSelect}
                         value={statusFilter}
                         onChange={handleStatusChange}
                     >
@@ -122,6 +120,7 @@ export default function AdminQandAPage() {
                         <option value="Answered">Answered</option>
                     </select>
                 </div>
+            </div>
 
                 {/* Q&A Table */}
                 <div className={styles.tableContainer}>
@@ -145,7 +144,7 @@ export default function AdminQandAPage() {
                                     <td className={styles.tableTd}>{qna.submittedDate}</td>
                                     <td className={styles.tableTd}>
                                         <span className={
-                                            qna.status === 'Pending' ? styles.statusPending : styles.statusAnswered
+                                            qna.status === 'Pending' ? styles.InDelivery : styles.Delivered
                                         }>
                                             {qna.status}
                                         </span>
@@ -182,7 +181,6 @@ export default function AdminQandAPage() {
                         </button>
                     </div>
                 </div>
-            </main>
         </div>
     );
 }
