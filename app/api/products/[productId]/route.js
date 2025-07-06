@@ -25,9 +25,10 @@ const HISTORY_TABLE_NAME = process.env.DYNAMODB_TABLE_HISTORY || 'history'; // H
  * @param {{params: {productId: string}}} context - Next.js dynamic route parameters
  * @returns {NextResponse} 상품 데이터 또는 오류 응답
  */
-export async function GET(request, { params }) {
+export async function GET(request, context) {
   try {
-    const { productId } = params;
+    // params 객체를 await하여 속성에 접근합니다.
+    const { productId } = await context.params;
 
     if (!productId) {
       return NextResponse.json({ message: 'Missing product ID' }, { status: 400 });
@@ -46,7 +47,7 @@ export async function GET(request, { params }) {
     }
     return NextResponse.json(Item, { status: 200 });
   } catch (error) {
-    console.error(`Error fetching product ${params.productId} from DynamoDB:`, error);
+    console.error(`Error fetching product ${context.params.productId} from DynamoDB:`, error);
     return NextResponse.json({ message: 'Failed to fetch product', error: error.message }, { status: 500 });
   }
 }
@@ -58,9 +59,10 @@ export async function GET(request, { params }) {
  * @param {{params: {productId: string}}} context - Next.js dynamic route parameters
  * @returns {NextResponse} 업데이트된 상품 데이터 또는 오류 응답
  */
-export async function PUT(request, { params }) {
+export async function PUT(request, context) {
   try {
-    const { productId } = params;
+    // params 객체를 await하여 속성에 접근합니다.
+    const { productId } = await context.params;
     const body = await request.json(); // 업데이트할 데이터
 
     if (!productId) {
@@ -80,28 +82,37 @@ export async function PUT(request, { params }) {
     const ExpressionAttributeValues = {};
     let first = true;
 
+    // 한글 필드명에 대한 매핑 정의
+    const fieldMapping = {
+        '유통기한': 'expiryDate', // 예시로 영문 필드명으로 매핑
+        '납기일': 'deliveryDate', // 예시로 영문 필드명으로 매핑
+        // 필요한 다른 한글 필드명도 여기에 추가
+    };
+
     for (const key in body) {
       // productId는 키이므로 업데이트 대상에서 제외합니다.
       if (key === 'productId') continue; 
 
+      const dynamoKey = fieldMapping[key] || key; // 한글 필드명 매핑 적용
+
       if (!first) {
         UpdateExpression += ',';
       }
-      UpdateExpression += ` #${key} = :${key}`;
-      ExpressionAttributeNames[`#${key}`] = key;
+      UpdateExpression += ` #${dynamoKey} = :${dynamoKey}`;
+      ExpressionAttributeNames[`#${dynamoKey}`] = key; // #dynamoKey는 ExpressionAttributeNames의 키가 되고, key는 실제 DynamoDB 필드명 (한글도 가능)
       
       // 숫자형 필드에 대한 NaN 처리 및 타입 변환
       let valueToStore = body[key];
       if (typeof valueToStore === 'string') {
         if (['stockQuantity', 'priceWon', 'exchangeRate', 'exchangeRateOffset', 'usdPriceOverride', 'calculatedPriceUsd'].includes(key)) {
           valueToStore = parseFloat(valueToStore) || 0;
-        } else if (key === '납기일') {
+        } else if (key === '납기일') { // '납기일' 필드 처리
           valueToStore = parseInt(valueToStore) || 0;
         }
       } else if (typeof valueToStore === 'number' && isNaN(valueToStore)) {
         valueToStore = 0;
       }
-      ExpressionAttributeValues[`:${key}`] = valueToStore;
+      ExpressionAttributeValues[`:${dynamoKey}`] = valueToStore; // :dynamoKey는 ExpressionAttributeValues의 키가 됨
       first = false;
     }
 
@@ -122,8 +133,7 @@ export async function PUT(request, { params }) {
       Key: { productId: productId }, // 'productId'가 파티션 키라고 가정
       UpdateExpression,
       ExpressionAttributeNames,
-    //   ExpressionAttributeValues: Object.keys(ExpressionAttributeValues).length > 0 ? ExpressionAttributeValues : undefined,
-       ExpressionAttributeValues,
+      ExpressionAttributeValues,
       ReturnValues: "ALL_NEW", // 업데이트된 항목의 모든 속성을 반환
     });
 
@@ -138,6 +148,7 @@ export async function PUT(request, { params }) {
             if (key === 'productId' || key === 'updatedAt') continue;
             const oldValue = oldProduct[key];
             const newValue = body[key];
+            // 한글 필드명도 여기에 포함하여 비교
             if (String(oldValue) !== String(newValue)) { // 값 변경 감지
                 changes.push(`${key}: '${oldValue}' -> '${newValue}'`);
             }
@@ -164,7 +175,7 @@ export async function PUT(request, { params }) {
 
     return NextResponse.json({ message: 'Product updated successfully', product: Attributes }, { status: 200 });
   } catch (error) {
-    console.error(`Error updating product ${params.productId} in DynamoDB:`, error);
+    console.error(`Error updating product ${context.params.productId} in DynamoDB:`, error);
     return NextResponse.json({ message: 'Failed to update product', error: error.message }, { status: 500 });
   }
 }
@@ -172,14 +183,14 @@ export async function PUT(request, { params }) {
 /**
  * DELETE 요청 처리: 특정 상품 데이터를 삭제합니다.
  * URL: /api/products/[productId]
- * @param {Request} request - 요청 객체
- * @param {{params: {productId: string}}} context - Next.js dynamic route parameters
+ * @param {Request} request
+ * @param {{params: {productId: string}}} context
  * @returns {NextResponse} 삭제 결과 또는 오류 응답
  */
-export async function DELETE(request, { params }) {
+export async function DELETE(request, context) {
   try {
-    const { productId } = params;
-
+    // params 객체를 await하여 속성에 접근합니다.
+    const { productId } = await context.params;
     if (!productId) {
       return NextResponse.json({ message: 'Missing product ID' }, { status: 400 });
     }
@@ -218,7 +229,7 @@ export async function DELETE(request, { params }) {
 
     return NextResponse.json({ message: 'Product deleted successfully' }, { status: 200 });
   } catch (error) {
-    console.error(`Error deleting product ${params.productId} from DynamoDB:`, error);
+    console.error(`Error deleting product ${context.params.productId} from DynamoDB:`, error);
     return NextResponse.json({ message: 'Failed to delete product', error: error.message }, { status: 500 });
   }
 }

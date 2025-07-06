@@ -1,7 +1,7 @@
 // app/admin/product-management/page.js
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -49,7 +49,8 @@ const PRODUCT_MANAGEMENT_TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_PRO
 
 const ITEMS_PER_PAGE = 5;
 const MAIN_CATEGORIES = ['All', 'Category A', 'Category B', 'Category C']; // 실제 데이터에 맞게 조정
-const SUB_CATEGORIES = ['All', 'Sub A1', 'Sub B1', 'Sub C1']; // 실제 데이터에 맞게 조정
+const SUB1_CATEGORIES = ['All', 'Sub1 A1', 'Sub1 B1', 'Sub1 C1']; // 실제 데이터에 맞게 조정
+const SUB2_CATEGORIES = ['All', 'Sub2 A2', 'Sub2 B2', 'Sub2 C2']; // 실제 데이터에 맞게 조정
 const PRODUCT_STATUS_OPTIONS = ['Active', 'Inactive'];
 
 // 이미지 URL을 Base64로 변환하는 헬퍼 함수 (PDF 임베딩용)
@@ -82,8 +83,14 @@ export default function ProductManagementPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [mainCategoryFilter, setMainCategoryFilter] = useState('All');
-  const [subCategoryFilter, setSubCategoryFilter] = useState('All');
+  const [subCategory1Filter, setSubCategory1Filter] = useState('All');
+  const [subCategory2Filter, setSubCategory2Filter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
+
+  // 동적 카테고리 옵션 상태
+  const [mainCategoryOptions, setMainCategoryOptions] = useState([]);
+  const [subCategory1Options, setSubCategory1Options] = useState([]);
+  const [subCategory2Options, setSubCategory2Options] = useState([]);
 
   // 일괄 수정 관련 상태
   const [selectedProductIds, setSelectedProductIds] = useState([]);
@@ -119,7 +126,64 @@ export default function ProductManagementPage() {
 
   useEffect(() => {
     fetchProducts();
+    fetchMainCategories(); // 메인 카테고리 데이터도 함께 가져옴
   }, []);
+
+  // API를 통해 메인 카테고리 데이터를 가져오는 함수
+  const fetchMainCategories = useCallback(async () => {
+    try {
+      const response = await fetch('/api/categories?level=main');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      // 'All' 옵션과 함께 { id, name } 형태로 저장
+      setMainCategoryOptions([{ id: 'All', name: 'All' }, ...data.map(cat => ({ id: cat.categoryId, name: cat.name }))]);
+    } catch (err) {
+      console.error("Error fetching main categories:", err);
+      showAdminNotificationModal(`메인 카테고리 목록을 불러오는 데 실패했습니다: ${err.message}`);
+    }
+  }, [showAdminNotificationModal]);
+
+  // API를 통해 Surve Category 1 데이터를 가져오는 함수
+  const fetchSubCategory1s = useCallback(async (mainCatId) => {
+    if (mainCatId === 'All' || !mainCatId) {
+      setSubCategory1Options([{ id: 'All', name: 'All' }]);
+      return;
+    }
+    try {
+      const response = await fetch(`/api/categories?level=surve1&parentId=${mainCatId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("Sub categories 1 fetched:", data);
+      setSubCategory1Options([{ id: 'All', name: 'All' }, ...data.map(cat => ({ id: cat.categoryId, name: cat.name }))]);
+    } catch (err) {
+      console.error("Error fetching sub category 1s:", err);
+      showAdminNotificationModal(`Surve Category 1 목록을 불러오는 데 실패했습니다: ${err.message}`);
+    }
+  }, [showAdminNotificationModal]);
+
+  // API를 통해 Surve Category 2 데이터를 가져오는 함수
+  const fetchSubCategory2s = useCallback(async (sub1CatId) => {
+    if (sub1CatId === 'All' || !sub1CatId) {
+      setSubCategory2Options([{ id: 'All', name: 'All' }]);
+      return;
+    }
+    try {
+      const response = await fetch(`/api/categories?level=surve2&parentId=${sub1CatId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setSubCategory2Options([{ id: 'All', name: 'All' }, ...data.map(cat => ({ id: cat.categoryId, name: cat.name }))]);
+    } catch (err) {
+      console.error("Error fetching sub category 2s:", err);
+      showAdminNotificationModal(`Surve Category 2 목록을 불러오는 데 실패했습니다: ${err.message}`);
+    }
+  }, [showAdminNotificationModal]);
+  
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
@@ -135,12 +199,14 @@ export default function ProductManagementPage() {
 
       const matchesMainCategory =
         mainCategoryFilter === 'All' || product.mainCategory === mainCategoryFilter;
-      const matchesSubCategory =
-        subCategoryFilter === 'All' || product.subCategory === subCategoryFilter; 
+      const matchesSubCategory1 =
+        subCategory1Filter === 'All' || product.subCategory1 === subCategory1Filter;
+      const matchesSubCategory2 =
+        subCategory2Filter === 'All' || product.subCategory2 === subCategory2Filter;
 
-      return matchesSearch && matchesMainCategory && matchesSubCategory;
+      return matchesSearch && matchesMainCategory && matchesSubCategory1 && matchesSubCategory2;
     });
-  }, [products, searchTerm, mainCategoryFilter, subCategoryFilter]);
+  }, [products, searchTerm, mainCategoryFilter, subCategory1Filter, subCategory2Filter]);
 
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const currentProducts = useMemo(() => {
@@ -158,10 +224,17 @@ export default function ProductManagementPage() {
   const handleMainCategoryFilterChange = (e) => {
     setMainCategoryFilter(e.target.value);
     setCurrentPage(1);
+    fetchSubCategory1s(e.target.value); // 메인 카테고리 변경 시 서브 카테고리 1 업데이트
   };
 
-  const handleSubCategoryFilterChange = (e) => {
-    setSubCategoryFilter(e.target.value);
+  const handleSubCategory1FilterChange = (e) => {
+    setSubCategory1Filter(e.target.value);
+    setCurrentPage(1);
+    fetchSubCategory2s(e.target.value); // 서브 카테고리 1 변경 시 서브 카테고리 2 업데이트
+  };
+
+  const handleSubCategory2FilterChange = (e) => {
+    setSubCategory2Filter(e.target.value);
     setCurrentPage(1);
   };
 
@@ -585,13 +658,13 @@ export default function ProductManagementPage() {
       <div className={styles.controlsOnlyFilter}>
         <div className={styles.filterGroup}>
           <select value={mainCategoryFilter} onChange={handleMainCategoryFilterChange} className={styles.filterSelect}>
-            {MAIN_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            {mainCategoryOptions.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
           </select>
-          <select value={subCategoryFilter} onChange={handleSubCategoryFilterChange} className={styles.filterSelect}>
-            {SUB_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+          <select value={subCategory1Filter} onChange={handleSubCategory1FilterChange} className={styles.filterSelect}>
+            {subCategory1Options.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
           </select>
-          <select value={subCategoryFilter} onChange={handleSubCategoryFilterChange} className={styles.filterSelect}>
-            {SUB_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+          <select value={subCategory2Filter} onChange={handleSubCategory2FilterChange} className={styles.filterSelect}>
+            {subCategory2Options.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
           </select>
         </div>
       </div>

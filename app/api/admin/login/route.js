@@ -18,6 +18,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 // 관리자 사용자 테이블 이름 (환경 변수에서 가져옴)
 const ADMIN_USERS_TABLE_NAME = process.env.DYNAMODB_TABLE_ADMIN_USERS || 'admin-users';
+const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1h'; // JWT 만료 시간 (기본값: 1시간)
 
 /**
  * POST 요청 처리: 관리자 로그인
@@ -57,7 +58,7 @@ export async function POST(request) {
       userId: adminUser.username,
       role: adminUser.role || 'admin',
     };
-    const token = await generateToken(tokenPayload, '1h'); // await 추가
+    const token = await generateToken(tokenPayload, JWT_EXPIRATION);
 
     // 4. HTTP-only 쿠키에 토큰 설정
     const cookie = serialize('admin_jwt', token, {

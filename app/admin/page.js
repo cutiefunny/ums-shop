@@ -32,7 +32,6 @@ export default function AdminLoginPage() {
       }
     };
     
-    // AWS Amplify 관련 코드 제거 [수정]
     checkAuthStatus();
   }, [router]);
 

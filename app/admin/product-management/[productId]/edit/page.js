@@ -1,6 +1,7 @@
+// app/admin/product-management/[productId]/edit/page.js
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'; // useCallback 추가
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import styles from '../../new/product-add-edit.module.css'; // 새 CSS 모듈 임포트 (재사용)
@@ -9,7 +10,7 @@ import { useAdminModal } from '@/contexts/AdminModalContext';
 
 // DynamoDB 관련 import (클라이언트 컴포넌트에서 직접 접근)
 // WARN: 클라이언트 컴포넌트에서 AWS 자격 증명을 직접 사용하는 것은 보안상 위험합니다.
-// 프로덕션 환경에서는 반드시 Next.js API Routes를 통해 서버 사이드에서 통신하도록 리팩토링하세요.
+// 프로덕션 환경에서는 반드시 Next.js API Routes를 통해 서버 사이드에서 통신하도록 리팩터링하세요.
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 
@@ -25,14 +26,10 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 // DynamoDB 테이블 이름 (환경 변수에서 가져옴)
 const PRODUCT_MANAGEMENT_TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_PRODUCTS || 'product-management';
+const TABLE_MAIN_CATEGORIES = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_MAIN_CATEGORIES || 'category-main';
+const TABLE_SUB1_CATEGORIES = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_SUB1_CATEGORIES || 'category-sub1';
+const TABLE_SUB2_CATEGORIES = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_SUB2_CATEGORIES || 'category-sub2';
 
-
-// 카테고리 데이터 및 SKU 생성을 위한 Mock/매핑 데이터 (실제로는 API에서 가져오거나 더 복잡한 로직)
-const CATEGORY_DATA = {
-    'Category A': { code: '01', sub1: [{ name: 'Sub A1', code: '01' }, { name: 'Sub A2', code: '02' }] },
-    'Category B': { code: '02', sub1: [{ name: 'Sub B1', code: '01' }, { name: 'Sub B2', code: '02' }] },
-    'Category C': { code: '03', sub1: [{ name: 'Sub C1', code: '01' }, { name: 'Sub C2', code: '02' }] },
-};
 
 // 이미지 URL을 Base64로 변환하는 헬퍼 함수 (PDF 임베딩용) - PDF 기능을 위해 재사용
 async function imageUrlToBase64(url) {
@@ -55,22 +52,18 @@ async function imageUrlToBase64(url) {
     }
 }
 
-// SKU 자동 생성 헬퍼 함수 (편집 페이지에서는 보통 SKU가 고정되지만, 카테고리 변경 시 재활용 가능)
-async function generateSku(mainCat, sub1Cat, sub2Cat) {
-    if (!mainCat || !sub1Cat || !sub2Cat) return '';
+// SKU 자동 생성 헬퍼 함수 (이제 동적으로 가져온 카테고리 데이터 사용)
+// 이 함수는 카테고리 이름과 해당 카테고리 옵션 배열을 받아 코드를 찾습니다.
+async function generateSku(productName, mainCatName) {
+    if (!productName || !mainCatName) return '';
 
-    const mainCode = CATEGORY_DATA[mainCat]?.code || '';
-    const sub1Code = CATEGORY_DATA[mainCat]?.sub1.find(s => s.name === sub1Cat)?.code || '';
-    const sub2Code = CATEGORY_DATA[mainCat]?.sub1.find(s => s.name === sub2Cat)?.code || ''; 
+    // 상품 이름에서 대문자만 추출하여 SKU 코드로 사용
+    const productNameCode = productName.match(/[A-Z]/g)?.join('') || '';
 
     // 실제로는 SKU 중복 방지를 위해 DynamoDB에서 마지막 SKU 번호를 조회해야 함
-    // 여기서는 간단화를 위해 랜덤 4자리 숫자를 추가합니다. (편집에서는 기존 SKU 유지 권장)
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000); 
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000); // 1000-9999
 
-    if (mainCode && sub1Code && sub2Code) {
-        return `${mainCode}${sub1Code}${sub2Code}-${randomSuffix}`;
-    }
-    return '';
+    return `${productNameCode}-${randomSuffix}`;
 }
 
 export default function EditProductPage() {
@@ -86,13 +79,13 @@ export default function EditProductPage() {
     const [product, setProduct] = useState({
         productId: '', // 편집 모드에서는 초기값으로 설정될 예정
         productName: '',
-        mainCategory: '',
-        subCategory1: '', 
-        subCategory2: '', 
+        mainCategory: '', // Name string
+        subCategory1: '', // Name string
+        subCategory2: '', // Name string
         sku: '', 
         description: '',
         mainImage: null, 
-        subImages: [], 
+        subImages: [], // 초기값을 빈 배열로 설정하여 iterable 보장
         stockQuantity: '',
         유통기한: '', 
         납기일: '', 
@@ -105,14 +98,80 @@ export default function EditProductPage() {
         calculatedPriceUsd: 0, 
         status: 'Public', 
     });
+    console.log("Initial product state:", product);
 
     const [formErrors, setFormErrors] = useState({});
     const mainImageInputRef = useRef(null);
     const subImageInputRef = useRef(null);
 
-    // 제품 데이터 불러오기
+    // 동적 카테고리 옵션 상태 (ID와 Name을 함께 저장)
+    const [mainCategoryOptions, setMainCategoryOptions] = useState([]);
+    const [subCategory1Options, setSubCategory1Options] = useState([]);
+    const [subCategory2Options, setSubCategory2Options] = useState([]);
+
+    // API를 통해 메인 카테고리 데이터를 가져오는 함수
+    const fetchMainCategories = useCallback(async () => {
+        try {
+            const response = await fetch('/api/categories?level=main');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            setMainCategoryOptions([{ id: 'All', name: 'All', code: '' }, ...data.map(cat => ({ id: cat.categoryId, name: cat.name, code: cat.code }))]);
+            return data; // 불러온 데이터 반환
+        } catch (err) {
+            console.error("Error fetching main categories:", err);
+            showAdminNotificationModal(`메인 카테고리 목록을 불러오는 데 실패했습니다: ${err.message}`);
+            return [];
+        }
+    }, [showAdminNotificationModal]);
+
+    // API를 통해 Surve Category 1 데이터를 가져오는 함수
+    const fetchSubCategory1s = useCallback(async (mainCatId) => {
+        if (mainCatId === 'All' || !mainCatId) {
+            setSubCategory1Options([{ id: 'All', name: 'All', code: '' }]);
+            return [];
+        }
+        try {
+            const response = await fetch(`/api/categories?level=surve1&parentId=${mainCatId}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            setSubCategory1Options([{ id: 'All', name: 'All', code: '' }, ...data.map(cat => ({ id: cat.categoryId, name: cat.name, code: cat.code }))]);
+            return data; // 불러온 데이터 반환
+        } catch (err) {
+            console.error("Error fetching sub category 1s:", err);
+            showAdminNotificationModal(`Surve Category 1 목록을 불러오는 데 실패했습니다: ${err.message}`);
+            return [];
+        }
+    }, [showAdminNotificationModal]);
+
+    // API를 통해 Surve Category 2 데이터를 가져오는 함수
+    const fetchSubCategory2s = useCallback(async (sub1CatId) => {
+        if (sub1CatId === 'All' || !sub1CatId) {
+            setSubCategory2Options([{ id: 'All', name: 'All', code: '' }]);
+            return [];
+        }
+        try {
+            const response = await fetch(`/api/categories?level=surve2&parentId=${sub1CatId}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            setSubCategory2Options([{ id: 'All', name: 'All', code: '' }, ...data.map(cat => ({ id: cat.categoryId, name: cat.name, code: cat.code }))]);
+            return data; // 불러온 데이터 반환
+        } catch (err) {
+            console.error("Error fetching sub category 2s:", err);
+            showAdminNotificationModal(`Surve Category 2 목록을 불러오는 데 실패했습니다: ${err.message}`);
+            return [];
+        }
+    }, [showAdminNotificationModal]);
+
+
+    // 제품 데이터 불러오기 및 카테고리 필터 초기화
     useEffect(() => {
-        async function fetchProductData() {
+        async function fetchProductAndInitCategories() {
             if (!productId) {
                 setLoading(false);
                 setError('제품 ID가 누락되었습니다.');
@@ -121,23 +180,105 @@ export default function EditProductPage() {
             setLoading(true);
             setError(null);
             try {
-                // 특정 제품을 가져오는 API Route 호출 (GET /api/products/[productId])
-                const response = await fetch(`/api/products/${productId}`);
-                if (!response.ok) {
-                    const errorData = await response.json();
+                const productResponse = await fetch(`/api/products/${productId}`);
+                if (!productResponse.ok) {
+                    const errorData = await productResponse.json();
                     throw new Error(errorData.message || 'Failed to fetch product data');
                 }
-                const data = await response.json();
-                setProduct(data); // 불러온 데이터로 폼 채우기
+                const productData = await productResponse.json();
+                setProduct(productData); // 불러온 데이터로 폼 채우기, SKU 포함
+
+                // 카테고리 옵션들을 순차적으로 불러오고 필터 상태 초기화
+                const mainCats = await fetchMainCategories();
+                const selectedMainCat = mainCats.find(cat => cat.name === productData.mainCategory);
+                const mainCatId = selectedMainCat ? selectedMainCat.categoryId : 'All';
+                console.log("Fetched Main Categories:", mainCats, "Selected Main Category:", selectedMainCat);
+
+                if (mainCatId !== 'All') {
+                    const sub1Cats = await fetchSubCategory1s(mainCatId);
+                    console.log("Fetched Sub Category 1s:", sub1Cats);
+                    const selectedSub1Cat = sub1Cats.find(cat => cat.name === productData.subCategory1);
+                    const sub1CatId = selectedSub1Cat ? selectedSub1Cat.categoryId : 'All';
+
+                    if (sub1CatId !== 'All') {
+                        await fetchSubCategory2s(sub1CatId);
+                    }
+                }
             } catch (err) {
-                console.error("Error fetching product:", err);
-                setError(`제품 데이터를 불러오는 데 실패했습니다: ${err.message}`);
+                console.error("Error fetching product or categories:", err);
+                setError(`데이터를 불러오는 데 실패했습니다: ${err.message}`);
             } finally {
                 setLoading(false);
             }
         }
-        fetchProductData();
-    }, [productId]);
+        fetchProductAndInitCategories();
+    }, [productId, fetchMainCategories, fetchSubCategory1s, fetchSubCategory2s]);
+
+    // SKU 자동 생성 로직 (Edit 페이지용 - 기존 SKU가 없을 때만 생성)
+    useEffect(() => {
+        const updateSkuIfEmpty = async () => {
+            // SKU가 이미 존재하면 (즉, 불러온 제품 데이터에 SKU가 있으면) 새로 생성하지 않습니다.
+            // product.sku가 초기값인 ''이거나 null/undefined인 경우에만 생성 로직을 수행합니다.
+            if (product.sku) {
+                return;
+            }
+
+            const mainCatName = product.mainCategory;
+
+            if (mainCatName) {
+
+                const newSku = await generateSku(
+                    product.productName,
+                    mainCatName
+                );
+                // 새롭게 생성된 SKU가 유효하고, 현재 SKU와 다를 경우에만 업데이트
+                if (newSku && newSku !== product.sku) {
+                    setProduct(prev => ({ ...prev, sku: newSku }));
+                }
+            } else {
+                // 카테고리가 모두 선택되지 않았고 SKU가 비어 있지 않으면, 빈 값으로 설정 (클리어)
+                // 이 부분은 초기 로드 시 SKU가 비어있지 않은 경우를 방지하며, 카테고리 선택이 불완전할 때 SKU 필드를 비웁니다.
+                if (product.sku !== '') {
+                    setProduct(prev => ({ ...prev, sku: '' }));
+                }
+            }
+        };
+        updateSkuIfEmpty();
+    }, [
+        product.sku, // 이 useEffect가 product.sku가 비어있는지 확인할 수 있도록 의존성에 포함.
+        product.mainCategory,
+        mainCategoryOptions
+    ]);
+
+
+    // Calculated USD Price 계산 로직 (기존 코드와 동일)
+    useEffect(() => {
+        let calculatedPrice = 0;
+        const priceWon = parseFloat(product.priceWon);
+        const exchangeRate = parseFloat(product.exchangeRate); 
+        const exchangeRateOffset = parseFloat(product.exchangeRateOffset);
+        const usdPriceOverride = parseFloat(product.usdPriceOverride);
+
+        if (isNaN(priceWon) || priceWon <= 0) {
+            calculatedPrice = 0;
+        } else if (product.autoExchangeRate === 'No' && !isNaN(usdPriceOverride) && usdPriceOverride > 0) {
+            calculatedPrice = usdPriceOverride;
+        } else if (product.autoExchangeRate === 'Yes') {
+            const baseExchangeRate = 1300; 
+            if (!isNaN(baseExchangeRate) && baseExchangeRate > 0) {
+                calculatedPrice = priceWon / (baseExchangeRate * (1 + (isNaN(exchangeRateOffset) ? 0 : exchangeRateOffset)));
+            }
+        } else if (product.autoExchangeRate === 'No' && !isNaN(exchangeRate) && exchangeRate > 0) {
+            calculatedPrice = priceWon / exchangeRate;
+        }
+        
+        const finalCalculatedPrice = Number.isNaN(calculatedPrice) ? 0 : calculatedPrice;
+        
+        setProduct(prev => ({ ...prev, calculatedPriceUsd: finalCalculatedPrice }));
+    }, [
+        product.priceWon, product.autoExchangeRate, product.exchangeRate, product.exchangeRateOffset,
+        product.usdPriceOverride
+    ]);
 
 
     // 필수 필드 유효성 검사 (SAVE 버튼 활성화/비활성화)
@@ -164,38 +305,6 @@ export default function EditProductPage() {
         return allRequiredFilled;
     }, [product]);
 
-    // Calculated USD Price 계산 로직 (SKU는 편집에서 고정되므로 제외)
-    useEffect(() => {
-        let calculatedPrice = 0;
-        const priceWon = parseFloat(product.priceWon);
-        const exchangeRate = parseFloat(product.exchangeRate); 
-        const exchangeRateOffset = parseFloat(product.exchangeRateOffset);
-        const usdPriceOverride = parseFloat(product.usdPriceOverride);
-        // const discount = parseFloat(product.discount); // discount 필드가 없으므로 주석 처리
-
-        if (isNaN(priceWon) || priceWon <= 0) {
-            calculatedPrice = 0;
-        } else if (product.autoExchangeRate === 'No' && !isNaN(usdPriceOverride) && usdPriceOverride > 0) {
-            calculatedPrice = usdPriceOverride;
-        } else if (product.autoExchangeRate === 'Yes') {
-            const baseExchangeRate = 1300; 
-            if (!isNaN(baseExchangeRate) && baseExchangeRate > 0) {
-                // discount 필드를 사용하지 않고 계산
-                calculatedPrice = priceWon / (baseExchangeRate * (1 + (isNaN(exchangeRateOffset) ? 0 : exchangeRateOffset)));
-            }
-        } else if (product.autoExchangeRate === 'No' && !isNaN(exchangeRate) && exchangeRate > 0) {
-            // discount 필드를 사용하지 않고 계산
-            calculatedPrice = priceWon / exchangeRate;
-        }
-        
-        const finalCalculatedPrice = Number.isNaN(calculatedPrice) ? 0 : calculatedPrice;
-        
-        setProduct(prev => ({ ...prev, calculatedPriceUsd: finalCalculatedPrice }));
-    }, [
-        product.priceWon, product.autoExchangeRate, product.exchangeRate, product.exchangeRateOffset,
-        product.usdPriceOverride // Removed product.discount as it's not in the provided schema
-    ]);
-
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -206,24 +315,42 @@ export default function EditProductPage() {
         setFormErrors(prev => ({ ...prev, [name]: undefined }));
     };
 
-    const handleCategoryChange = (e, level) => {
-        const { value } = e.target;
+    const handleCategoryChange = async (e, level) => { // async 추가
+        const { value: selectedId } = e.target; // 선택된 옵션의 ID
+        let selectedName = '';
+
         setProduct(prev => {
             const newState = { ...prev };
             if (level === 'main') {
-                newState.mainCategory = value;
+                selectedName = mainCategoryOptions.find(cat => cat.id === selectedId)?.name || '';
+                newState.mainCategory = selectedName;
                 newState.subCategory1 = ''; 
                 newState.subCategory2 = ''; 
+                // 메인 카테고리 변경 시 하위 옵션 초기화 및 새로 불러오기
+                setSubCategory1Options([{ id: 'All', name: 'All', code: '' }]);
+                setSubCategory2Options([{ id: 'All', name: 'All', code: '' }]);
+                if (selectedId !== 'All') {
+                    fetchSubCategory1s(selectedId);
+                }
             } else if (level === 'sub1') {
-                newState.subCategory1 = value;
+                selectedName = subCategory1Options.find(cat => cat.id === selectedId)?.name || '';
+                newState.subCategory1 = selectedName;
                 newState.subCategory2 = ''; 
+                // 서브1 카테고리 변경 시 하위 옵션 초기화 및 새로 불러오기
+                setSubCategory2Options([{ id: 'All', name: 'All', code: '' }]);
+                if (selectedId !== 'All') {
+                    fetchSubCategory2s(selectedId);
+                }
             } else if (level === 'sub2') {
-                newState.subCategory2 = value;
+                selectedName = subCategory2Options.find(cat => cat.id === selectedId)?.name || '';
+                newState.subCategory2 = selectedName;
             }
+            // SKU 자동 생성 로직은 EditProductPage에서는 적용되지 않도록 직접 호출하지 않습니다.
             return newState;
         });
         setFormErrors(prev => ({ ...prev, [`${level}Category`]: undefined }));
     };
+
 
     const handleImageUpload = (e, isMain = false) => {
         if (e.target.files && e.target.files[0]) {
@@ -321,7 +448,7 @@ export default function EditProductPage() {
 
         // Sub Images S3 업로드 처리
         const uploadedSubImages = [];
-        for (const img of product.subImages) {
+        for (const img of (product.subImages || [])) { // product.subImages가 null일 경우를 대비하여 || [] 추가
             if (img && img.startsWith('data:')) { // Base64 이미지인 경우
                 showAdminNotificationModal('추가 이미지 업로드 중...');
                 try {
@@ -424,40 +551,36 @@ export default function EditProductPage() {
                             <select
                                 id="mainCategory"
                                 name="mainCategory"
-                                value={product.mainCategory || ''}
+                                value={mainCategoryOptions.find(cat => cat.name === product.mainCategory)?.id || 'All'} // ID로 값 설정
                                 onChange={(e) => handleCategoryChange(e, 'main')}
                                 className={styles.select}
                             >
-                                <option value="">Select Main</option>
-                                {Object.keys(CATEGORY_DATA).map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
+                                {mainCategoryOptions.map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                             </select>
                             <select
                                 id="subCategory1"
                                 name="subCategory1"
-                                value={product.subCategory1 || ''}
+                                value={subCategory1Options.find(cat => cat.name === product.subCategory1)?.id || 'All'} // ID로 값 설정
                                 onChange={(e) => handleCategoryChange(e, 'sub1')}
                                 className={styles.select}
-                                disabled={!product.mainCategory}
+                                disabled={mainCategoryOptions.find(cat => cat.name === product.mainCategory)?.id === 'All'} // 'All' 선택 시 비활성화
                             >
-                                <option value="">Select Sub1</option>
-                                {product.mainCategory && CATEGORY_DATA[product.mainCategory]?.sub1.map(sub => (
-                                    <option key={sub.code} value={sub.name}>{sub.name}</option>
+                                {subCategory1Options.map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                             </select>
                             <select
                                 id="subCategory2"
                                 name="subCategory2"
-                                value={product.subCategory2 || ''}
+                                value={subCategory2Options.find(cat => cat.name === product.subCategory2)?.id || 'All'} // ID로 값 설정
                                 onChange={(e) => handleCategoryChange(e, 'sub2')}
                                 className={styles.select}
-                                disabled={!product.subCategory1}
+                                disabled={subCategory1Options.find(cat => cat.name === product.subCategory1)?.id === 'All'} // 'All' 선택 시 비활성화
                             >
-                                <option value="">Select Sub2</option>
-                                {/* Sub2도 Sub1과 동일한 구조의 MockData를 사용한다고 가정 */}
-                                {product.subCategory1 && CATEGORY_DATA[product.mainCategory]?.sub1.map(sub => (
-                                    <option key={sub.code} value={sub.name}>{sub.name}</option>
+                                {subCategory2Options.map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                             </select>
                         </div>
