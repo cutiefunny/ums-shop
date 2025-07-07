@@ -29,6 +29,7 @@ export async function GET(request) {
   const searchTerm = searchParams.get('searchTerm'); // 상품명 또는 선박명 검색
   const shipNameFilter = searchParams.get('shipName');
   const packingStatusFilter = searchParams.get('packingStatus'); // 'true' 또는 'false' 문자열
+  const packingStatusDashboard = searchParams.get('packingStatusDashboard'); // 대시보드용 필터링 여부
 
   try {
     const filterExpressions = [];
@@ -63,6 +64,14 @@ export async function GET(request) {
     if (packingStatusFilter && packingStatusFilter !== 'All') {
       filterExpressions.push('#packingStatus = :packingStatusVal');
       expressionAttributeValues[':packingStatusVal'] = packingStatusFilter === 'true'; // boolean으로 변환
+      expressionAttributeNames['#packingStatus'] = 'packingStatus';
+    }
+
+    // 대시보드용 포장상태 필터링
+    // packingStatusDashboard가 true인 경우, 포장 상태가 false인 항목만 필터링
+    if (packingStatusDashboard) {
+      filterExpressions.push('#packingStatus = :packingStatusDashboardVal');
+      expressionAttributeValues[':packingStatusDashboardVal'] = packingStatusDashboard;
       expressionAttributeNames['#packingStatus'] = 'packingStatus';
     }
 

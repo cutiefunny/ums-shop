@@ -1,7 +1,7 @@
 // app/admin/product-management/page.js
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -99,6 +99,9 @@ export default function ProductManagementPage() {
   const [showBulkEditNumberModal, setShowBulkEditNumberModal] = useState(false);
   const [bulkEditField, setBulkEditField] = useState(null); // '유통기한' 또는 '납기일'
 
+  // 파일 업로드 관련 ref
+  const fileInputRef = useRef(null); // 파일 입력 input에 대한 ref
+
   const router = useRouter();
   const { showAdminNotificationModal, showAdminConfirmationModal } = useAdminModal();
 
@@ -109,7 +112,7 @@ export default function ProductManagementPage() {
       setLoading(true);
       setError(null);
       // Next.js API Route를 호출 (GET /api/products)
-      const response = await fetch('/api/products'); 
+      const response = await fetch('/api/products');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -183,7 +186,7 @@ export default function ProductManagementPage() {
       showAdminNotificationModal(`Surve Category 2 목록을 불러오는 데 실패했습니다: ${err.message}`);
     }
   }, [showAdminNotificationModal]);
-  
+
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
@@ -234,7 +237,7 @@ export default function ProductManagementPage() {
   };
 
   const handleSubCategory2FilterChange = (e) => {
-    setSubCategory2Filter(e.target.value);
+    setSubCategory2Options(e.target.value); // Fix: setSubCategory22Filter -> setSubCategory2Options
     setCurrentPage(1);
   };
 
@@ -308,9 +311,136 @@ export default function ProductManagementPage() {
     );
   };
 
-  const handleUpload = () => {
-    showAdminNotificationModal('Upload 기능은 미구현입니다.');
-    // 파일 업로드 로직 (S3 Presigned URL + BatchWriteItem 등)
+  // 엑셀 업로드 버튼 클릭 시 숨겨진 파일 입력 필드 트리거
+  const handleUploadClick = () => {
+    fileInputRef.current.click();
+  };
+
+  // 엑셀 파일 처리 로직 추가
+  const handleFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      showAdminNotificationModal('파일을 선택해주세요.');
+      return;
+    }
+
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      showAdminNotificationModal('엑셀 파일(.xlsx 또는 .xls)만 업로드 가능합니다.');
+      return;
+    }
+
+    setLoading(true);
+    showAdminNotificationModal('엑셀 파일 업로드 및 데이터 처리 중...');
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const buffer = e.target.result;
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
+        const worksheet = workbook.getWorksheet(1); // 첫 번째 워크시트 가져오기
+
+        if (!worksheet) {
+          showAdminNotificationModal('워크시트를 찾을 수 없습니다.');
+          setLoading(false);
+          return;
+        }
+
+        const headers = worksheet.getRow(1).values.map(h => String(h).trim());
+        const expectedHeaders = [
+          'Product Name', 'SKU', 'Main-Category', 'Sub-Category1', 'Sub-Category2', 'Description', 'Main Image URL', 'Sub Images URLs', 'Stock', '유통기한', '납기일',
+          'Purchas', 'Auto Exchange Rate', 'Price(won)', 'Exchange Rate', 'Exchange Rate Offset', 'USD Price Override',
+          'Discount', 'Calculated', 'Status'
+        ];
+
+        // 헤더 검증
+        const headerMismatch = !expectedHeaders.every(h => headers.includes(h));
+        if (headerMismatch) {
+          showAdminNotificationModal('엑셀 파일 헤더가 예상과 다릅니다. 정확한 템플릿을 사용해주세요.');
+          setLoading(false);
+          return;
+        }
+
+        const productsToUpload = [];
+        worksheet.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return; // 헤더 스킵
+
+          const rowData = {};
+          row.eachCell((cell, colNumber) => {
+            const headerName = headers[colNumber - 1]; // ExcelJS는 1부터 시작
+            rowData[headerName] = cell.value;
+          });
+
+          // SKU 자동 생성을 위한 임시 로직 (실제 앱에서는 서버에서 고유성 검사 및 생성)
+          // 여기서는 단순히 Product Name을 기반으로 임시 ID 생성
+          const productId = rowData['SKU'] || `product-${Date.now()}-${rowNumber}`;
+
+          productsToUpload.push({
+            id: productId,
+            name: rowData['Product Name'],
+            price: Number(rowData['Price(won)']), // price 필드 추가
+            productName: rowData['Product Name'],
+            sku: rowData['SKU'],
+            mainCategory: rowData['Main-Category'],
+            // Excel에서 'Sub-Category1'와 'Sub-Category2' 헤더를 가정합니다.
+            subCategory1: rowData['Sub-Category1'] || '',
+            subCategory2: rowData['Sub-Category2'] || '',
+            description: rowData['Description'] || '',
+            mainImage: rowData['Main Image URL'] || null,
+            // Sub Images URLs는 콤마로 구분된 문자열을 배열로 변환합니다.
+            subImages: rowData['Sub Images URLs'] ? String(rowData['Sub Images URLs']).split(',').map(s => s.trim()) : [],
+            stockQuantity: Number(rowData['Stock']),
+            // 날짜 포맷팅 (YYYY-MM-DD)
+            유통기한: rowData['유통기한'] ? new Date(rowData['유통기한']).toISOString().split('T')[0] : '',
+            납기일: Number(rowData['납기일']),
+            purchas: rowData['Purchas'] || '',
+            autoExchangeRate: rowData['Auto Exchange Rate'] === 'No' ? 'No' : 'Yes',
+            priceWon: Number(rowData['Price(won)']),
+            exchangeRate: Number(rowData['Exchange Rate']),
+            exchangeRateOffset: Number(rowData['Exchange Rate Offset']),
+            usdPriceOverride: Number(rowData['USD Price Override']),
+            discount: Number(rowData['Discount']),
+            calculatedPriceUsd: Number(rowData['Calculated']),
+            status: rowData['Status'] || 'Public',
+          });
+        });
+
+        let successCount = 0;
+        let failCount = 0;
+        const uploadPromises = productsToUpload.map(async (productData) => {
+          try {
+            const response = await fetch('/api/products', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(productData),
+            });
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.message || `Failed to add product ${productData.productName}`);
+            }
+            successCount++;
+          } catch (err) {
+            failCount++;
+            console.error(`Error uploading product ${productData.productName}:`, err);
+          }
+        });
+
+        await Promise.allSettled(uploadPromises); // 모든 업로드 요청이 완료될 때까지 기다림
+
+        if (failCount === 0) {
+          showAdminNotificationModal(`엑셀 파일의 모든 제품 (${successCount}개)이 성공적으로 저장되었습니다.`);
+        } else {
+          showAdminNotificationModal(`엑셀 파일 처리 완료: ${successCount}개 성공, ${failCount}개 실패. 자세한 내용은 콘솔을 확인하세요.`);
+        }
+        fetchProducts(); // 데이터 새로고침
+        setLoading(false);
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (parseError) {
+      console.error("Error parsing Excel file:", parseError);
+      showAdminNotificationModal('엑셀 파일 파싱 중 오류가 발생했습니다: ' + parseError.message);
+      setLoading(false);
+    }
   };
 
   const handleExcelDownload = async () => {
@@ -372,7 +502,7 @@ export default function ProductManagementPage() {
   };
 
   const handlePdfDownload = async () => {
-    const productsToPdf = filteredProducts.filter(p => 
+    const productsToPdf = filteredProducts.filter(p =>
       mainCategoryFilter === 'All' ? true : p.mainCategory === mainCategoryFilter
     );
 
@@ -398,8 +528,8 @@ export default function ProductManagementPage() {
     const docDefinition = {
       content: [
         // 상단에 카테고리 경로 + 코드명 표시
-        { 
-          text: `Category: ${mainCategoryFilter} / ${subCategory1Filter === 'All' ? 'All Sub-Categories' : subCategory1Filter}`, 
+        {
+          text: `Category: ${mainCategoryFilter} / ${subCategory1Filter === 'All' ? 'All Sub-Categories' : subCategory1Filter}`,
           style: 'categoryHeader', // 새로운 스타일 적용
           margin: [0, 0, 0, 10], // 이미지처럼 상단 여백 줄임
           alignment: 'left' // 좌측 정렬
@@ -419,21 +549,21 @@ export default function ProductManagementPage() {
                 stack: [
                   { // 썸네일 이미지
                     image: product.base64Image || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', // 기본 1x1 투명 이미지
-                    width: 80, 
-                    height: 80, 
+                    width: 80,
+                    height: 80,
                     alignment: 'center',
                     margin: [0, 0, 0, 5]
                   },
                   { // 상품명
-                    text: product.productName, 
+                    text: product.productName,
                     style: 'productName'
                   },
                   { // 가격
-                    text: `$${product.calculatedPriceUsd?.toFixed(2) || 'N/A'}`, 
+                    text: `$${product.calculatedPriceUsd?.toFixed(2) || 'N/A'}`,
                     style: 'productPrice'
                   },
                   { // 상품코드 (SKU)
-                    text: product.sku, 
+                    text: product.sku,
                     style: 'productSku'
                   }
                 ],
@@ -452,7 +582,7 @@ export default function ProductManagementPage() {
             })
           },
           // 모든 셀에 경계선 적용을 위한 커스텀 레이아웃 (이미지처럼 그리드)
-          layout: { 
+          layout: {
             hLineWidth: function (i, node) { return 1; }, // 모든 가로선
             vLineWidth: function (i, node) { return 1; }, // 모든 세로선
             hLineColor: function (i, node) { return '#ddd'; }, // 선 색상
@@ -645,9 +775,17 @@ export default function ProductManagementPage() {
           />
           <button className={styles.searchButton}>Search</button>
         </div>
-        
+
         <div className={styles.headerRight}>
-          <button onClick={handleUpload} className={styles.uploadButton}>Upload</button>
+          {/* 숨겨진 파일 입력 필드 */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            accept=".xlsx, .xls"
+            onChange={handleFileUpload}
+          />
+          <button onClick={handleUploadClick} className={styles.uploadButton}>Upload</button>
           <button onClick={handleExcelDownload} className={styles.excelButton}>EXCELL</button>
           <button onClick={handlePdfDownload} className={styles.pdfButton}>PDF</button>
           <button onClick={handleBulkEdit} className={styles.editButton}>수정하기</button>
@@ -673,8 +811,8 @@ export default function ProductManagementPage() {
         <thead>
           <tr>
             <th>
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 onChange={(e) => {
                   if (e.target.checked) {
                     setSelectedProductIds(filteredProducts.map(p => p.productId));
@@ -705,8 +843,8 @@ export default function ProductManagementPage() {
             currentProducts.map(product => (
               <tr key={product.productId}>
                 <td>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={selectedProductIds.includes(product.productId)}
                     onChange={(e) => {
                       if (e.target.checked) {

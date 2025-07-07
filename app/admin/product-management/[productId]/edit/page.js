@@ -10,7 +10,7 @@ import { useAdminModal } from '@/contexts/AdminModalContext';
 
 // DynamoDB 관련 import (클라이언트 컴포넌트에서 직접 접근)
 // WARN: 클라이언트 컴포넌트에서 AWS 자격 증명을 직접 사용하는 것은 보안상 위험합니다.
-// 프로덕션 환경에서는 반드시 Next.js API Routes를 통해 서버 사이드에서 통신하도록 리팩터링하세요.
+// 프로덕션 환경에서는 반드시 Next.js API Routes를 통해 서버 사이드에서 통신하도록 리팩토링하세요.
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 
@@ -73,7 +73,7 @@ export default function EditProductPage() {
 
     const { showAdminNotificationModal } = useAdminModal();
 
-    const [loading, setLoading] = useState(true); 
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const [product, setProduct] = useState({
@@ -82,21 +82,21 @@ export default function EditProductPage() {
         mainCategory: '', // Name string
         subCategory1: '', // Name string
         subCategory2: '', // Name string
-        sku: '', 
+        sku: '',
         description: '',
-        mainImage: null, 
+        mainImage: null,
         subImages: [], // 초기값을 빈 배열로 설정하여 iterable 보장
         stockQuantity: '',
-        유통기한: '', 
-        납기일: '', 
+        유통기한: '',
+        납기일: '',
         purchas: '',
-        autoExchangeRate: 'Yes', 
+        autoExchangeRate: 'Yes',
         priceWon: '',
         exchangeRate: '',
         exchangeRateOffset: '',
         usdPriceOverride: '',
-        calculatedPriceUsd: 0, 
-        status: 'Public', 
+        calculatedPriceUsd: 0,
+        status: 'Public',
     });
     console.log("Initial product state:", product);
 
@@ -108,6 +108,25 @@ export default function EditProductPage() {
     const [mainCategoryOptions, setMainCategoryOptions] = useState([]);
     const [subCategory1Options, setSubCategory1Options] = useState([]);
     const [subCategory2Options, setSubCategory2Options] = useState([]);
+
+    // next/image에 허용된 호스트네임 목록 (next.config.mjs와 일치해야 함)
+    const allowedImageHostnames = useMemo(() => [
+        'firebasestorage.googleapis.com',
+        'ums-shop-storage.s3.ap-southeast-2.amazonaws.com'
+    ], []);
+
+    // 이미지 URL의 호스트네임이 허용 목록에 있는지 확인하는 헬퍼 함수
+    const isHostnameAllowed = useCallback((url) => {
+        if (!url || typeof url !== 'string') return false;
+        try {
+            const parsedUrl = new URL(url);
+            return allowedImageHostnames.includes(parsedUrl.hostname);
+        } catch (e) {
+            // URL 파싱 오류 (잘못된 URL 형식 등)
+            return false;
+        }
+    }, [allowedImageHostnames]);
+
 
     // API를 통해 메인 카테고리 데이터를 가져오는 함수
     const fetchMainCategories = useCallback(async () => {
@@ -138,6 +157,7 @@ export default function EditProductPage() {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
+            console.log("Sub categories 1 fetched:", data);
             setSubCategory1Options([{ id: 'All', name: 'All', code: '' }, ...data.map(cat => ({ id: cat.categoryId, name: cat.name, code: cat.code }))]);
             return data; // 불러온 데이터 반환
         } catch (err) {
@@ -255,7 +275,7 @@ export default function EditProductPage() {
     useEffect(() => {
         let calculatedPrice = 0;
         const priceWon = parseFloat(product.priceWon);
-        const exchangeRate = parseFloat(product.exchangeRate); 
+        const exchangeRate = parseFloat(product.exchangeRate);
         const exchangeRateOffset = parseFloat(product.exchangeRateOffset);
         const usdPriceOverride = parseFloat(product.usdPriceOverride);
 
@@ -264,16 +284,16 @@ export default function EditProductPage() {
         } else if (product.autoExchangeRate === 'No' && !isNaN(usdPriceOverride) && usdPriceOverride > 0) {
             calculatedPrice = usdPriceOverride;
         } else if (product.autoExchangeRate === 'Yes') {
-            const baseExchangeRate = 1300; 
+            const baseExchangeRate = 1300;
             if (!isNaN(baseExchangeRate) && baseExchangeRate > 0) {
                 calculatedPrice = priceWon / (baseExchangeRate * (1 + (isNaN(exchangeRateOffset) ? 0 : exchangeRateOffset)));
             }
         } else if (product.autoExchangeRate === 'No' && !isNaN(exchangeRate) && exchangeRate > 0) {
             calculatedPrice = priceWon / exchangeRate;
         }
-        
+
         const finalCalculatedPrice = Number.isNaN(calculatedPrice) ? 0 : calculatedPrice;
-        
+
         setProduct(prev => ({ ...prev, calculatedPriceUsd: finalCalculatedPrice }));
     }, [
         product.priceWon, product.autoExchangeRate, product.exchangeRate, product.exchangeRateOffset,
@@ -284,10 +304,10 @@ export default function EditProductPage() {
     // 필수 필드 유효성 검사 (SAVE 버튼 활성화/비활성화)
     const isFormValid = useMemo(() => {
         const requiredFields = [
-            'productName', 'mainCategory', 'subCategory1', 'subCategory2', 'description', 
+            'productName', 'mainCategory', 'subCategory1', 'subCategory2', 'description',
             'stockQuantity', '유통기한', '납기일', 'priceWon', 'status'
         ];
-        
+
         const allRequiredFilled = requiredFields.every(field => {
             if (typeof product[field] === 'number') return product[field] >= 0;
             return product[field] !== '' && product[field] !== null && product[field] !== undefined;
@@ -298,7 +318,7 @@ export default function EditProductPage() {
         } else {
             if (product.exchangeRateOffset === '' || parseFloat(product.exchangeRateOffset) < 0) return false;
         }
-        
+
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
         if (product.유통기한 && !dateRegex.test(product.유통기한)) return false;
 
@@ -324,8 +344,8 @@ export default function EditProductPage() {
             if (level === 'main') {
                 selectedName = mainCategoryOptions.find(cat => cat.id === selectedId)?.name || '';
                 newState.mainCategory = selectedName;
-                newState.subCategory1 = ''; 
-                newState.subCategory2 = ''; 
+                newState.subCategory1 = '';
+                newState.subCategory2 = '';
                 // 메인 카테고리 변경 시 하위 옵션 초기화 및 새로 불러오기
                 setSubCategory1Options([{ id: 'All', name: 'All', code: '' }]);
                 setSubCategory2Options([{ id: 'All', name: 'All', code: '' }]);
@@ -335,7 +355,7 @@ export default function EditProductPage() {
             } else if (level === 'sub1') {
                 selectedName = subCategory1Options.find(cat => cat.id === selectedId)?.name || '';
                 newState.subCategory1 = selectedName;
-                newState.subCategory2 = ''; 
+                newState.subCategory2 = '';
                 // 서브1 카테고리 변경 시 하위 옵션 초기화 및 새로 불러오기
                 setSubCategory2Options([{ id: 'All', name: 'All', code: '' }]);
                 if (selectedId !== 'All') {
@@ -348,7 +368,7 @@ export default function EditProductPage() {
             // SKU 자동 생성 로직은 EditProductPage에서는 적용되지 않도록 직접 호출하지 않습니다.
             return newState;
         });
-        setFormErrors(prev => ({ ...prev, [`${level}Category`]: undefined }));
+        setFormErrors(prev => ({ ...prev.mainCategory, [`${level}Category`]: undefined }));
     };
 
 
@@ -359,7 +379,7 @@ export default function EditProductPage() {
 
             reader.onloadend = () => {
                 if (isMain) {
-                    setProduct(prev => ({ ...prev, mainImage: reader.result })); 
+                    setProduct(prev => ({ ...prev, mainImage: reader.result }));
                 } else {
                     if (product.subImages.length < 10) {
                         setProduct(prev => ({ ...prev, subImages: [...prev.subImages, reader.result] }));
@@ -383,7 +403,7 @@ export default function EditProductPage() {
     const handleSave = async () => {
         const newErrors = {};
         const requiredFields = [
-            'productName', 'mainCategory', 'subCategory1', 'subCategory2', 'description', 
+            'productName', 'mainCategory', 'subCategory1', 'subCategory2', 'description',
             'stockQuantity', '유통기한', '납기일', 'priceWon', 'status'
         ];
 
@@ -400,7 +420,7 @@ export default function EditProductPage() {
         if (product.autoExchangeRate === 'No' && (!product.exchangeRate || parseFloat(product.exchangeRate) <= 0)) {
             newErrors.exchangeRate = '수동 환율 사용 시 환율을 입력해야 합니다.';
         }
-        
+
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
         if (product.유통기한 && !dateRegex.test(product.유통기한)) {
             newErrors.유통기한 = '날짜 형식이 올바르지 않습니다 (YYYY-MM-DD).';
@@ -414,9 +434,9 @@ export default function EditProductPage() {
 
         setLoading(true);
         let finalProductData = { ...product };
-        
+
         // 이미지 S3 업로드 처리 (Main Image)
-        if (product.mainImage && product.mainImage.startsWith('data:')) { 
+        if (product.mainImage && product.mainImage.startsWith('data:')) {
             showAdminNotificationModal('메인 이미지 업로드 중...');
             try {
                 const blob = await fetch(product.mainImage).then(res => res.blob());
@@ -486,7 +506,7 @@ export default function EditProductPage() {
         // DynamoDB 저장 (PUT 요청)
         try {
             // PUT 요청은 URL 파라미터로 productId를 사용하고, body에는 업데이트할 필드들을 보냅니다.
-            const response = await fetch(`/api/products/${productId}`, { 
+            const response = await fetch(`/api/products/${productId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(finalProductData), // 모든 필드를 포함하여 전송
@@ -634,12 +654,24 @@ export default function EditProductPage() {
                         />
                         <div className={styles.imageUploadBox} onClick={() => mainImageInputRef.current.click()}>
                             {product.mainImage ? (
-                                <>
+                                isHostnameAllowed(product.mainImage) ? (
                                     <Image src={product.mainImage} alt="Main Preview" width={100} height={100} />
-                                    <button className={styles.deleteImageButton} onClick={(e) => { e.stopPropagation(); handleDeleteImage(null, true); }}>&times;</button>
-                                </>
+                                ) : (
+                                    // Fallback to a regular img tag if hostname is not configured for next/image
+                                    <img
+                                        src={product.mainImage}
+                                        alt="Main Preview"
+                                        width={100}
+                                        height={100}
+                                        style={{ objectFit: 'cover' }}
+                                        onError={(e) => { e.target.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; }} // Transparent pixel
+                                    />
+                                )
                             ) : (
                                 <span>Upload Image</span>
+                            )}
+                            {product.mainImage && (
+                                <button className={styles.deleteImageButton} onClick={(e) => { e.stopPropagation(); handleDeleteImage(null, true); }}>&times;</button>
                             )}
                         </div>
                         <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>Recommended image size 350x350px.</p>
@@ -659,7 +691,18 @@ export default function EditProductPage() {
                         <div className={styles.imageUploadGrid}>
                             {product.subImages?.map((img, index) => (
                                 <div key={index} className={styles.imageUploadBox}>
-                                    <Image src={img} alt={`Sub Preview ${index}`} width={100} height={100} />
+                                    {isHostnameAllowed(img) ? (
+                                        <Image src={img} alt={`Sub Preview ${index}`} width={100} height={100} />
+                                    ) : (
+                                        <img
+                                            src={img}
+                                            alt={`Sub Preview ${index}`}
+                                            width={100}
+                                            height={100}
+                                            style={{ objectFit: 'cover' }}
+                                            onError={(e) => { e.target.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; }} // Transparent pixel
+                                        />
+                                    )}
                                     <button className={styles.deleteImageButton} onClick={(e) => { e.stopPropagation(); handleDeleteImage(index, false); }}>&times;</button>
                                 </div>
                             ))}
