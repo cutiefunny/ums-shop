@@ -387,7 +387,7 @@ export default function ProductManagementPage() {
     const imagePromises = productsToPdf.map(async (product) => {
       // product.image가 데이터에 있다고 가정하거나, 없을 경우 기본 이미지 사용
       // MockData에 imageUrl 필드가 없으므로 productId를 기반으로 임시 이미지 URL 생성
-      const imageUrl = `/images/${product.sku}.png`; // 예를 들어 SKU를 이미지 파일명으로 사용
+      const imageUrl = product.mainImage; // 실제 이미지 URL을 사용해야 함
       const base64 = await imageUrlToBase64(imageUrl);
       return { ...product, base64Image: base64 };
     });
@@ -399,7 +399,7 @@ export default function ProductManagementPage() {
       content: [
         // 상단에 카테고리 경로 + 코드명 표시
         { 
-          text: `Category: ${mainCategoryFilter} / ${subCategoryFilter === 'All' ? 'All Sub-Categories' : subCategoryFilter}`, 
+          text: `Category: ${mainCategoryFilter} / ${subCategory1Filter === 'All' ? 'All Sub-Categories' : subCategory1Filter}`, 
           style: 'categoryHeader', // 새로운 스타일 적용
           margin: [0, 0, 0, 10], // 이미지처럼 상단 여백 줄임
           alignment: 'left' // 좌측 정렬
