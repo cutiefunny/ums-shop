@@ -5,6 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link'; // Next.js Link 컴포넌트 임포트
 import ApprovalStatusModal from './components/ApprovalStatusModal'; // 새 모달 컴포넌트 임포트
 import styles from '../common.module.css';
+import { useSearchParams } from 'next/navigation'; // useSearchParams 임포트
 
 const ITEMS_PER_PAGE = 5; // 페이지당 항목 수
 
@@ -21,6 +22,8 @@ export default function UserManagementPage() {
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const [selectedUserForApproval, setSelectedUserForApproval] = useState(null); // { seq, currentStatus }
+
+  const searchParams = useSearchParams(); // useSearchParams 훅 사용
 
   // API를 통해 사용자 데이터를 가져오는 함수
   async function fetchUsers() {
@@ -44,7 +47,13 @@ export default function UserManagementPage() {
   // 컴포넌트 마운트 시 사용자 데이터를 가져옵니다.
   useEffect(() => {
     fetchUsers();
-  }, []);
+
+    // URL 쿼리에서 filterStatus를 읽어와 초기 상태로 적용
+    const urlFilterStatus = searchParams.get('filterStatus');
+    if (urlFilterStatus) {
+      setFilterStatus(urlFilterStatus);
+    }
+  }, [searchParams]); // searchParams가 변경될 때마다 실행되도록 의존성 추가
 
   const filteredUsers = useMemo(() => {
     if (!users) return [];

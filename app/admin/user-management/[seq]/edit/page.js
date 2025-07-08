@@ -1,7 +1,7 @@
 // app/admin/user-management/[seq]/edit/page.js
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import styles from './edit.module.css'; // CSS Modules 임포트
 
@@ -14,6 +14,9 @@ export default function UserEditPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('information'); // 'information' or 'orderHistory'
+  const [userOrders, setUserOrders] = useState([]); // 사용자의 주문 내역 상태
+  const [loadingOrders, setLoadingOrders] = useState(false); // 주문 내역 로딩 상태
+  const [errorOrders, setErrorOrders] = useState(null); // 주문 내역 에러 상태
 
   // 사용자 데이터 불러오기
   useEffect(() => {
@@ -39,6 +42,39 @@ export default function UserEditPage() {
     }
     fetchUser();
   }, [userSeq]);
+
+  // 사용자의 주문 내역을 불러오는 함수
+  const fetchUserOrders = useCallback(async (userEmail) => {
+    if (!userEmail) return;
+
+    setLoadingOrders(true);
+    setErrorOrders(null);
+    try {
+      // 모든 주문을 가져와서 클라이언트 측에서 이메일로 필터링
+      // TODO: 서버 측에서 이메일로 필터링하는 API를 구현하는 것이 더 효율적입니다.
+      const response = await fetch('/api/orders');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const allOrders = await response.json();
+
+      const filteredOrders = allOrders.filter(order => order.userEmail === userEmail);
+      setUserOrders(filteredOrders.sort((a, b) => new Date(b.date) - new Date(a.date))); // 최신순 정렬
+    } catch (err) {
+      console.error("Error fetching user orders:", err);
+      setErrorOrders(`주문 내역을 불러오는 데 실패했습니다: ${err.message}`);
+    } finally {
+      setLoadingOrders(false);
+    }
+  }, []);
+
+  // user 데이터가 로드되면 주문 내역을 불러옴
+  useEffect(() => {
+    if (user && user.email) {
+      fetchUserOrders(user.email);
+    }
+  }, [user, fetchUserOrders]);
+
 
   // 입력 필드 변경 핸들러
   const handleChange = (e) => {
@@ -94,6 +130,9 @@ export default function UserEditPage() {
   if (!user) {
     return <div className={styles.container}>User not found.</div>;
   }
+
+  // 총 주문 금액 계산
+  const totalOrderAmount = userOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
 
   return (
     <div className={styles.container}>
@@ -198,7 +237,7 @@ export default function UserEditPage() {
             />
           </div>
           {/* SAVE Button - Moved here */}
-          <div className={styles.saveButtonContainer}> {/* 새 컨테이너 추가 */}
+          <div className={styles.saveButtonContainer}>
             <button onClick={handleSave} className={styles.saveButton}>
               SAVE
             </button>
@@ -208,7 +247,44 @@ export default function UserEditPage() {
 
       {activeTab === 'orderHistory' && (
         <div className={styles.tabContent}>
-          <p>Order history details will be displayed here.</p>
+          <div className={styles.inputGroup2}>
+            <label className={styles.label2}>Total</label>
+            <input
+              type="text"
+              value={`$ ${totalOrderAmount.toFixed(2)}`}
+              readOnly
+              className={styles.input2}
+            />
+          </div>
+
+          {loadingOrders ? (
+            <p>주문 내역을 불러오는 중...</p>
+          ) : errorOrders ? (
+            <p style={{ color: 'red' }}>오류: {errorOrders}</p>
+          ) : userOrders.length === 0 ? (
+            <p>주문 내역이 없습니다.</p>
+          ) : (
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Date</th>
+                  <th>Account</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {userOrders.map(order => (
+                  <tr key={order.orderId}>
+                    <td>{order.orderId}</td>
+                    <td>{order.date ? order.date.split('T')[0] : 'N/A'}</td>
+                    <td>${order.totalAmount?.toFixed(2) || '0.00'}</td>
+                    <td>{order.status || 'N/A'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 

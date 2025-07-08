@@ -10,6 +10,10 @@
   flex-direction: column; /* 세로 정렬 */
 }
 
+.card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
 .cardTitle {
   margin-top: 0;
   margin-bottom: 15px;

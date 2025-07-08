@@ -3,11 +3,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from '../../components/Card'; // 공통 Card 컴포넌트 임포트
+import { useRouter } from 'next/navigation';
 
 export default function UnpackagedProductsWidget() {
   const [unpackagedItems, setUnpackagedItems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const router = useRouter(); // useRouter 훅 사용
 
   useEffect(() => {
     async function fetchUnpackagedItems() {
@@ -53,8 +55,13 @@ export default function UnpackagedProductsWidget() {
     );
   }
 
+  // 카드 클릭 시 /admin/packing-status 페이지로 이동하며 'PackingStatusDashboard' 필터를 적용
+  const handleCardClick = () => {
+    router.push('/admin/packing-status?packingStatusDashboard=false');
+  };  
+
   return (
-    <Card title="미포장 상품">
+    <Card title="미포장 상품" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
       <p>미포장 상품 수: {unpackagedItems}건</p>
     </Card>
   );

@@ -3,11 +3,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from '../../components/Card'; // 공통 Card 컴포넌트 임포트
+import { useRouter } from 'next/navigation'; // useRouter 훅 임포트
 
 export default function QnAStatusWidget() {
   const [unansweredQnA, setUnansweredQnA] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const router = useRouter(); // useRouter 훅 사용
 
   useEffect(() => {
     async function fetchUnansweredQnA() {
@@ -51,8 +53,13 @@ export default function QnAStatusWidget() {
     );
   }
 
+  // 카드 클릭 시 /admin/q-and-a 페이지로 이동하며 'Pending' 필터를 적용
+  const handleCardClick = () => {
+    router.push('/admin/q-and-a?status=Pending');
+  };
+
   return (
-    <Card title="Q&A 미답변">
+    <Card title="Q&A 미답변" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
       <p>미답변 Q&A: {unansweredQnA}건</p>
     </Card>
   );

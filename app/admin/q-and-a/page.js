@@ -16,6 +16,15 @@ export default function AdminQandAPage() {
     const itemsPerPage = 5; // 한 페이지에 보여줄 항목 수
     const router = useRouter();
 
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const statusFromQuery = params.get('status');
+
+        if (statusFromQuery) {
+            setStatusFilter(statusFromQuery);
+        }
+    }, []);
+
     const fetchQnAs = async () => {
         try {
             const queryParams = new URLSearchParams({

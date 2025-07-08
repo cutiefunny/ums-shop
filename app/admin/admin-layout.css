@@ -40,9 +40,6 @@ a {
 }
 
 .sidebarHeader {
-  padding-bottom: 30px;
-  border-bottom: 1px solid #ccc;
-  margin-bottom: 20px;
 }
 
 .logo {
@@ -110,8 +107,7 @@ a {
 
 .mainHeader {
   padding: 20px;
-  background-color: white;
-  border-bottom: 1px solid #ddd;
+  background-color: #FBC926; /* 상단 메뉴 배경색 */
   height: 60px;
   display: flex;
   align-items: center;
@@ -121,4 +117,11 @@ a {
   flex-grow: 1;
   padding: 20px;
   overflow-y: auto;
+}
+
+.adminLogo {
+  width: 100%; /* 로고 너비 */
+  height: auto; /* 자동 높이 조정 */
+  display: block;
+  margin: 0 auto; /* 중앙 정렬 */
 }

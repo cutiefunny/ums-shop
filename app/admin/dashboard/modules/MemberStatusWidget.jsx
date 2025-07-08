@@ -3,11 +3,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from '../../components/Card'; // 공통 Card 컴포넌트 임포트
+import { useRouter } from 'next/navigation'; // useRouter 훅 임포트
 
 export default function MemberStatusWidget() {
   const [pendingMembers, setPendingMembers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const router = useRouter(); // useRouter 훅 사용
 
   useEffect(() => {
     async function fetchPendingMembers() {
@@ -36,6 +38,11 @@ export default function MemberStatusWidget() {
     fetchPendingMembers();
   }, []); // 컴포넌트 마운트 시 한 번만 실행
 
+  // 카드 클릭 시 /admin/user-management 페이지로 이동하며 'Request' 필터를 적용
+  const handleCardClick = () => {
+    router.push('/admin/user-management?filterStatus=Request');
+  };
+
   if (loading) {
     return (
       <Card title="회원 미승인">
@@ -53,7 +60,7 @@ export default function MemberStatusWidget() {
   }
 
   return (
-    <Card title="회원 미승인">
+    <Card title="회원 미승인" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
       <p>승인 대기: {pendingMembers}명</p>
     </Card>
   );

@@ -129,7 +129,9 @@ function AdminLayoutContent({ children }) {
       <aside className="sidebar">
         <div className="sidebarContent">
           <div className="sidebarHeader">
-            <h2 className="logo">LOGO</h2>
+            <Link href="/admin/dashboard">
+              <img src="/images/admin-logo.png" className="adminLogo" />
+            </Link>
           </div>
           <nav>
             <ul>

@@ -28,6 +28,15 @@ export default function PackingStatusPage() {
   const router = useRouter();
   const { showAdminNotificationModal } = useAdminModal();
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const packingStatusDashboard = urlParams.get('packingStatusDashboard');
+
+    if (packingStatusDashboard) {
+      setPackingFilter(packingStatusDashboard);
+    }
+  }, []);
+
   // API를 통해 포장 상태 아이템들을 가져오는 함수
   const fetchPackingItems = useCallback(async (filters = {}) => {
     setLoading(true);

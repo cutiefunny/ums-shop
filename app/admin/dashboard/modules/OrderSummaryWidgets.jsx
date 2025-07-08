@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from '../../components/Card'; // 공통 Card 컴포넌트 임포트
+import { useRouter } from 'next/navigation'; // useRouter 훅 임포트
 
 export default function OrderSummaryWidgets() {
   const [orderData, setOrderData] = useState({
@@ -12,6 +13,7 @@ export default function OrderSummaryWidgets() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const router = useRouter(); // useRouter 훅 사용
 
   useEffect(() => {
     async function fetchOrderSummary() {
@@ -73,8 +75,13 @@ export default function OrderSummaryWidgets() {
     );
   }
 
+  // 카드 클릭 시 /admin/order-management 페이지로 이동
+  const handleCardClick = () => {
+    router.push('/admin/order-management'); // 주문 관리 페이지로 이동
+  };
+
   return (
-    <Card title="오더 단계별 수량">
+    <Card title="오더 단계별 수량" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
       <p>결제완료: {orderData.paymentCompleted}건</p>
       <p>배송중: {orderData.shipping}건</p>
       <p>배송완료: {orderData.deliveryCompleted}건</p>
