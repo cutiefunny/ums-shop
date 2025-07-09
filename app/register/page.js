@@ -66,7 +66,7 @@ const TermsStep = ({ onNext, agreements, setAgreements, onBack }) => {
 };
 
 
-// [수정] 정보 입력 컴포넌트에 에러 메시지 표시 로직 추가
+// 정보 입력 컴포넌트에 에러 메시지 표시 로직 추가
 const InfoStep = ({ onBack, formData, handleChange, errors }) => {
   return (
     <>
@@ -74,14 +74,14 @@ const InfoStep = ({ onBack, formData, handleChange, errors }) => {
       <div className={styles.contentPadding}>
         <h2 className={styles.title}>Register</h2>
         <p className={styles.subtitle}>Just a few steps! Fill out all fields. We'll notify you once your account is approved.</p>
-        
+
         <form id="info-form" className={styles.form}>
           <label className={styles.inputLabel}>Email</label>
           <input name="email" type="email" value={formData.email} placeholder="abcd@gmail.com" onChange={handleChange} className={styles.input} required />
-          
+
           <label className={styles.inputLabel}>Full Name</label>
           <input name="fullName" type="text" value={formData.fullName} placeholder="John Doe" onChange={handleChange} className={styles.input} required />
-          
+
           <label className={styles.inputLabel}>Ship Name</label>
           <input name="shipName" type="text" value={formData.shipName} placeholder="OCEAN EXPLORER" onChange={handleChange} className={styles.input} required />
 
@@ -127,8 +127,11 @@ export default function RegisterPage() {
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errors, setErrors] = useState({}); // 에러 메시지 상태 추가
+  const [loading, setLoading] = useState(false); // 로딩 상태 추가
+  const [modalTitle, setModalTitle] = useState("Welcome to UMS SHOP"); // 모달 타이틀
+  const [modalMessage, setModalMessage] = useState("Your registration is almost complete.\nConfirmation will be sent to your email once approved."); // 모달 메시지
 
-  // [수정] 선박명 대문자 변환 로직 추가
+  // 선박명 대문자 변환 로직 추가
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'shipName') {
@@ -137,26 +140,26 @@ export default function RegisterPage() {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
-  
+
   // 실시간 유효성 검사를 위한 useEffect
   useEffect(() => {
     const newErrors = {};
     const { password, confirmPassword } = formData;
-    
+
     // 비밀번호 필드에 입력이 시작되면 유효성 검사
     if (password) {
       if (!/^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(password)) {
         newErrors.password = "Password must be at least 8 characters long and include letters and numbers.";
       }
     }
-    
+
     // 비밀번호 확인 필드에 입력이 시작되면 일치 여부 검사
     if (confirmPassword) {
       if (password !== confirmPassword) {
         newErrors.confirmPassword = "Passwords do not match.";
       }
     }
-    
+
     setErrors(newErrors);
   }, [formData.password, formData.confirmPassword]);
 
@@ -170,21 +173,44 @@ export default function RegisterPage() {
 
   const canProceedToNextStep = agreements.termsOfUse && agreements.privacyPolicy;
 
-  // [수정] 제출 시 에러 처리 로직 강화
-  const handleInfoSubmit = (e) => {
+  // 제출 시 에러 처리 로직 강화
+  const handleInfoSubmit = async (e) => { // async 함수로 변경
     e.preventDefault();
-    // TODO: 중복 이메일 확인 API 연동 필요
-    // if (isEmailDuplicate(formData.email)) {
-    //   alert("This email is already registered.");
-    //   return;
-    // }
+    setLoading(true); // 로딩 시작
+    setErrors({}); // 에러 초기화
 
-    if (isStep2FormValid()) {
-      console.log('Registering user:', formData);
+    if (!isStep2FormValid()) {
+      setModalTitle("입력 오류");
+      setModalMessage("모든 필수 필드를 입력하거나 비밀번호 요구 사항을 확인해주세요.");
       setIsModalOpen(true);
-    } else {
-      // 폼 유효성 검사 실패 시 포괄적인 알림
-      alert("Please fill out all required fields and check password requirements.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // 등록 API 호출
+      const response = await fetch('/api/auth/register', { // 새로 생성한 API 라우트 호출
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData), // formData 전체를 전송
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Registration failed.');
+      }
+
+      console.log('Registration successful:', await response.json());
+      setModalTitle("Welcome to UMS SHOP");
+      setModalMessage("Your registration is almost complete.\nConfirmation will be sent to your email once approved.");
+      setIsModalOpen(true);
+    } catch (err) {
+      console.error("Registration error:", err);
+      setModalTitle("등록 실패");
+      setModalMessage(err.message || "회원가입 중 오류가 발생했습니다.");
+      setIsModalOpen(true);
+    } finally {
+      setLoading(false); // 로딩 종료
     }
   };
 
@@ -220,22 +246,23 @@ export default function RegisterPage() {
           </Link>
         </div>
         {step === 1 ? (
-          <button onClick={() => setStep(2)} disabled={!canProceedToNextStep} className={styles.button}>
+          <button onClick={() => setStep(2)} disabled={!canProceedToNextStep || loading} className={styles.button}>
             Next
           </button>
         ) : (
-          <button type="submit" form="info-form" onClick={handleInfoSubmit} className={styles.button}>
-            Next
+          <button type="submit" form="info-form" onClick={handleInfoSubmit} className={styles.button} disabled={loading}>
+            {loading ? 'Registering...' : 'Next'}
           </button>
         )}
       </div>
 
       <ConfirmationModal
         isOpen={isModalOpen}
-        title="Welcome to UMS SHOP"
-        message={"Your registration is almost complete.\nConfirmation will be sent to your email once approved."}
+        title={modalTitle}
+        message={modalMessage}
         buttonText="OK"
         onConfirm={handleConfirmAndRedirect}
+        onCancel={() => setIsModalOpen(false)} // 취소 버튼 핸들러 추가 (모달 닫기)
       />
     </div>
   );
