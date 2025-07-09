@@ -78,6 +78,7 @@ export async function POST(request) {
       seq: user.seq, // 사용자 seq도 페이로드에 포함
       name: user.name, // 사용자 이름도 페이로드에 포함
       shipName: user.shipName, // 선박명도 페이로드에 포함
+      phoneNumber: user.phoneNumber, // 전화번호도 페이로드에 포함
     };
 
     // 'Stay logged in'이 체크된 경우 만료 시간을 길게 설정
@@ -104,6 +105,7 @@ export async function POST(request) {
             role: user.role,
             seq: user.seq,
             shipName: user.shipName,
+            phoneNumber: user.phoneNumber,
         }
     }, { status: 200 });
     response.headers.set('Set-Cookie', cookie);
