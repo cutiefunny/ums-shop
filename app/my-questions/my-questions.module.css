@@ -1,0 +1,338 @@
+/* app/my-questions/my-questions.module.css */
+
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #fff;
+  padding-bottom: 70px; /* For BottomNav */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 10;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.mainContent {
+  padding: 16px;
+}
+
+.emptyMessage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 200px); /* Adjust height as needed */
+  color: #868e96;
+  font-size: 1rem;
+}
+
+/* --- New Styles for Q&A Page Layout --- */
+.qaTabs {
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+  margin-bottom: 16px;
+  background-color: #f8f8f8; /* Light background for tabs */
+  border-radius: 12px;
+  margin: 0 16px 16px 16px; /* Match padding of mainContent */
+}
+
+.qaTabButton {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #868e96;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.qaTabButton.active {
+  background-color: #f5a623; /* Yellow background for active tab */
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filterChips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 16px 16px 16px; /* Match mainContent padding */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.filterChips::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}
+
+.filterChip {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  font-size: 0.9rem;
+  color: #495057;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.filterChip.active {
+  background-color: #f5a623;
+  color: white;
+  border-color: #f5a623;
+}
+
+/* Q&A List Item Styles */
+.qaList {
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden; /* Ensure border-radius applies to children */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Optional: subtle shadow for list container */
+}
+
+.qaListItem {
+  background-color: #fff;
+  border-bottom: 1px solid #e9ecef;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qaListItem:last-child {
+  border-bottom: none;
+}
+
+.qaHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.qaStatus {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.qaStatus.pending {
+  background-color: #fff3e0; /* light orange */
+  color: #ff9800; /* orange */
+}
+
+.qaStatus.answered {
+  background-color: #e0f2f7; /* light blue */
+  color: #03a9f4; /* blue */
+}
+
+.qaCategory {
+  font-size: 0.85rem;
+  color: #868e96;
+}
+
+.qaTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #212529;
+}
+
+.qaDate {
+  font-size: 0.85rem;
+  color: #adb5bd;
+}
+
+/* Form Styles for Ask a Question */
+.formContainer {
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.formGroup {
+  margin-bottom: 15px;
+}
+
+.formLabel {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #212529;
+}
+
+.formInput,
+.formSelect,
+.formTextarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  color: #212529;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.formInput:focus,
+.formSelect:focus,
+.formTextarea:focus {
+  outline: none;
+  border-color: #f5a623;
+  box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.25);
+}
+
+.formTextarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.imageUploadArea {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.imageUploadButton {
+  width: 100px;
+  height: 100px;
+  border: 1px dashed #ced4da;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #495057;
+  transition: background-color 0.2s ease;
+}
+
+.imageUploadButton:hover {
+  background-color: #e9ecef;
+}
+
+.imagePreviewContainer {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.imagePreviewContainer img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.removeImageButton {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(255, 255, 255, 0.7);
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #333;
+  z-index: 1;
+}
+
+.fileInfoText {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 5px;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f5a623;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 20px; /* Space from form elements */
+}
+
+.submitButton:disabled {
+  background-color: #e0e0e0;
+  color: #adb5bd;
+  cursor: not-allowed;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #d88e1a;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .qaTabs {
+    margin: 0 10px 16px 10px;
+  }
+  .filterChips {
+    padding: 0 10px 16px 10px;
+  }
+  .qaListItem {
+    padding: 12px;
+  }
+  .qaTitle {
+    font-size: 0.95rem;
+  }
+  .formInput,
+  .formSelect,
+  .formTextarea {
+    padding: 8px 10px;
+    font-size: 0.95rem;
+  }
+  .formLabel {
+    font-size: 0.85rem;
+  }
+  .submitButton {
+    padding: 12px;
+    font-size: 0.95rem;
+  }
+}

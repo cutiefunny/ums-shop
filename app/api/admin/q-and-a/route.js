@@ -1,7 +1,8 @@
 // /api/admin/q-and-a/route.js
 import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand, PutCommand } from '@aws-sdk/lib-dynamodb'; // PutCommand 추가
+import { v4 as uuidv4 } from 'uuid'; // uuidv4 추가
 
 const client = new DynamoDBClient({
     region: process.env.AWS_REGION || 'ap-northeast-2', // 예: 서울 리전
@@ -87,5 +88,49 @@ export async function GET(request) {
             { message: 'Failed to fetch Q&A data', error: error.message },
             { status: 500 }
         );
+    }
+}
+
+/**
+ * POST 요청 처리: 새 Q&A 항목을 생성합니다.
+ * @param {Request} request - 요청 객체 (category, title, question, imageUrl, name, userEmail, shipName 포함)
+ * @returns {NextResponse} 생성된 Q&A 항목 또는 오류 응답
+ */
+export async function POST(request) {
+    try {
+        const { category, title, question, imageUrl, name, userEmail, shipName } = await request.json();
+
+        // 필수 필드 유효성 검사
+        if (!category || !title || !question || !name || !userEmail) {
+            return NextResponse.json({ message: 'Missing required fields for Q&A submission.' }, { status: 400 });
+        }
+
+        const newQnAItem = {
+            id: uuidv4(), // 고유 ID 생성
+            category: category,
+            title: title,
+            question: question,
+            imageUrl: imageUrl || null, // 이미지가 없으면 null
+            name: name, // 사용자 이름
+            userEmail: userEmail, // 사용자 이메일
+            shipName: shipName || null, // 선박명 (선택 사항)
+            status: 'Pending', // 초기 상태는 'Pending'
+            submittedDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD 형식으로 저장
+            createdAt: new Date().toISOString(), // 생성 타임스탬프
+            updatedAt: new Date().toISOString(), // 업데이트 타임스탬프
+            answer: null, // 답변 필드 초기화
+        };
+
+        const command = new PutCommand({
+            TableName: TABLE_NAME,
+            Item: newQnAItem,
+        });
+        await ddbDocClient.send(command);
+
+        return NextResponse.json({ message: 'Question submitted successfully', qna: newQnAItem }, { status: 201 });
+
+    } catch (error) {
+        console.error('Error submitting Q&A:', error);
+        return NextResponse.json({ message: 'Failed to submit question', error: error.message }, { status: 500 });
     }
 }

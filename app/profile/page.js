@@ -164,10 +164,7 @@ export default function ProfilePage() {
   };
 
   const handleMyQuestionsClick = () => {
-    // "My Questions" 클릭 시 메시지 제출 성공 모달 (예시)
-    // 실제로는 /my-questions 페이지로 이동합니다.
-    setShowQuestionsSubmittedModal(true); 
-    // router.push('/my-questions');
+    router.push('/q-and-a?tab=my'); // My Questions 페이지로 이동
   };
 
   if (!editableUser) {
