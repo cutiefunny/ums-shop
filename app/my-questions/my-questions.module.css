@@ -139,20 +139,20 @@
 .qaStatus {
   display: inline-block;
   padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 400;
   text-transform: capitalize;
 }
 
-.qaStatus.pending {
-  background-color: #fff3e0; /* light orange */
-  color: #ff9800; /* orange */
+.qaStatus.Pending {
+  background-color: #e6e6e6;
+  color: #000000;
 }
 
-.qaStatus.answered {
-  background-color: #e0f2f7; /* light blue */
-  color: #03a9f4; /* blue */
+.qaStatus.Answered {
+  background-color: #646464;
+  color: #ffffff;
 }
 
 .qaCategory {
@@ -225,8 +225,8 @@
 }
 
 .imageUploadButton {
-  width: 100px;
-  height: 100px;
+  width: 50px;
+  height: 50px;
   border: 1px dashed #ced4da;
   border-radius: 8px;
   background-color: #f8f9fa;
@@ -334,5 +334,94 @@
   .submitButton {
     padding: 12px;
     font-size: 0.95rem;
+  }
+  .questionDetailSection,
+  .answerSection {
+    margin: 10px;
+    padding: 12px;
+  }
+  .questionText,
+  .answerText {
+    font-size: 0.95rem;
+  }
+  .answerTitle {
+    font-size: 1rem;
+  }
+}
+
+/* Q&A Detail Page Styles */
+.questionDetailSection {
+  /* 이미지와 같이 별도의 배경/테두리 없이 콘텐츠 영역에 바로 표시 */
+  padding: 0 16px; 
+  margin: 0 0 16px 0;
+  border-top: #bdbdbd 1px solid; /* 상단에만 테두리 추가 */
+  /* 기존의 background-color, border, border-radius 속성은 제거됩니다. */
+}
+
+.questionText {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #343a40;
+  margin-bottom: 12px;
+  white-space: pre-wrap; /* Preserve whitespace and line breaks */
+}
+
+.questionImageContainer {
+  width: 100%;
+  max-width: 300px; /* Max width for image */
+  height: auto;
+  margin-top: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #e9ecef;
+}
+
+.questionImageContainer img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain; /* Ensure image fits within container */
+}
+
+/* Answer Section - Keep the boxed style as seen in 모바일_Q&A_pending-1.png */
+.answerSection {
+  padding: 0 16px; 
+  margin: 0 0 16px 0;
+  background-color: #f8f9fa;
+  border-radius: 15px;
+}
+
+.answerTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0288d1; /* Darker blue */
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px dashed #81d4fa;
+}
+
+.answerText {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #212529;
+  white-space: pre-wrap; /* Preserve whitespace and line breaks */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .questionDetailSection,
+  .answerSection {
+    margin: 10px;
+    padding: 12px;
+  }
+  .questionText,
+  .answerText {
+    font-size: 0.95rem;
+  }
+  .answerTitle {
+    font-size: 1rem;
   }
 }

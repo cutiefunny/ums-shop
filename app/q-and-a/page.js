@@ -7,6 +7,7 @@ import styles from '../my-questions/my-questions.module.css'; // my-questions.mo
 import commonStyles from '../admin/common.module.css'; // 공통 스타일 재활용
 import { useAuth } from '@/contexts/AuthContext'; // 사용자 정보 (이메일, 이름, 선박명) 가져오기
 import { useModal } from '@/contexts/ModalContext'; // 알림 모달 사용
+import Link from 'next/link';
 
 // 아이콘 컴포넌트
 const BackIcon = () => <svg width="24" height="24" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41Z" fill="black"/></svg>;
@@ -17,59 +18,6 @@ const AttachIcon = () => (
     <path d="M13 7H7a2 2 0 0 0-2 2v6"></path>
   </svg>
 );
-
-// Q&A 항목을 위한 Mock Data (실제로는 API에서 가져올 예정)
-const mockQnA = [
-  {
-    id: 'q1',
-    status: 'Pending',
-    title: 'Question about my recent order',
-    date: '2025-02-28',
-    category: 'Order',
-    userEmail: 'user1@example.com'
-  },
-  {
-    id: 'q2',
-    status: 'Answered',
-    title: 'Payment issue for product X',
-    date: '2025-02-27',
-    category: 'Payment',
-    userEmail: 'user1@example.com'
-  },
-  {
-    id: 'q3',
-    status: 'Pending',
-    title: 'Delivery inquiry for item Y',
-    date: '2025-02-26',
-    category: 'Delivery',
-    userEmail: 'user2@example.com' // 다른 사용자 질문
-  },
-  {
-    id: 'q4',
-    status: 'Pending',
-    title: 'Question about product features',
-    date: '2025-02-25',
-    category: 'Product',
-    userEmail: 'user1@example.com'
-  },
-  {
-    id: 'q5',
-    status: 'Answered',
-    title: 'General service feedback',
-    date: '2025-02-24',
-    category: 'Service',
-    userEmail: 'user1@example.com'
-  },
-  {
-    id: 'q6',
-    status: 'Pending',
-    title: 'ETC question example',
-    date: '2025-02-23',
-    category: 'ETC',
-    userEmail: 'user1@example.com'
-  },
-];
-
 
 export default function QnAPage() {
   const router = useRouter();
@@ -283,7 +231,7 @@ export default function QnAPage() {
   };
 
   const getMyQuestionsStatusClass = (status) => {
-    return status.toLowerCase() === 'pending' ? styles.qaStatus.pending : styles.qaStatus.answered;
+    return status.toLowerCase() === 'pending' ? styles.Pending : styles.Answered;
   };
 
 
@@ -384,7 +332,6 @@ export default function QnAPage() {
               </div>
 
               <div className={styles.imageUploadArea}>
-                <label className={styles.formLabel}>Attach Image (Optional)</label>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -398,8 +345,7 @@ export default function QnAPage() {
                     onClick={() => askFileInputRef.current.click()}
                     className={styles.imageUploadButton}
                   >
-                    <AttachIcon />
-                    Add Image
+                    +
                   </button>
                 ) : (
                   <div className={styles.imagePreviewContainer}>
@@ -413,7 +359,6 @@ export default function QnAPage() {
                     </button>
                   </div>
                 )}
-                <p className={styles.fileInfoText}>Max 1 file, jpg/png/webp, 5MB limit.</p>
               </div>
             </form>
           </div>
@@ -459,16 +404,18 @@ export default function QnAPage() {
             ) : filteredMyQnAs.length > 0 ? (
               <div className={styles.qaList}>
                 {filteredMyQnAs.map(qna => (
-                  <div key={qna.id} className={styles.qaListItem}>
-                    <div className={styles.qaHeader}>
-                      <span className={`${styles.qaStatus} ${getMyQuestionsStatusClass(qna.status)}`}>
-                        {qna.status}
-                      </span>
-                      <span className={styles.qaCategory}>{qna.category}</span>
+                  <Link href={`/q-and-a/${qna.id}`} key={qna.id} className={styles.qaListItemLink}> {/* Link 추가 */}
+                    <div className={styles.qaListItem}>
+                      <div className={styles.qaHeader}>
+                        <span className={`${styles.qaStatus} ${getMyQuestionsStatusClass(qna.status)}`}>
+                          {qna.status}
+                        </span>
+                        <span className={styles.qaCategory}>{qna.category}</span>
+                      </div>
+                      <h3 className={styles.qaTitle}>{qna.title}</h3>
+                      <p className={styles.qaDate}>{qna.date}</p>
                     </div>
-                    <h3 className={styles.qaTitle}>{qna.title}</h3>
-                    <p className={styles.qaDate}>{qna.date}</p>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (
@@ -480,6 +427,7 @@ export default function QnAPage() {
         )}
       </main>
 
+        {activeTab === 'ask' && (
       <div className={styles.submitButtonContainer}>
         <button 
           type="submit" 
@@ -490,6 +438,7 @@ export default function QnAPage() {
           {commonLoading ? 'Submitting...' : 'Submit'}
         </button>
       </div>
+        )}
     </div>
   );
 }
