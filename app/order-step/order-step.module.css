@@ -1,0 +1,169 @@
+/* app/order-step/order-step.module.css */
+
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #fff;
+  padding-bottom: 70px; /* For BottomNav if used */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 10;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.mainContent {
+  padding: 16px;
+}
+
+.orderStepList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background-color: #f8f8f8;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 16px;
+}
+
+.orderStepItem {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e9ecef;
+  position: relative;
+}
+
+.orderStepItem:last-child {
+  border-bottom: none;
+}
+
+.stepNumber {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #adb5bd; /* Default color for inactive step */
+  margin-right: 15px;
+  min-width: 30px; /* Ensure consistent spacing */
+  text-align: center;
+}
+
+.stepContent {
+  flex-grow: 1;
+}
+
+.stepTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #212529;
+}
+
+.stepDescription {
+  font-size: 0.9rem;
+  color: #495057;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.stepDate {
+  font-size: 0.8rem;
+  color: #adb5bd;
+  margin-top: 8px;
+}
+
+.stepStatusTag {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-left: 10px;
+  color: white;
+  background-color: #6c757d; /* Default gray for status */
+}
+
+.stepStatusTag.pending {
+  background-color: #ffc107; /* Yellow for pending */
+}
+
+.stepStatusTag.completed {
+  background-color: #28a745; /* Green for completed */
+}
+
+.stepStatusTag.current {
+  background-color: #f5a623; /* Orange for current step */
+}
+
+.orderStepItem.active .stepNumber {
+  color: #f5a623; /* Active step number color */
+}
+
+.orderStepItem.active .stepTitle {
+  color: #f5a623; /* Active step title color */
+}
+
+/* Line connecting steps */
+.stepLine {
+  position: absolute;
+  left: 30px; /* Align with step number center */
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #e9ecef; /* Light gray line */
+  z-index: 0; /* Behind content */
+}
+
+.orderStepItem:first-child .stepLine {
+  top: 50%; /* Start line from middle of first item */
+}
+
+.orderStepItem:last-child .stepLine {
+  bottom: 50%; /* End line at middle of last item */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .orderStepList {
+    margin: 10px;
+  }
+  .orderStepItem {
+    padding: 12px;
+  }
+  .stepNumber {
+    font-size: 1.3rem;
+    margin-right: 10px;
+  }
+  .stepTitle {
+    font-size: 0.95rem;
+  }
+  .stepDescription {
+    font-size: 0.85rem;
+  }
+  .stepDate, .stepStatusTag {
+    font-size: 0.75rem;
+  }
+  .stepLine {
+    left: 25px; /* Adjust line position for smaller screens */
+  }
+}

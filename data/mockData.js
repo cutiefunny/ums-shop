@@ -1,14 +1,14 @@
 export const categoryData = [
-  { name: 'Health_Wellness', code: 'HEA', subCategories: ['Herbal Extracts & Supplements', 'Beauty & Health Devices', 'General Health & Supplements'] },
-  { name: 'Food_Beverages', code: 'FOO / BEV / MFO / MEI', subCategories: ['Subcategory 1', 'Subcategory 2'] },
-  { name: 'Fashion_Lifestyle', code: 'FAS', subCategories: ['Subcategory A', 'Subcategory B'] },
-  { name: 'Electronics_Gadgets', code: 'ELE', subCategories: [] },
-  { name: 'Tech_Communication', code: 'TEC', subCategories: [] },
-  { name: 'Personal Care_Grooming', code: 'PER / COS', subCategories: [] },
-  { name: 'Kids\' Essentials', code: 'KID', subCategories: [] },
-  { name: 'Outdoor, Sports_Leisure', code: 'OUT / SPO', subCategories: [] },
-  { name: 'Cabin Care_Home Comforts', code: 'CLC', subCategories: [] },
-  { name: 'Korean Souvenirs_Gifts', code: 'GIF', subCategories: [] },
+  { name: 'health-wellness', code: 'HEA', subCategories: ['Herbal Extracts & Supplements', 'Beauty & Health Devices', 'General Health & Supplements'] },
+  { name: 'food-beverages', code: 'FOO / BEV / MFO / MEI', subCategories: ['Subcategory 1', 'Subcategory 2'] },
+  { name: 'fashion-lifestyle', code: 'FAS', subCategories: ['Subcategory A', 'Subcategory B'] },
+  { name: 'electronics-gadgets', code: 'ELE', subCategories: [] },
+  { name: 'tech-communication', code: 'TEC', subCategories: [] },
+  { name: 'personal-care-grooming', code: 'PER / COS', subCategories: [] },
+  { name: 'kids-essentials', code: 'KID', subCategories: [] },
+  { name: 'outdoor-sports-leisure', code: 'OUT / SPO', subCategories: [] },
+  { name: 'cabin-care-home-comforts', code: 'CLC', subCategories: [] },
+  { name: 'korean-souvenirs-gifts', code: 'GIF', subCategories: [] },
 ];
 
 // 텍스트를 URL slug 형식으로 변환하는 헬퍼 함수

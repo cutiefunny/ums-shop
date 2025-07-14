@@ -167,6 +167,10 @@ export default function ProfilePage() {
     router.push('/q-and-a?tab=my'); // My Questions 페이지로 이동
   };
 
+  const handleAskQuestionClick = () => {
+    router.push('/q-and-a?tab=ask'); // 통합된 Q&A 페이지의 'Ask a Question' 탭으로 이동
+  };
+
   if (!editableUser) {
     return <div className={styles.container}>Loading profile...</div>;
   }
@@ -258,7 +262,7 @@ export default function ProfilePage() {
             </button>
           </li>
           <li>
-            <button className={styles.menuItem} onClick={() => router.push('/ask-question')}>
+            <button className={styles.menuItem} onClick={handleAskQuestionClick}>
               <span>Ask a Question</span>
               <ChevronRightIcon />
             </button>
@@ -324,6 +328,9 @@ export default function ProfilePage() {
         buttonText="Log Out"
         onConfirm={confirmLogout}
         onCancel={() => setShowLogoutModal(false)}
+        // 이미지에 맞춰 버튼 스타일 재정의
+        confirmButtonClass={styles.logoutConfirmButton}
+        cancelButtonClass={styles.logoutCancelButton}
       />
 
       {/* 모달: Thinking of Leaving? (탈퇴 확인) */}

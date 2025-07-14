@@ -3,9 +3,28 @@
 .title { font-size: 1.5rem; font-weight: 600; }
 .iconButton, .moreLink { background: none; border: none; cursor: pointer; display: flex; align-items: center; padding: 4px; }
 .headerIcons { display: flex; gap: 8px; }
-.filterBar { display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px; border-bottom: 1px solid #f1f3f5; -ms-overflow-style: none; scrollbar-width: none; }
+.filterBar 
+{ 
+  display: flex; 
+  gap: 8px; 
+  overflow-x: auto; 
+  padding: 12px 16px; 
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
+  height: 48px;
+}
 .filterBar::-webkit-scrollbar { display: none; }
-.filterChip { padding: 8px 16px; border-radius: 20px; border: 1px solid #dee2e6; background-color: #f8f9fa; font-size: 0.9rem; cursor: pointer; white-space: nowrap; }
+.filterChip 
+{ 
+  padding: 8px 16px; 
+  border-radius: 20px; 
+  border: 1px solid #dee2e6; 
+  background-color: #f8f9fa; 
+  font-size: 0.9rem; 
+  cursor: pointer; 
+  white-space: nowrap; 
+  height: 32px;
+}
 .filterChip.active { background-color: #f5a623; color: white; border-color: #f5a623; }
 .mainContent { display: flex; flex-direction: column; gap: 24px; }
 .subCategorySection { margin-top: 24px; }

@@ -201,6 +201,38 @@
 
 }
 
+/* Custom styles for ConfirmationModal buttons (Logout) */
+/* These override the default styles in modal.module.css for specific buttons */
+.logoutConfirmButton {
+  background-color: #f5a623 !important; /* Yellow from image */
+  color: white !important;
+  border-radius: 8px !important;
+  font-weight: bold !important;
+  padding: 12px 20px !important;
+  flex: 1; /* Take equal space */
+  transition: background-color 0.2s ease;
+}
+
+.logoutConfirmButton:hover {
+  background-color: #d88e1a !important; /* Darker yellow on hover */
+}
+
+.logoutCancelButton {
+  background-color: #e9ecef !important; /* Light gray from image */
+  color: #495057 !important;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 8px !important;
+  font-weight: bold !important;
+  padding: 12px 20px !important;
+  flex: 1; /* Take equal space */
+  transition: background-color 0.2s ease;
+}
+
+.logoutCancelButton:hover {
+  background-color: #ced4da !important; /* Darker gray on hover */
+}
+
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .profileInfo,

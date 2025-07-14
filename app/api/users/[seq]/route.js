@@ -85,6 +85,13 @@ export async function PUT(request, context) {
       first = false;
     }
 
+    // updatedAt 필드 추가
+    if (!first) UpdateExpression += ',';
+    UpdateExpression += ' #updatedAt = :updatedAt';
+    ExpressionAttributeNames['#updatedAt'] = 'updatedAt';
+    ExpressionAttributeValues[':updatedAt'] = new Date().toISOString();
+
+
     if (Object.keys(body).length === 0 || (Object.keys(body).length === 1 && body.hasOwnProperty('seq'))) {
       return NextResponse.json({ message: 'No fields provided for update' }, { status: 400 });
     }

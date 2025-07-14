@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './category1depth.module.css';
 import ProductCard from '@/components/ProductCard';
 import { useModal } from '@/contexts/ModalContext';
-import { categoryData, mockProducts, devices, generals, slugify } from '@/data/mockData';
+import { categoryData, slugify } from '@/data/mockData'; // categoryData와 slugify는 유지
 import AddToCartModal from '../../products/detail/[slug]/components/AddToCartModal'; // 바텀 시트 모달 import
 
 // 아이콘 컴포넌트
@@ -20,14 +20,99 @@ export default function Category1DepthPage() {
   const router = useRouter();
   const params = useParams();
   const { showModal } = useModal();
-  const { slug } = params;
+  const { slug } = params; // 현재 URL의 slug (예: herbal-extracts-supplements)
 
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const currentCategory = categoryData.find(cat => slugify(cat.name) === slug);
-  const title = currentCategory ? currentCategory.name.replace(/_/g, ' ') : 'Category';
-  const subCategories = currentCategory ? currentCategory.subCategories : [];
+  const [mainCategoryOptions, setMainCategoryOptions] = useState([]); // 메인 카테고리 목록 (API에서 가져옴)
+  const [subCategories, setSubCategories] = useState([]); // subCategory1 목록 (API에서 가져옴)
+  const [productsByCategory, setProductsByCategory] = useState({}); // { subCategory1Id: [products...] }
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 메인 카테고리 목록을 가져오는 함수
+  const fetchMainCategoryOptions = useCallback(async () => {
+    try {
+      const response = await fetch('/api/categories?level=main');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setMainCategoryOptions(data || []);
+    } catch (err) {
+      console.error("Error fetching main category options:", err);
+      // 이 에러는 페이지 로딩을 막지 않으므로, 에러 상태만 기록
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMainCategoryOptions();
+  }, [fetchMainCategoryOptions]);
+
+  // 현재 메인 카테고리 정보 찾기
+  const currentMainCategory = useMemo(() => {
+    // slug를 통해 mainCategory의 name을 찾고, 그 name에 해당하는 categoryData를 찾습니다.
+    // slug가 mainCategory의 slug와 일치하는 경우를 찾아야 합니다.
+    return mainCategoryOptions.find(cat => slugify(cat.name) === slug);
+  }, [slug, mainCategoryOptions]); // mainCategoryOptions에 의존성을 추가
+
+  const title = currentMainCategory ? currentMainCategory.name.replace(/_/g, ' ') : 'Category';
+  const mainCategoryId = currentMainCategory ? currentMainCategory.categoryId : null; // DynamoDB ID
+
+  // subCategory1 목록 및 각 subCategory1에 속하는 상품 목록을 가져오는 함수
+  const fetchCategoryData = useCallback(async () => {
+    if (!mainCategoryId) {
+      setLoading(false);
+      // mainCategoryId가 없으면 에러를 설정하고 함수 종료
+      setError('Main category not found for this URL or data not loaded.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      // 1. subCategory1 목록 가져오기
+      const sub1Response = await fetch(`/api/categories?level=surve1&parentId=${mainCategoryId}`);
+      if (!sub1Response.ok) {
+        throw new Error(`Failed to fetch sub categories: ${sub1Response.status}`);
+      }
+      const sub1Data = await sub1Response.json();
+      setSubCategories(sub1Data);
+
+      // 2. 각 subCategory1에 해당하는 상품 목록 가져오기
+      const productsMap = {};
+      for (const sub1Cat of sub1Data) {
+        // /api/products/check?subCategory1Id=... API 호출
+        const productsResponse = await fetch(`/api/products/check?subCategory1Id=${sub1Cat.categoryId}`);
+        if (!productsResponse.ok) {
+          console.warn(`Failed to fetch products for ${sub1Cat.name}: ${productsResponse.status}`);
+          productsMap[sub1Cat.categoryId] = []; // 실패해도 빈 배열로 처리
+          continue;
+        }
+        const productsData = await productsResponse.json();
+        productsMap[sub1Cat.categoryId] = productsData;
+      }
+      setProductsByCategory(productsMap);
+
+    } catch (err) {
+      console.error("Error fetching category data:", err);
+      setError(`데이터를 불러오는 데 실패했습니다: ${err.message}`);
+      showModal(`데이터를 불러오는 데 실패했습니다: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [mainCategoryId, showModal]);
+
+  useEffect(() => {
+    // mainCategoryId가 유효할 때만 fetchCategoryData 호출
+    if (mainCategoryId) {
+        fetchCategoryData();
+    } else if (!loading && !error) { // mainCategoryId가 없는데 로딩이 끝나고 에러가 없으면, 초기 로딩 상태로 설정
+        setLoading(true); // mainCategoryOptions가 로드될 때까지 기다림
+    }
+  }, [mainCategoryId, fetchCategoryData]);
+
 
   const handleOpenCartModal = (product) => {
     setSelectedProduct(product);
@@ -39,6 +124,22 @@ export default function Category1DepthPage() {
       console.log(`${productName} ${quantity}개 장바구니에 추가`);
       showModal(`${productName} has been added to your cart.`);
   };
+
+  if (loading) {
+    return (
+      <div className={styles.pageContainer}>
+        <div className={styles.emptyMessage}>Loading category products...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.pageContainer}>
+        <div className={`${styles.emptyMessage} ${styles.errorText}`}>Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.pageContainer}>
@@ -54,6 +155,7 @@ export default function Category1DepthPage() {
             <h1 className={styles.title}>{title}</h1>
         </div>
         
+        {/* TODO: 2차 카테고리 필터링 로직 구현 필요 */}
         <div className={styles.filterBar}>
             <button className={`${styles.filterChip} ${styles.active}`}>ALL</button>
             <button className={styles.filterChip}>categorie 1</button>
@@ -61,30 +163,47 @@ export default function Category1DepthPage() {
         </div>
 
         <main className={styles.mainContent}>
-            {subCategories.map(subCategory => {
-                const products = subCategory === 'Beauty & Health Devices' ? devices : 
-                                 subCategory === 'General Health & Supplements' ? generals : 
-                                 mockProducts;
-                return (
-                    <section key={subCategory} className={styles.subCategorySection}>
-                        <div className={styles.subCategoryHeader}>
-                            <h2>{subCategory.replace(/_/g, ' ')}</h2>
-                            <Link href={`/products/${slugify(subCategory)}`} className={styles.moreLink}>
-                                more <MoreIcon />
-                            </Link>
-                        </div>
-                        <div className={styles.horizontalProductList}>
-                            {products.map(product => (
-                                <Link href={`/products/detail/${product.slug}`} key={product.id} className={styles.productLink}>
-                                    <div className={styles.productCardWrapper}>
-                                        <ProductCard product={product} onAddToCart={handleOpenCartModal} />
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </section>
-                );
-            })}
+            {subCategories.length > 0 ? (
+              subCategories.map(subCategory1 => {
+                  const products = productsByCategory[subCategory1.categoryId] || []; // 해당 subCategory1의 상품 목록
+                  return (
+                      <section key={subCategory1.categoryId} className={styles.subCategorySection}>
+                          <div className={styles.subCategoryHeader}>
+                              <h2>{subCategory1.name.replace(/_/g, ' ')}</h2>
+                              {/* TODO: 3차 카테고리 페이지로 이동하는 Link로 변경 필요 */}
+                              <Link href={`/products/${slugify(subCategory1.name)}`} className={styles.moreLink}>
+                                  more <MoreIcon />
+                              </Link>
+                          </div>
+                          <div className={styles.horizontalProductList}>
+                              {products.length > 0 ? (
+                                products.map(product => (
+                                    <Link href={`/products/detail/${product.slug || product.id}`} key={product.id} className={styles.productLink}>
+                                        <div className={styles.productCardWrapper}>
+                                            {/* ProductCard에 필요한 product 속성 전달 */}
+                                            <ProductCard product={{
+                                                id: product.id,
+                                                name: product.productName, // DynamoDB의 productName 필드 사용
+                                                price: product.priceWon, // DynamoDB의 priceWon 필드 사용
+                                                discount: product.discount || 0, // 할인율 필드가 있다면 사용
+                                                image: product.mainImage, // DynamoDB의 mainImage 필드 사용
+                                                slug: product.sku // SKU를 slug로 사용하거나, 별도 slug 필드 사용
+                                            }} onAddToCart={handleOpenCartModal} />
+                                        </div>
+                                    </Link>
+                                ))
+                              ) : (
+                                <p style={{ color: '#6c757d', fontSize: '0.9rem', paddingLeft: '10px' }}>No products found in this category.</p>
+                              )}
+                          </div>
+                      </section>
+                  );
+              })
+            ) : (
+              <div className={styles.emptyMessage}>
+                <p>No sub-categories found for this main category.</p>
+              </div>
+            )}
         </main>
 
         {selectedProduct && (

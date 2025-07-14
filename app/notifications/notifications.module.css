@@ -1,0 +1,262 @@
+/* app/notifications/notifications.module.css */
+
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #fff;
+  padding-bottom: 70px; /* For BottomNav if used */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 10;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.mainContent {
+  padding: 16px;
+}
+
+.notificationList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background-color: #ffffff; /* List background color */
+  border-radius: 12px;
+  overflow: hidden; /* For rounded corners */
+  margin: 16px; /* Spacing from edges */
+  
+}
+
+.notificationItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-radius: 12px;
+  background-color: #f7f7f7;
+    margin-bottom: 8px;
+}
+
+/* .notificationItem:last-child {
+  border-bottom: none;
+} */
+
+.notificationLabel {
+  font-size: 1rem;
+  color: #212529;
+  font-weight: 500;
+}
+
+/* Custom Toggle Switch Styles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px; /* Width of the switch */
+  height: 28px; /* Height of the switch */
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc; /* Default off color */
+  transition: .4s;
+  border-radius: 28px; /* Rounded slider */
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px; /* Size of the circle */
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%; /* Circle shape */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Shadow for the circle */
+}
+
+input:checked + .slider {
+  background-color: #f5a623; /* Yellow on color */
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #f5a623;
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px); /* Move circle to the right */
+}
+
+/* --- Styles for Notifications List (Alarms tab) --- */
+.alarmFilterTabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 16px 16px 16px; /* Match mainContent padding */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.alarmFilterTabs::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}
+
+.alarmFilterChip {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  font-size: 0.9rem;
+  color: #495057;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.alarmFilterChip.active {
+  background-color: #f5a623;
+  color: white;
+  border-color: #f5a623;
+}
+
+.alarmListContainer {
+  margin: 0 16px; /* Match mainContent padding */
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+.alarmItem {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border-bottom: 1px solid #e9ecef;
+  position: relative; /* For "New alarm" tag */
+}
+
+.alarmItem:last-child {
+  border-bottom: none;
+}
+
+.alarmHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.alarmCategoryTag {
+  display: inline-block;
+  background-color: #e9ecef;
+  color: #495057;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.alarmTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 4px;
+}
+
+.alarmContent {
+  font-size: 0.9rem;
+  color: #495057;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.alarmDate {
+  font-size: 0.8rem;
+  color: #adb5bd;
+}
+
+.newAlarmTag {
+  background-color: #ffc107; /* Yellow for new alarm */
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+}
+
+.alarmOkButton {
+  background-color: #f5a623;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  align-self: flex-end; /* Align to the right */
+  margin-top: 8px;
+}
+
+.alarmOkButton:hover {
+  background-color: #d88e1a;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .notificationList,
+  .alarmListContainer {
+    margin: 10px;
+  }
+  .notificationItem,
+  .alarmItem {
+    padding: 12px;
+  }
+  .notificationLabel,
+  .alarmTitle {
+    font-size: 0.95rem;
+  }
+  .alarmContent {
+    font-size: 0.85rem;
+  }
+  .alarmCategoryTag,
+  .newAlarmTag {
+    font-size: 0.7rem;
+  }
+}

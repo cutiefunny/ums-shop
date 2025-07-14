@@ -19,9 +19,10 @@ const PRODUCTS_TABLE_NAME = process.env.DYNAMODB_TABLE_PRODUCTS;
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const mainCategoryId = searchParams.get('mainCategoryId');
-  const subCategory1Id = searchParams.get('subCategory1Id');
-  const subCategory2Id = searchParams.get('subCategory2Id');
+  //searchParams에 %20가 포함되어 있을 수 있으므로 decodeURIComponent 사용
+  const mainCategoryId = decodeURIComponent(searchParams.get('mainCategoryId') || '');
+  const subCategory1Id = decodeURIComponent(searchParams.get('subCategory1Id') || '');
+  const subCategory2Id = decodeURIComponent(searchParams.get('subCategory2Id') || '');
 
   try {
     let Items = [];
