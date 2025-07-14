@@ -3,12 +3,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image'; // [신규] Image 컴포넌트 import
 import styles from '../home.module.css';
+import { useRouter } from 'next/navigation'; // useRouter 훅 임포트
 
 export default function MainBanner({ items }) {
   const [displayItems, setDisplayItems] = useState([]);
   const containerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const isJumpingRef = useRef(false);
+  const router = useRouter(); // useRouter 훅 사용
 
   // ... updateScale, useEffect, handleJump, handleScroll 함수는 기존과 동일 ...
   const updateScale = useCallback(() => {
@@ -61,7 +63,8 @@ export default function MainBanner({ items }) {
   useEffect(() => {
     if (displayItems.length > 0 && containerRef.current) {
       const container = containerRef.current;
-      const initialItemIndex = 2;
+      // 첫 번째 실제 아이템 (클론 제외)의 인덱스
+      const initialItemIndex = 1; // Assuming the first item is a clone
       const item = container.children[initialItemIndex];
       
       if (item) {
@@ -79,7 +82,12 @@ export default function MainBanner({ items }) {
     if (!containerRef.current || !items || items.length === 0) return;
 
     const container = containerRef.current;
-    const itemWidthWithGap = container.children[1].offsetLeft - container.children[0].offsetLeft;
+    // Adjusted to correctly calculate item width with gap.
+    // Assuming all items have the same width and gap.
+    const firstItem = container.children[0];
+    const secondItem = container.children[1];
+    const itemWidthWithGap = secondItem ? (secondItem.offsetLeft - firstItem.offsetLeft) : firstItem.offsetWidth;
+
     const currentIndex = Math.round(container.scrollLeft / itemWidthWithGap);
     
     const atEndClone = currentIndex >= displayItems.length - 1;
@@ -87,6 +95,8 @@ export default function MainBanner({ items }) {
 
     if (atEndClone || atStartClone) {
         isJumpingRef.current = true;
+        // Target index is 1 for the first original item (after the start clone)
+        // or items.length for the last original item (before the end clone).
         const targetIndex = atEndClone ? 1 : items.length;
         const targetItem = container.children[targetIndex];
         if(targetItem) {
@@ -108,6 +118,15 @@ export default function MainBanner({ items }) {
     scrollTimeoutRef.current = setTimeout(handleJump, 150);
   };
 
+  // 배너 클릭 핸들러
+  const handleBannerClick = (item) => {
+    // 클론 아이템은 클릭해도 이동하지 않음
+    if (item.id.startsWith('clone-')) {
+      return;
+    }
+    router.push(`/products/detail/${item.id}`); // 상품 상세 페이지로 이동 (item.id를 slug로 사용)
+  };
+
   return (
     <div 
       ref={containerRef} 
@@ -119,15 +138,16 @@ export default function MainBanner({ items }) {
           key={item.id} 
           className={styles.bannerItem}
           style={{ backgroundColor: item.color }}
+          onClick={() => handleBannerClick(item)} // 클릭 이벤트 추가
         >
           {/* [수정] Image 컴포넌트를 사용하여 배너 이미지 표시 */}
           {item.imageUrl && (
             <Image
               src={item.imageUrl}
-              alt="Main Banner"
+              alt={item.id.startsWith('clone-') ? `Banner item ${item.id.replace('clone-', '')}` : `Product banner for ${item.id}`} // alt 텍스트 개선
               fill={true} // 부모 요소(div)를 꽉 채우도록 설정
               style={{ objectFit: 'cover' }} // 이미지가 잘리지 않고 채워지도록 설정
-              priority={item.id === 2} // 중앙에 처음 보이는 이미지는 우선적으로 로드
+              priority={item.id === 2} // 중앙에 처음 보이는 이미지는 우선적으로 로드 (원본 id 기준)
             />
           )}
         </div>

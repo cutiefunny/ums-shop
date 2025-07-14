@@ -33,7 +33,14 @@ export default function ProductCard({ product, onAddToCart }) {
   return (
     <div className={styles.card}>
       <div className={styles.imageWrapper}>
-        <Image src={product.image} alt={product.name} width={150} height={150} />
+        {/* 'alt' 속성 수정 및 'objectFit="cover"' 추가 */}
+        <Image 
+          src={product.image} 
+          alt={product.name || 'Product Image'} 
+          width={150} 
+          height={150} 
+          objectFit="cover" // 추가된 부분
+        />
         {isLoggedIn && (
           <button onClick={handleWishlistClick} className={styles.heartButton}>
             {isWishlisted ? <HeartIcon /> : <HeartOutlineIcon />}

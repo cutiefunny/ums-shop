@@ -31,7 +31,13 @@ export default function ProductCard({ product, onAddToCart }) {
   return (
     <div className={styles.card}>
       <div className={styles.imageWrapper}>
-        <Image src={product.image} alt={product.name} width={150} height={150} />
+        {/* 'alt' 속성에 'product.name'이 유효하지 않을 경우 'Product Image'를 사용하도록 수정 */}
+        <Image src={product.image} 
+          alt={product.name || 'Product Image'} 
+          width={150} 
+          height={150} 
+          objectFit="cover" // 이미지가 잘리거나 늘어나지 않도록 cover 설정
+        />
         {isLoggedIn && (
           <button onClick={handleWishlistClick} className={styles.heartButton}>
             {isWishlisted ? <HeartIcon /> : <HeartOutlineIcon />}
@@ -40,10 +46,11 @@ export default function ProductCard({ product, onAddToCart }) {
       </div>
       <div className={styles.info}>
         <h3 className={styles.productName}>{product.name}</h3>
-        <div className={styles.priceContainer}>
+        {product.discount > 0 && <div className={styles.priceContainer}>
           <span className={styles.discount}>{product.discount}%</span>
           <span className={styles.originalPrice}>${product.price.toFixed(2)}</span>
         </div>
+        }
         <p className={styles.finalPrice}>${discountedPrice.toFixed(2)}</p>
       </div>
       <button className={styles.addToCartButton} onClick={handleAddToCartClick}>

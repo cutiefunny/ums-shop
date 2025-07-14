@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react'; // useCallback 추가
+import React, { useState, useEffect, useCallback, useMemo } from 'react'; // useCallback, useMemo 추가
 import styles from './home.module.css';
 import HomeHeader from './components/HomeHeader';
 import SearchComponent from './components/SearchComponent';
@@ -14,9 +14,17 @@ import { useModal } from '@/contexts/ModalContext'; // useModal 훅 임포트
 export default function HomePage() {
   const [showPopup, setShowPopup] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
-  const [mainCategories, setMainCategories] = useState([]); // API에서 가져올 카테고리 데이터
-  const [loadingCategories, setLoadingCategories] = useState(true); // 카테고리 로딩 상태
-  const [errorCategories, setErrorCategories] = useState(null); // 카테고리 에러 상태
+
+  // 카테고리 데이터 상태
+  const [mainCategories, setMainCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [errorCategories, setErrorCategories] = useState(null);
+
+  // 배너 제품 데이터 상태
+  const [bannerProducts, setBannerProducts] = useState([]);
+  const [loadingBannerProducts, setLoadingBannerProducts] = useState(true);
+  const [errorBannerProducts, setErrorBannerProducts] = useState(null);
+
   const { showModal } = useModal(); // 알림 모달 훅
 
   useEffect(() => {
@@ -48,54 +56,94 @@ export default function HomePage() {
     }
   }, [showModal]);
 
+  // API를 통해 랜덤 제품 이미지를 가져오는 함수 (배너용)
+  const fetchBannerProducts = useCallback(async () => {
+    setLoadingBannerProducts(true);
+    setErrorBannerProducts(null);
+    try {
+      // DynamoDB에서 최대 10개의 상품만 가져오도록 limit 파라미터 추가
+      const response = await fetch('/api/products?limit=10'); // 수정된 부분
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const allProducts = await response.json();
+
+      // 이미지가 있고, Next.js Image 컴포넌트가 허용하는 URL 패턴을 가진 상품만 필터링
+      // (next.config.mjs에 설정된 remotePatterns를 따름)
+      const validImageProducts = allProducts.filter(p =>
+        p.mainImage && (p.mainImage.startsWith('http://') || p.mainImage.startsWith('https://'))
+      );
+
+      // 필터링된 유효한 이미지 제품 중 무작위로 5개 선택
+      // (ScanLimit이 10개이므로, 10개 미만일 수도 있어 .slice(0, 5)는 그대로 유지)
+      const shuffledProducts = validImageProducts.sort(() => 0.5 - Math.random());
+      const selectedProducts = shuffledProducts.slice(0, 5); // 5개만 최종 선택
+
+      const mappedBannerItems = selectedProducts.map((product, index) => ({
+        id: product.productId, // 또는 고유한 다른 ID
+        // 색상은 임의로 지정하거나, 백엔드에서 받아올 수 있습니다.
+        color: index % 2 === 0 ? 'gray' : 'lightgray',
+        imageUrl: product.mainImage,
+      }));
+
+      setBannerProducts(mappedBannerItems);
+    } catch (err) {
+      console.error("Error fetching banner products:", err);
+      setErrorBannerProducts(`배너 이미지를 불러오는 데 실패했습니다: ${err.message}`);
+      showModal(`배너 이미지를 불러오는 데 실패했습니다: ${err.message}`);
+    } finally {
+      setLoadingBannerProducts(false);
+    }
+  }, [showModal]);
+
+
+  // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     fetchMainCategories();
-  }, [fetchMainCategories]);
+    fetchBannerProducts(); // 배너 제품도 함께 가져옴
+  }, [fetchMainCategories, fetchBannerProducts]);
+
+  // MainBanner에 전달할 아이템 (Swiper loop를 위해 3배로 늘림)
+  const triplicatedBannerItems = useMemo(() => {
+    if (!bannerProducts.length) return []; // 제품이 없으면 빈 배열 반환
+    return [
+      ...bannerProducts,
+      ...bannerProducts.map(item => ({ ...item, id: `${item.id}-duplicate-1` })),
+      ...bannerProducts.map(item => ({ ...item, id: `${item.id}-duplicate-2` }))
+    ];
+  }, [bannerProducts]);
 
 
-  const bannerItems = [
-    { id: 1, color: 'gray', imageUrl: '/images/home1.jpeg' },
-    { id: 2, color: 'lightgray', imageUrl: '/images/home2.jpeg' },
-    { id: 3, color: 'gray', imageUrl: '/images/home3.jpeg' },
-  ];
-
-  // Swiper loop 경고 및 렌더링 오류 해결을 위해 아이템 배열을 3배로 늘립니다.
-  const triplicatedBannerItems = [
-    ...bannerItems,
-    ...bannerItems.map(item => ({ ...item, id: `${item.id}-duplicate-1` })),
-    ...bannerItems.map(item => ({ ...item, id: `${item.id}-duplicate-2` }))
-  ];
-
-  // TrendingSection에 전달할 카테고리 데이터는 이제 API에서 가져온 mainCategories입니다.
-  // trendingCategories는 더 이상 필요하지 않습니다.
+  const isLoading = loadingCategories || loadingBannerProducts;
+  const hasError = errorCategories || errorBannerProducts;
 
   return (
     <div className={styles.pageContainer}>
       {showPopup && (
-        <PopupModal 
+        <PopupModal
           imageUrl="/images/notice-popup.png"
-          onClose={() => setShowPopup(false)} 
+          onClose={() => setShowPopup(false)}
         />
       )}
       
-      <HomeHeader 
-        onSearchClick={() => setIsSearchVisible(true)} 
+      <HomeHeader
+        onSearchClick={() => setIsSearchVisible(true)}
         isSearchVisible={isSearchVisible}
       />
 
-      <SearchComponent 
-        isVisible={isSearchVisible} 
-        onClose={() => setIsSearchVisible(false)} 
+      <SearchComponent
+        isVisible={isSearchVisible}
+        onClose={() => setIsSearchVisible(false)}
       />
 
-      {/* 카테고리 로딩 중이거나 에러 발생 시 메시지 표시 */}
-      {loadingCategories ? (
+      {/* 카테고리 또는 배너 제품 로딩 중이거나 에러 발생 시 메시지 표시 */}
+      {isLoading ? (
         <div className={styles.mainContent} style={{ textAlign: 'center', padding: '50px' }}>
-          <p>카테고리를 불러오는 중...</p>
+          <p>데이터를 불러오는 중...</p>
         </div>
-      ) : errorCategories ? (
+      ) : hasError ? (
         <div className={styles.mainContent} style={{ textAlign: 'center', padding: '50px', color: 'red' }}>
-          <p>오류: {errorCategories}</p>
+          <p>오류: {hasError}</p>
         </div>
       ) : (
         <main className={styles.mainContent}>

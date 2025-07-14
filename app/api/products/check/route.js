@@ -1,4 +1,4 @@
-// app/api/products/check/route.js (GSI 사용 버전)
+// app/api/products/check/route.js
 import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
@@ -18,78 +18,77 @@ const PRODUCTS_TABLE_NAME = process.env.DYNAMODB_TABLE_PRODUCTS;
 
 
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  //searchParams에 %20가 포함되어 있을 수 있으므로 decodeURIComponent 사용
-  const mainCategoryId = decodeURIComponent(searchParams.get('mainCategoryId') || '');
-  const subCategory1Id = decodeURIComponent(searchParams.get('subCategory1Id') || '');
-  const subCategory2Id = decodeURIComponent(searchParams.get('subCategory2Id') || '');
+  const { searchParams } = new URL(request.url);
+  // searchParams에서 카테고리 이름을 가져옵니다. (기존 변수명 유지)
+  const mainCategoryName = decodeURIComponent(searchParams.get('mainCategoryId') || '');
+  const subCategory1Name = decodeURIComponent(searchParams.get('subCategory1Id') || '');
+  const subCategory2Name = decodeURIComponent(searchParams.get('subCategory2Id') || '');
 
-  try {
-    let Items = [];
+  console.log("Received category names:", {
+    mainCategoryName,
+    subCategory1Name,
+    subCategory2Name
+  });
 
-    // GSI를 사용하여 효율적으로 쿼리 (우선순위: sub2 > sub1 > main)
-    if (subCategory2Id) {
-      const command = new QueryCommand({
+  try {
+    let Items = [];
+
+    // 필터링 조건을 구성합니다.
+    let filterExpressions = [];
+    let expressionAttributeValues = {};
+    let expressionAttributeNames = {};
+    let params = {
         TableName: PRODUCTS_TABLE_NAME,
-        IndexName: 'subCategory2Id-productId-index', // GSI 이름
-        KeyConditionExpression: 'subCategory2Id = :s2Id',
-        ExpressionAttributeValues: {
-          ':s2Id': subCategory2Id,
-        },
-        ProjectionExpression: 'productId, #pName',
-        ExpressionAttributeNames: {
-            '#pName': 'name'
-        }
-      });
-      const { Items: queriedItems } = await docClient.send(command);
-      Items = queriedItems;
+    };
 
-    } else if (subCategory1Id) {
-      const command = new QueryCommand({
-        TableName: PRODUCTS_TABLE_NAME,
-        IndexName: 'subCategory1Id-productId-index', // GSI 이름
-        KeyConditionExpression: 'subCategory1Id = :s1Id',
-        ExpressionAttributeValues: {
-          ':s1Id': subCategory1Id,
-        },
-        ProjectionExpression: 'productId, #pName',
-        ExpressionAttributeNames: {
-            '#pName': 'name'
-        }
-      });
-      const { Items: queriedItems } = await docClient.send(command);
-      Items = queriedItems;
-
-    } else if (mainCategoryId) {
-      const command = new QueryCommand({
-        TableName: PRODUCTS_TABLE_NAME,
-        IndexName: 'mainCategoryId-productId-index', // GSI 이름
-        KeyConditionExpression: 'mainCategoryId = :mcId',
-        ExpressionAttributeValues: {
-          ':mcId': mainCategoryId,
-        },
-        ProjectionExpression: 'productId, #pName',
-        ExpressionAttributeNames: {
-            '#pName': 'name'
-        }
-      });
-      const { Items: queriedItems } = await docClient.send(command);
-      Items = queriedItems;
-
-    } else {
-        // 어떤 카테고리 ID도 제공되지 않았다면 빈 배열 반환
-        // 모든 상품을 조회하는 경우 (비효율적)는 여기에 ScanCommand를 사용할 수 있지만 권장하지 않음
-        return NextResponse.json([], { status: 200 });
+    // GSI 대신 ScanCommand와 FilterExpression을 사용하여 이름 기반 필터링을 구현합니다.
+    // 카테고리 ID가 아닌 이름(name)을 기준으로 필터링합니다.
+    if (subCategory2Name) {
+        // 가장 구체적인 subCategory2 이름으로 필터링
+        filterExpressions.push('#subCategory2 = :s2Name');
+        expressionAttributeValues[':s2Name'] = subCategory2Name;
+        expressionAttributeNames['#subCategory2'] = 'subCategory2';
+    } else if (subCategory1Name) {
+        // subCategory1 이름으로 필터링
+        filterExpressions.push('#subCategory1 = :s1Name');
+        expressionAttributeValues[':s1Name'] = subCategory1Name;
+        expressionAttributeNames['#subCategory1'] = 'subCategory1';
+    } else if (mainCategoryName) {
+        // mainCategory 이름으로 필터링
+        filterExpressions.push('#mainCategory = :mcName');
+        expressionAttributeValues[':mcName'] = mainCategoryName;
+        expressionAttributeNames['#mainCategory'] = 'mainCategory';
     }
-    
-    const productDetails = Items ? Items.map(item => ({ id: item.productId, name: item.name })) : [];
 
-    console.log("Fetched product details:", productDetails);
+    if (filterExpressions.length > 0) {
+        params.FilterExpression = filterExpressions.join(' AND ');
+        params.ExpressionAttributeValues = expressionAttributeValues;
+        params.ExpressionAttributeNames = expressionAttributeNames;
 
-    return NextResponse.json(productDetails, { status: 200 });
-  } catch (error) {
-    console.error("Error fetching products from DynamoDB:", error);
-    // GSI 관련 에러 처리도 필요 (예: GSI가 ACTIVE 상태가 아닐 때)
-    return NextResponse.json({ message: 'Failed to fetch products', error: error.message }, { status: 500 });
-  }
+        // FilterExpression을 사용하여 스캔 수행
+        const command = new ScanCommand(params);
+        const { Items: scannedItems } = await docClient.send(command);
+        Items = scannedItems;
+    } else {
+        // 어떤 카테고리 이름도 제공되지 않았다면 빈 배열 반환
+        return NextResponse.json([], { status: 200 });
+    }
+
+    // 반환할 상품 세부 정보 추출 (productId, productName, priceWon, mainImage, calculatedPriceUsd, sku 등)
+    // DynamoDB 스키마에 따라 필요한 필드를 선택합니다.
+    const productDetails = Items ? Items.map(item => ({ 
+        id: item.productId, 
+        name: item.productName,
+        priceWon: item.priceWon,
+        mainImage: item.mainImage,
+        calculatedPriceUsd: item.calculatedPriceUsd,
+        sku: item.sku,
+    })) : [];
+
+    return NextResponse.json(productDetails, { status: 200 });
+  } catch (error) {
+    console.error("Error fetching products from DynamoDB:", error);
+    // GSI 관련 에러 처리 (이제 Scan을 사용하므로 덜 중요하지만 유지)
+    return NextResponse.json({ message: 'Failed to fetch products', error: error.message }, { status: 500 });
+  }
 }

@@ -84,7 +84,9 @@ export default function Category1DepthPage() {
       const productsMap = {};
       for (const sub1Cat of sub1Data) {
         // /api/products/check?subCategory1Id=... API 호출
-        const productsResponse = await fetch(`/api/products/check?subCategory1Id=${sub1Cat.categoryId}`);
+        //name에 &가 포함될 수 있으므로 encodeURIComponent 사용
+        const subCategory1Name = encodeURIComponent(sub1Cat.name);
+        const productsResponse = await fetch(`/api/products/check?subCategory1Id=${subCategory1Name}`);
         if (!productsResponse.ok) {
           console.warn(`Failed to fetch products for ${sub1Cat.name}: ${productsResponse.status}`);
           productsMap[sub1Cat.categoryId] = []; // 실패해도 빈 배열로 처리
@@ -183,8 +185,8 @@ export default function Category1DepthPage() {
                                             {/* ProductCard에 필요한 product 속성 전달 */}
                                             <ProductCard product={{
                                                 id: product.id,
-                                                name: product.productName, // DynamoDB의 productName 필드 사용
-                                                price: product.priceWon, // DynamoDB의 priceWon 필드 사용
+                                                name: product.name, // DynamoDB의 productName 필드 사용
+                                                price: product.calculatedPriceUsd, // DynamoDB의 calculatedPriceUsd 필드 사용
                                                 discount: product.discount || 0, // 할인율 필드가 있다면 사용
                                                 image: product.mainImage, // DynamoDB의 mainImage 필드 사용
                                                 slug: product.sku // SKU를 slug로 사용하거나, 별도 slug 필드 사용
