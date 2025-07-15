@@ -150,7 +150,7 @@ export default function HomePage() {
           <div className={styles.titleSection}>
             <h1 className={styles.mainTitle}>Tap to Start Private Shopping</h1>
           </div>
-          <MainBanner items={triplicatedBannerItems} />
+          <MainBanner items={bannerProducts} />
           {/* API에서 가져온 mainCategories를 TrendingSection에 전달 */}
           <TrendingSection categories={mainCategories} />
         </main>
