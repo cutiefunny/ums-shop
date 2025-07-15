@@ -16,7 +16,7 @@ export default function ProductCard({ product, onAddToCart }) {
   const { isProductInWishlist, toggleWishlist } = useWishlist();
   
   const isWishlisted = isProductInWishlist(product.id);
-  const discountedPrice = product.price * (1 - product.discount / 100);
+  const discountedPrice = product.price * (1 - (product.discount || 0) / 100);
 
   const handleAddToCartClick = (e) => {
     e.preventDefault();  // Link의 기본 동작(페이지 이동)을 막습니다.
@@ -39,7 +39,7 @@ export default function ProductCard({ product, onAddToCart }) {
           alt={product.name || 'Product Image'} 
           width={150} 
           height={150} 
-          objectFit="cover" // 추가된 부분
+          style={{ objectFit: 'cover' }} // 'objectFit' prop을 'style' 속성으로 이동
         />
         {isLoggedIn && (
           <button onClick={handleWishlistClick} className={styles.heartButton}>
@@ -49,10 +49,12 @@ export default function ProductCard({ product, onAddToCart }) {
       </div>
       <div className={styles.info}>
         <h3 className={styles.productName}>{product.name}</h3>
-        <div className={styles.priceContainer}>
-          <span className={styles.discount}>{product.discount}%</span>
-          <span className={styles.originalPrice}>${product.price.toFixed(2)}</span>
-        </div>
+        {product.discount > 0 && (
+          <div className={styles.priceContainer}>
+            <span className={styles.discount}>{product.discount}%</span>
+            <span className={styles.originalPrice}>${product.price.toFixed(2)}</span>
+          </div>
+        )}
         <p className={styles.finalPrice}>${discountedPrice.toFixed(2)}</p>
       </div>
       <button className={styles.addToCartButton} onClick={handleAddToCartClick}>
