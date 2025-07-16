@@ -39,7 +39,15 @@
 .productGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 10px;
+}
+
+.productGridCart {
+  border: 1px solid #f1f3f5;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .productLink {
@@ -55,4 +63,37 @@
   height: calc(100vh - 200px); /* 헤더와 하단 네비게이션 높이를 제외한 대략적인 높이 */
   color: #868e96;
   font-size: 1rem;
+}
+
+.checkoutButton {
+  width: 100%;
+  padding: 12px;
+  background-color: #f5a623;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 16px;
+}
+
+.cartSummary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-top: 24px;
+}
+
+.totalAmountRow {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 0;
+  border-bottom: 1px solid #dee2e6;
+  font-size: 1.1rem;
+  font-weight: bold;
 }

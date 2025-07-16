@@ -219,6 +219,11 @@ export default function RegisterPage() {
     router.push('/');
   };
 
+  // 로딩 메시지 출력 위치에 이미지로 대체
+  if (loading) {
+    return <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />;
+  }
+
   return (
     <div className={styles.pageWithFixedFooter}>
       <div className={styles.scrollableContent}>

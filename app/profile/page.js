@@ -175,6 +175,10 @@ export default function ProfilePage() {
     return <div className={styles.container}>Loading profile...</div>;
   }
 
+  if (loading) {
+    return <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />;
+  }
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>

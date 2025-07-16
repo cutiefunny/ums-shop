@@ -138,9 +138,7 @@ export default function HomePage() {
 
       {/* 카테고리 또는 배너 제품 로딩 중이거나 에러 발생 시 메시지 표시 */}
       {isLoading ? (
-        <div className={styles.mainContent} style={{ textAlign: 'center', padding: '50px' }}>
-          <p>데이터를 불러오는 중...</p>
-        </div>
+        <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
       ) : hasError ? (
         <div className={styles.mainContent} style={{ textAlign: 'center', padding: '50px', color: 'red' }}>
           <p>오류: {hasError}</p>

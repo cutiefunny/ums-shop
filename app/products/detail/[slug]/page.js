@@ -1,7 +1,7 @@
 // app/products/detail/[slug]/page.js
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react'; // useEffect, useCallback 추가
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -13,6 +13,7 @@ import styles from './product-detail.module.css';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { useModal } from '@/contexts/ModalContext';
 import AddToCartModal from './components/AddToCartModal';
+import { useAuth } from '@/contexts/AuthContext'; // useAuth 임포트
 
 // --- Icons ---
 const BackIcon = () => <svg width="24" height="24" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41Z" fill="black"/></svg>;
@@ -34,6 +35,7 @@ export default function ProductDetailPage() {
 
     const { showModal } = useModal();
     const { isProductInWishlist, toggleWishlist } = useWishlist();
+    const { user, isLoggedIn } = useAuth(); // 로그인 사용자 정보 가져오기
 
     // 텍스트를 URL slug 형식으로 변환하는 헬퍼 함수
     const slugify = (text) => text.toLowerCase().replace(/ & /g, ' ').replace(/_/g, ' ').replace(/\s+/g, '-');
@@ -92,7 +94,7 @@ export default function ProductDetailPage() {
 
     // 로딩 및 에러 상태 처리
     if (loading) {
-        return <div className={styles.pageContainer}>Loading product details...</div>;
+        return <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />;
     }
 
     if (error) {
@@ -108,10 +110,70 @@ export default function ProductDetailPage() {
     const discountedUsd = product.calculatedPriceUsd * (1 - product.discount / 100);
     const isWishlisted = isProductInWishlist(product.id);
 
-    const handleConfirmAddToCart = (productName, quantity) => {
-        // TODO: 실제 장바구니에 상품을 담는 로직 (e.g. API 호출)
-        console.log(`${productName} ${quantity}개 장바구니에 추가`);
-        showModal(`${productName} has been added to your cart.`);
+    const handleConfirmAddToCart = async (productName, quantity) => {
+        if (!isLoggedIn || !user?.seq) {
+            showModal("장바구니에 상품을 추가하려면 로그인해야 합니다.");
+            router.push('/'); // 로그인 페이지 또는 홈으로 리다이렉트
+            return;
+        }
+
+        // 선택된 상품의 모든 상세 정보 (product)와 수량(quantity)을 활용
+        const itemToAdd = {
+            productId: product.id, // Product ID
+            name: product.name,
+            quantity: quantity,
+            unitPrice: product.calculatedPriceUsd, // USD 가격을 단위 가격으로 사용
+            mainImage: product.images[0], // 메인 이미지
+            slug: product.slug, // 상세 페이지 이동을 위한 slug (SKU)
+            // 필요한 다른 상품 정보 (예: SKU, 옵션 등) 추가
+        };
+
+        try {
+            // 1. 현재 사용자 데이터를 다시 불러와서 기존 cart 정보를 가져옵니다.
+            const userResponse = await fetch(`/api/users/${user.seq}`);
+            if (!userResponse.ok) {
+                throw new Error('Failed to fetch user cart data.');
+            }
+            const userData = await userResponse.json();
+            const currentCart = userData.cart || []; // 사용자의 기존 cart 배열, 없으면 빈 배열
+
+            // 2. 새로운 항목을 cart 배열에 추가하거나 기존 항목의 수량을 업데이트합니다.
+            const existingItemIndex = currentCart.findIndex(item => item.productId === itemToAdd.productId);
+            let updatedCart;
+
+            if (existingItemIndex > -1) {
+                // 이미 장바구니에 있는 상품이면 수량만 업데이트
+                updatedCart = currentCart.map((item, index) =>
+                    index === existingItemIndex
+                        ? { ...item, quantity: item.quantity + quantity }
+                        : item
+                );
+            } else {
+                // 장바구니에 없는 상품이면 새로 추가
+                updatedCart = [...currentCart, itemToAdd];
+            }
+
+            // 3. 업데이트된 cart 배열을 /api/users/[seq] 엔드포인트로 PUT 요청을 보내어 저장합니다.
+            const response = await fetch(`/api/users/${user.seq}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cart: updatedCart }), // 'cart' 필드만 업데이트
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to add item to cart in DB.');
+            }
+
+            console.log(`장바구니에 추가된 상품 정보:`, itemToAdd);
+            console.log(`사용자 (ID: ${user.seq})의 장바구니가 업데이트되었습니다.`);
+
+            showModal(`${productName} 상품 ${quantity}개가 장바구니에 추가되었습니다!`); // 성공 모달
+            setIsCartModalOpen(false); // 모달 닫기
+            
+        } catch (error) {
+            console.error("장바구니에 상품 추가 실패:", error);
+            showModal(`장바구니에 상품을 추가하지 못했습니다: ${error.message}`);
+        }
     };
 
     return (

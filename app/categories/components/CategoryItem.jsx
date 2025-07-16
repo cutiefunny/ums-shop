@@ -58,9 +58,7 @@ export default function CategoryItem({ category, isOpen, onToggle }) {
       {isOpen && (
         <ul className={styles.subCategoryList}>
           {subLoading ? (
-            <li className={styles.subCategoryItem} style={{ textAlign: 'center', color: '#868e96' }}>
-              서브 카테고리 불러오는 중...
-            </li>
+            <img src="/images/loading2.gif" alt="Loading..." style={{ height: '48px' }} />
           ) : subError ? (
             <li className={styles.subCategoryItem} style={{ textAlign: 'center', color: 'red' }}>
               오류: {subError}

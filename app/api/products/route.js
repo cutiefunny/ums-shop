@@ -22,10 +22,30 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '0', 10); // limit 파라미터 가져오기, 기본값 0
+    const searchTerm = searchParams.get('searchTerm'); // 검색어 파라미터 추가
 
     const params = {
       TableName: PRODUCTS_TABLE_NAME,
     };
+
+    const filterExpressions = [];
+    const expressionAttributeValues = {};
+    const expressionAttributeNames = {};
+
+    if (searchTerm) {
+      // 상품명 또는 SKU에 검색어가 포함된 경우 (대소문자 구분 없이)
+      // DynamoDB의 `contains`는 대소문자를 구분하므로, 정확한 대소문자 무시 검색을 위해서는
+      // DynamoDB에 소문자 필드를 추가하거나 Elasticsearch와 같은 외부 검색 솔루션을 고려해야 합니다.
+      // 현재는 제공된 필드에서 'contains'를 사용합니다.
+      filterExpressions.push(`contains(productName, :searchTerm) OR contains(sku, :searchTerm)`);
+      expressionAttributeValues[':searchTerm'] = searchTerm;
+    }
+
+    if (filterExpressions.length > 0) {
+      params.FilterExpression = filterExpressions.join(' AND ');
+      params.ExpressionAttributeValues = expressionAttributeValues;
+    }
+
 
     if (limit > 0) {
       params.Limit = limit; // limit이 있으면 ScanCommand에 적용
@@ -36,7 +56,7 @@ export async function GET(request) {
     return NextResponse.json(Items, { status: 200 });
   } catch (error) {
     console.error("Error fetching products from DynamoDB:", error);
-    return NextResponse.json({ message: 'Failed to fetch products' }, { status: 500 });
+    return NextResponse.json({ message: 'Failed to fetch products', error: error.message }, { status: 500 });
   }
 }
 

@@ -50,9 +50,7 @@ export default function CategoriesPage() {
   if (loading) {
     return (
       <div className={styles.pageContainer}>
-        <div className={styles.mainContent} style={{ textAlign: 'center', padding: '50px' }}>
-          <p>카테고리 데이터를 불러오는 중...</p>
-        </div>
+        return <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />;
       </div>
     );
   }

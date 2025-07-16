@@ -11,6 +11,7 @@ import { useModal } from '@/contexts/ModalContext';
 // categoryData, mockProducts는 더 이상 mockData에서 가져오지 않습니다.
 import { slugify } from '@/data/mockData'; // slugify 함수만 유지합니다.
 import AddToCartModal from '../detail/[slug]/components/AddToCartModal'; // 바텀 시트 모달 import
+import { useAuth } from '@/contexts/AuthContext'; // useAuth 임포트
 
 // 아이콘 컴포넌트
 const BackIcon = () => <svg width="24" height="24" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41Z" fill="black"/></svg>;
@@ -23,6 +24,7 @@ export default function ProductListPage() {
   const params = useParams();
   const { showModal } = useModal();
   const { slug } = params; // 현재 URL의 slug (예: herbal-extracts-supplements)
+  const { user, isLoggedIn } = useAuth(); // useAuth 임포트
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
@@ -72,6 +74,7 @@ export default function ProductListPage() {
       data.forEach(product => {
         product.price = product.calculatedPriceUsd;
         product.image = product.mainImage;
+        product.discount = product.discount || 0; // 할인율이 없으면 0으로 설정
       });
       setProducts(data || []);
     } catch (err) {
@@ -143,18 +146,73 @@ export default function ProductListPage() {
     setIsCartModalOpen(true);
   };
 
-  const handleConfirmAddToCart = (productName, quantity) => {
-    // TODO: 실제 장바구니에 상품을 담는 로직 (e.g. API 호출)
-    console.log(`${productName} ${quantity}개 장바구니에 추가`);
-    showModal(`${productName} has been added to your cart.`);
-  };
+  const handleConfirmAddToCart = async (productName, quantity) => {
+    if (!isLoggedIn || !user?.seq) {
+        showModal("장바구니에 상품을 추가하려면 로그인해야 합니다.");
+        router.push('/'); // 로그인 페이지 또는 홈으로 리다이렉트
+        return;
+    }
+
+    // AddToCartModal에서 전달된 product (selectedProduct) 정보 활용
+    const itemToAdd = {
+        productId: selectedProduct.id, // ProductCard에서 전달되는 id 사용
+        name: selectedProduct.name,
+        quantity: quantity,
+        unitPrice: selectedProduct.price, // ProductCard에서 전달되는 price (USD) 사용
+        mainImage: selectedProduct.image, // ProductCard에서 전달되는 image 사용
+        slug: selectedProduct.slug, // ProductCard에서 전달되는 slug (SKU) 사용
+    };
+
+    try {
+        // 1. 현재 사용자 데이터를 다시 불러와서 기존 cart 정보를 가져옵니다.
+        const userResponse = await fetch(`/api/users/${user.seq}`);
+        if (!userResponse.ok) {
+            throw new Error('Failed to fetch user cart data.');
+        }
+        const userData = await userResponse.json();
+        const currentCart = userData.cart || []; // 사용자의 기존 cart 배열, 없으면 빈 배열
+
+        // 2. 새로운 항목을 cart 배열에 추가하거나 기존 항목의 수량을 업데이트합니다.
+        const existingItemIndex = currentCart.findIndex(item => item.productId === itemToAdd.productId);
+        let updatedCart;
+
+        if (existingItemIndex > -1) {
+            // 이미 장바구니에 있는 상품이면 수량만 업데이트
+            updatedCart = currentCart.map((item, index) =>
+                index === existingItemIndex
+                    ? { ...item, quantity: item.quantity + quantity }
+                    : item
+            );
+        } else {
+            // 장바구니에 없는 상품이면 새로 추가
+            updatedCart = [...currentCart, itemToAdd];
+        }
+
+        // 3. 업데이트된 cart 배열을 /api/users/[seq] 엔드포인트로 PUT 요청을 보내어 저장합니다.
+        const response = await fetch(`/api/users/${user.seq}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cart: updatedCart }), // 'cart' 필드만 업데이트
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to add item to cart in DB.');
+        }
+
+        console.log(`장바구니에 추가된 상품 정보:`, itemToAdd);
+        console.log(`사용자 (ID: ${user.seq})의 장바구니가 업데이트되었습니다.`);
+
+        showModal(`${productName} 상품 ${quantity}개가 장바구니에 추가되었습니다!`); // 성공 모달
+        setIsCartModalOpen(false); // 모달 닫기
+        
+    } catch (error) {
+        console.error("장바구니에 상품 추가 실패:", error);
+        showModal(`장바구니에 상품을 추가하지 못했습니다: ${error.message}`);
+    }
+};
 
   if (loading) {
-    return (
-      <div className={styles.pageContainer}>
-        <div className={styles.emptyMessage}>상품을 불러오는 중...</div>
-      </div>
-    );
+    return <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />;
   }
 
   if (error) {
