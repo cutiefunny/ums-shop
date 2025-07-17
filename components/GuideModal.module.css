@@ -1,0 +1,129 @@
+/* components/GuideModal.module.css */
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1500; /* 다른 모달보다 위에 표시 */
+}
+
+.modalContent {
+    background-color: white;
+    padding: 30px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    animation: fadeInScale 0.3s ease-out;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.stepIndicator {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #f5a623; /* 강조 색상 */
+    margin-bottom: 10px;
+}
+
+.modalTitle {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #212529;
+    margin: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+    width: 100%;
+}
+
+.modalMessage {
+    background-color: #fffbeb; /* 연한 노란색 배경 */
+    border: 1px solid #ffe082; /* 노란색 테두리 */
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #495057;
+    white-space: pre-line; /* 줄바꿈 문자 적용 */
+    text-align: left;
+    width: 100%;
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #495057;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.checkboxLabel input[type="checkbox"] {
+    accent-color: #f5a623; /* 체크박스 색상 */
+    transform: scale(1.1);
+}
+
+.buttonContainer {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.goToMyOrdersButton,
+.nextButton {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.goToMyOrdersButton {
+    background-color: #e9ecef;
+    color: #495057;
+    border: 1px solid #dee2e6;
+}
+
+.goToMyOrdersButton:hover {
+    background-color: #ced4da;
+}
+
+.nextButton {
+    background-color: #f5a623;
+    color: white;
+}
+
+.nextButton:disabled {
+    background-color: #e0e0e0;
+    color: #adb5bd;
+    cursor: not-allowed;
+}
+
+.nextButton:hover:not(:disabled) {
+    background-color: #d88e1a;
+}

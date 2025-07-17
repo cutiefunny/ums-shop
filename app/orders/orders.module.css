@@ -1,0 +1,269 @@
+/* app/orders/orders.module.css */
+
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #fff;
+  padding-bottom: 70px; /* For BottomNav if used */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 10;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.mainContent {
+  padding: 16px;
+  flex-grow: 1; /* 콘텐츠 영역이 남은 공간을 채우도록 */
+}
+
+.loadingSpinner {
+  width: 48px;
+  height: 48px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.emptyMessage, .emptyFilterMessage {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 250px); /* 헤더, 바텀네비, 기타 UI 높이 고려 */
+  color: #868e96;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.emptyMessage p, .emptyFilterMessage p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.errorText {
+  color: red;
+  font-weight: bold;
+}
+
+/* Status Summary Section */
+.statusSummary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.statusCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+  border-radius: 8px;
+  background-color: #fff;
+  cursor: pointer;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.statusCard.active {
+  background-color: #f5a623; /* 활성 상태 색상 */
+  color: white;
+  border-color: #f5a623;
+  box-shadow: 0 2px 8px rgba(245, 166, 35, 0.2);
+}
+
+.statusCard:hover:not(.active) {
+  background-color: #f1f3f5;
+}
+
+.statusLabel {
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.statusCount {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* Filter Chips */
+.filterChips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 0 16px 0; /* 하단 여백 추가 */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.filterChips::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}
+
+.filterChip {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  font-size: 0.9rem;
+  color: #495057;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.filterChip.active {
+  background-color: #f5a623;
+  color: white;
+  border-color: #f5a623;
+}
+
+/* Order List */
+.orderList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.orderItem {
+  background-color: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.orderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #e9ecef; /* 점선 구분선 */
+  padding-bottom: 8px;
+}
+
+.orderId {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #212529;
+}
+
+.orderStatusBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white;
+  text-transform: capitalize; /* 첫 글자 대문자 */
+}
+
+/* Status specific colors (from admin common.module.css or similar) */
+.orderStatusBadge.order { background-color: #007bff; } /* Blue */
+.orderStatusBadge.paypal { background-color: #0070ba; } /* PayPal blue */
+.orderStatusBadge.payincash { background-color: #28a745; } /* Green */
+.orderStatusBadge.ems { background-color: #ffc107; } /* Orange */
+.orderStatusBadge.delivered { background-color: #6c757d; } /* Gray */
+
+
+.orderDetails {
+  font-size: 0.9rem;
+  color: #495057;
+  line-height: 1.4;
+}
+
+.orderDetails p {
+  margin-bottom: 5px;
+}
+
+.moreButton {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 8px 15px;
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.moreButton:hover {
+  background-color: #e9ecef;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .mainContent {
+    padding: 10px;
+  }
+  .statusSummary {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* 작은 화면에서 유연하게 */
+    padding: 8px;
+  }
+  .statusCard {
+    padding: 8px 0;
+  }
+  .statusLabel {
+    font-size: 0.8rem;
+  }
+  .statusCount {
+    font-size: 1rem;
+  }
+  .filterChips {
+    padding-bottom: 10px;
+  }
+  .filterChip {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+  .orderItem {
+    padding: 12px;
+  }
+  .orderId {
+    font-size: 0.95rem;
+  }
+  .orderStatusBadge {
+    padding: 3px 8px;
+    font-size: 0.7rem;
+  }
+  .orderDetails {
+    font-size: 0.85rem;
+  }
+  .moreButton {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+}

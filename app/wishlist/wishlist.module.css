@@ -48,6 +48,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  gap : 3px;
 }
 
 .productLink {
@@ -58,11 +59,30 @@
 
 .emptyMessage {
   display: flex;
+  flex-direction: column; /* 내용을 세로로 정렬 */
   justify-content: center;
   align-items: center;
   height: calc(100vh - 200px); /* 헤더와 하단 네비게이션 높이를 제외한 대략적인 높이 */
   color: #868e96;
   font-size: 1rem;
+  text-align: center; /* 텍스트 중앙 정렬 */
+}
+
+.shopNowButton {
+  background-color: #f5a623; /* 이미지의 노란색 */
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 20px; /* 메시지와 버튼 사이 간격 */
+  transition: background-color 0.2s ease;
+}
+
+.shopNowButton:hover {
+  background-color: #d88e1a; /* 호버 시 약간 어두운 노란색 */
 }
 
 .checkoutButton {

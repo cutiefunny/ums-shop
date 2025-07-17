@@ -20,7 +20,7 @@ const BackIcon = () => <svg width="24" height="24" viewBox="0 0 24 24"><path d="
 const HeartIcon = () => <svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#E57373"/></svg>;
 const HeartOutlineIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#495057" strokeWidth="1.5"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>;
 const ChevronRightIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 18L15 12L9 6" stroke="#495057" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
-const ShippingIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 8C1 7.44772 1.44772 7 2 7H14.3722C14.735 7 15.0665 7.214 15.2319 7.55279L18.2319 13.5528C18.6656 14.4143 19.8227 14.4143 20.2564 13.5528L23.2564 7.55279C23.4218 7.214 23.7533 7 24.1161 7H26" stroke="#495057" strokeWidth="1.5" strokeLinecap="round"/><path d="M7 19.5C7 20.3284 6.32843 21 5.5 21C4.67157 21 4 20.3284 4 19.5C4 18.6716 4.67157 18 5.5 18C6.32843 18 7 18.6716 7 19.5Z" stroke="#495057" strokeWidth="1.5"/><path d="M21 19.5C21 20.3284 20.3284 21 19.5 21C18.6716 21 18 20.3284 18 19.5C18 18.6716 18.6716 18 19.5 18C20.3284 18 21 18.6716 21 19.5Z" stroke="#495057" strokeWidth="1.5"/><path d="M1 10V18C1 18.5523 1.44772 19 2 19H4" stroke="#495057" strokeWidth="1.5" strokeLinecap="round"/><path d="M7 19H18" stroke="#495057" strokeWidth="1.5" strokeLinecap="round"/><path d="M18 14H15C14.4477 14 14 13.5523 14 13V9" stroke="#495057" strokeWidth="1.5" strokeLinecap="round"/></svg>;
+const ShippingIcon = () => <img src="/images/Delivery.png" alt="Shipping" style={{ width: '24px', height: '24px' }} />;
 
 
 export default function ProductDetailPage() {
@@ -33,7 +33,7 @@ export default function ProductDetailPage() {
     const [error, setError] = useState(null);
     const [isCartModalOpen, setIsCartModalOpen] = useState(false);
 
-    const { showModal } = useModal();
+    const { showModal, showConfirmationModal } = useModal();
     const { isProductInWishlist, toggleWishlist } = useWishlist();
     const { user, isLoggedIn } = useAuth(); // 로그인 사용자 정보 가져오기
 
@@ -167,9 +167,18 @@ export default function ProductDetailPage() {
             console.log(`장바구니에 추가된 상품 정보:`, itemToAdd);
             console.log(`사용자 (ID: ${user.seq})의 장바구니가 업데이트되었습니다.`);
 
-            showModal(`${productName} 상품 ${quantity}개가 장바구니에 추가되었습니다!`); // 성공 모달
-            setIsCartModalOpen(false); // 모달 닫기
-            
+            // 성공 모달을 ConfirmationModal로 변경
+            showConfirmationModal(
+                "장바구니 추가 완료", // 모달 제목
+                `${productName} 제품이 장바구니에 추가되었습니다. 장바구니로 가시겠습니까?`, // 모달 메시지
+                () => { // 확인 버튼 클릭 시 (onConfirm)
+                    router.push('/cart'); // 장바구니 페이지로 이동
+                },
+                () => { // 취소 버튼 클릭 시 (onCancel)
+                    // 모달만 닫고 아무것도 하지 않음
+                }
+            );
+
         } catch (error) {
             console.error("장바구니에 상품 추가 실패:", error);
             showModal(`장바구니에 상품을 추가하지 못했습니다: ${error.message}`);

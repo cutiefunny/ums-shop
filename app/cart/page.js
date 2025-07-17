@@ -128,6 +128,11 @@ export default function CartPage() { // 컴포넌트 이름 변경
     }, 0);
   }, [userCartItems]);
 
+  // Checkout 버튼 클릭 핸들러
+  const handleCheckoutClick = () => {
+    router.push('/checkout'); // 새로 생성된 checkout 페이지로 이동
+  };
+
 
   if (loadingCart) {
     return (
@@ -181,7 +186,7 @@ export default function CartPage() { // 컴포넌트 이름 변경
               <span>${totalCartAmount.toFixed(2)}</span>
             </div>
             {/* 배송비, 세금 등 추가될 수 있음 */}
-            <button className={styles.checkoutButton}>Checkout</button>
+            <button onClick={handleCheckoutClick} className={styles.checkoutButton}>Checkout</button>
           </div>
         )}
       </main>

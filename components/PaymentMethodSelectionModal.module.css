@@ -1,0 +1,80 @@
+/* components/PaymentMethodSelectionModal.module.css */
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* Align to bottom */
+    z-index: 1400; /* Higher than other modals like GuideModal (1500 is higher) */
+}
+
+.modalContent {
+    background-color: white;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    padding: 24px 20px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom)); /* Safe area for iPhone X */
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 500px; /* Max width for desktop */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: slideUp 0.3s ease-out; /* Simple slide-up animation */
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.modalTitle {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 10px;
+    text-align: left; /* Image shows left-aligned title */
+}
+
+.paymentOptionsGrid {
+    display: flex; /* Use flex for vertical stacking as in image */
+    flex-direction: column;
+    gap: 10px; /* Space between buttons */
+}
+
+.paymentMethodButton {
+    background-color: #f8f9fa; /* Light background */
+    color: #212529;
+    border: 1px solid #dee2e6;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    text-align: left; /* Align text to left as in image */
+}
+
+.paymentMethodButton:hover {
+    background-color: #e9ecef;
+}
+
+.closeButton { /* If a close button is needed in the modal header */
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+}

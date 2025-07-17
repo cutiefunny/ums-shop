@@ -1,7 +1,8 @@
 // app/api/orders/[orderId]/route.js
 import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand, PutCommand } from '@aws-sdk/lib-dynamodb'; // PutCommand 추가
+import { v4 as uuidv4 } from 'uuid'; // uuidv4 추가
 
 // AWS SDK 클라이언트 초기화
 const client = new DynamoDBClient({
@@ -15,6 +16,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 // DynamoDB 테이블 이름 (환경 변수에서 가져옴)
 const ORDER_MANAGEMENT_TABLE_NAME = process.env.DYNAMODB_TABLE_ORDERS || 'order-management';
+const HISTORY_TABLE_NAME = process.env.DYNAMODB_TABLE_HISTORY || 'history'; // History 테이블 이름 추가
 
 /**
  * GET 요청 처리: 특정 주문 상세 데이터를 조회합니다.
@@ -113,5 +115,58 @@ export async function PUT(request, { params }) { // context.params 대신 { para
   } catch (error) {
     console.error(`Error updating order ${params.orderId} in DynamoDB:`, error); // context.params 대신 params 사용
     return NextResponse.json({ message: 'Failed to update order', error: error.message }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE 요청 처리: 특정 주문 데이터를 삭제합니다.
+ * URL: /api/orders/[orderId]
+ * @param {Request} request
+ * @param {{params: {orderId: string}}} context
+ * @returns {NextResponse} 삭제 결과 또는 오류 응답
+ */
+export async function DELETE(request, { params }) {
+  try {
+    const { orderId } = params;
+    if (!orderId) {
+      return NextResponse.json({ message: 'Missing order ID' }, { status: 400 });
+    }
+
+    // 삭제될 주문 정보를 미리 가져옴 (로그 기록용)
+    const getCommand = new GetCommand({
+        TableName: ORDER_MANAGEMENT_TABLE_NAME,
+        Key: { orderId: orderId },
+    });
+    const { Item: deletedOrder } = await docClient.send(getCommand);
+
+
+    const command = new DeleteCommand({
+      TableName: ORDER_MANAGEMENT_TABLE_NAME,
+      Key: {
+        orderId: orderId, // 'orderId'가 파티션 키라고 가정
+      },
+    });
+    await docClient.send(command);
+
+    // History 테이블에 기록
+    const historyItem = {
+        id: uuidv4(),
+        timestamp: new Date().toISOString(),
+        manager: "시스템 관리자", // TODO: 실제 로그인한 관리자 정보로 대체
+        deviceInfo: "백엔드 API (Order Management)", // TODO: 클라이언트 기기 정보로 대체
+        actionType: "주문 삭제",
+        details: `주문 '${deletedOrder?.orderId || orderId}' (고객: ${deletedOrder?.userName || 'N/A'})이(가) 삭제되었습니다.`,
+    };
+    const putHistoryCommand = new PutCommand({
+        TableName: HISTORY_TABLE_NAME,
+        Item: historyItem,
+    });
+    await docClient.send(putHistoryCommand);
+
+
+    return NextResponse.json({ message: 'Order deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error(`Error deleting order ${params.orderId} from DynamoDB:`, error);
+    return NextResponse.json({ message: 'Failed to delete order', error: error.message }, { status: 500 });
   }
 }
