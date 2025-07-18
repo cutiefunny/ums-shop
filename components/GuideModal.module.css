@@ -57,10 +57,10 @@
 }
 
 .modalMessage {
-    background-color: #fffbeb; /* 연한 노란색 배경 */
-    border: 1px solid #ffe082; /* 노란색 테두리 */
+    background-color: #fffbeb;
+    border: 1px solid #fffbeb;
     border-radius: 12px;
-    padding: 20px;
+    padding: 10px;
     font-size: 0.95rem;
     line-height: 1.6;
     color: #495057;
@@ -91,7 +91,17 @@
     margin-top: 20px;
 }
 
-.goToMyOrdersButton,
+.goToMyOrdersButton{
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
 .nextButton {
     flex: 1;
     padding: 14px;

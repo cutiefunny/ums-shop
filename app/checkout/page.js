@@ -103,25 +103,25 @@ export default function CheckoutPage() {
         {
             title: "Order Request",
             stepText: "1/4",
-            message: `Place your order via Cart\n\n<Order in Review>\nEach item will be reviewed and labeled as one of the following: (within approx. 2 business days)\n\n- Available\n- Limited Quantity\n- Out of Stock\n- Alternative Offer\n\nEdit and resubmit after availability check.`,
+            message: `<center>Place your order via Cart\n\n&lt;Order in Review&gt;\nEach item will be reviewed and labeled as one of the following: (within approx. 2 business days)\n\n<b>- Available\n- Limited Quantity\n- Out of Stock\n- Alternative Offer</b>\n\nEdit and resubmit after availability check.`,
             buttonText: "NEXT",
         },
         {
             title: "Order Confirmation",
             stepText: "2/4",
-            message: `If everything is ready, tap [Send Order Confirmation]\n\n⚠️ No changes/cancellations can be made after confirmation.\n\n- To add more items, please place a new order.\n- For EMS Orders, Tracking Number will be provided upon shipment.`,
+            message: `<center>If everything is ready, tap \n[Send Order Confirmation]\n\n⚠️ No changes/cancellations can be made after confirmation.\n\n- To add more items, please place a new order.\n- For EMS Orders, Tracking Number will be provided upon shipment.`,
             buttonText: "NEXT",
         },
         {
             title: "Payment Options",
             stepText: "3/4",
-            message: `After order confirmation, select your preferred payment method:\n\n- PayPal (Recommended)\n- Cash upon onboard delivery`,
+            message: `<center>After order confirmation, select your preferred payment method:\n\n- PayPal (Recommended)\n- Cash upon onboard delivery`,
             buttonText: "NEXT",
         },
         {
             title: "Delivery",
             stepText: "4/4",
-            message: `Once your order reaches your vessel, you'll receive a "Delivered" notification.`,
+            message: `<center>Once your order reaches your vessel, you'll receive a "Delivered" notification.`,
             buttonText: "DONE",
         },
     ]), []);
@@ -304,34 +304,40 @@ export default function CheckoutPage() {
                 }],
             };
 
-            const response = await fetch('/api/orders/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(orderPayload),
-            });
+            // const response = await fetch('/api/orders/create', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(orderPayload),
+            // });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || '주문 생성 실패');
-            }
+            // if (!response.ok) {
+            //     const errorData = await response.json();
+            //     throw new Error(errorData.message || '주문 생성 실패');
+            // }
 
-            // 주문 성공 시 장바구니 초기화 (서버에도 반영)
-            const userUpdateResponse = await fetch(`/api/users/${user.seq}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cart: [] }),
-            });
-            if (!userUpdateResponse.ok) {
-                console.error('Failed to clear cart after order:', await userUpdateResponse.text());
-            }
+            // // 주문 성공 시 장바구니 초기화 (서버에도 반영)
+            // const userUpdateResponse = await fetch(`/api/users/${user.seq}`, {
+            //     method: 'PUT',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ cart: [] }),
+            // });
+            // if (!userUpdateResponse.ok) {
+            //     console.error('Failed to clear cart after order:', await userUpdateResponse.text());
+            // }
+
+            // Step 1에서는 주문을 DB에 저장하지 않고, 상태에만 저장합니다.
++            setOrderReviewDetails(orderPayload);
++            setOriginalFinalTotalPrice(finalTotalPrice); // 1단계의 최종 금액 저장
             
-            await fetchUserCart(); // 장바구니를 비운 후, 사용자 카트 데이터를 다시 가져옴
+            // await fetchUserCart(); // 장바구니를 비운 후, 사용자 카트 데이터를 다시 가져옴
 
-            // 2단계에서 사용할 주문 상세 정보를 저장
-            // API 응답에서 orderId를 가져와야 합니다. 현재는 MOCK_ORDER_ID
-            const newOrderId = response.headers.get('x-order-id') || `ORDER_${Date.now()}`; 
-            setOrderReviewDetails({ ...orderPayload, orderId: newOrderId }); 
-            setOriginalFinalTotalPrice(finalTotalPrice); // 1단계의 최종 금액 저장
+            // // 2단계에서 사용할 주문 상세 정보를 저장
+            // // API 응답에서 orderId를 가져와야 합니다. 현재는 MOCK_ORDER_ID
+            // const newOrderId = response.headers.get('x-order-id') || `ORDER_${Date.now()}`; 
+            // setOrderReviewDetails({ ...orderPayload, orderId: newOrderId }); 
+            // setOriginalFinalTotalPrice(finalTotalPrice); // 1단계의 최종 금액 저장
+
+            fetchUserCart(); // 장바구니 데이터 재로드 (현재는 Step 2에서 비웁니다)
 
             if (isFirstOrder) {
                 setOrderSuccessfullyPlaced(true); // 첫 주문 완료 플래그 설정
@@ -399,7 +405,34 @@ export default function CheckoutPage() {
         setLoading(true);
         try {
             // TODO: 백엔드 API 호출하여 주문 상태를 'Confirmed' 등으로 업데이트
-            // orderReviewDetails를 기반으로 업데이트 (adminQuantity 등 반영)
+            // Step 1에서 준비된 orderReviewDetails를 사용하여 주문을 생성합니다.
+            const createOrderResponse = await fetch('/api/orders/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderReviewDetails), // Step 1에서 준비된 페이로드 사용
+            });
+
+            if (!createOrderResponse.ok) {
+                const errorData = await createOrderResponse.json();
+                throw new Error(errorData.message || '주문 생성 실패');
+            }
+
+            const createdOrderData = await createOrderResponse.json();
+            const newOrderId = createdOrderData.order.orderId; // 생성된 주문의 실제 ID
+
+            // 장바구니 초기화 (PUT)
+            const userUpdateResponse = await fetch(`/api/users/${user.seq}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cart: [] }),
+            });
+            if (!userUpdateResponse.ok) {
+                console.error('Failed to clear cart after order confirmation:', await userUpdateResponse.text());
+                // 장바구니 초기화 실패는 주문 생성 실패로 간주하지 않고 로깅만 합니다.
+            }
+            await fetchUserCart(); // 장바구니를 비운 후, 사용자 카트 데이터를 다시 가져옴
+
+            // 주문 상태를 'Confirmed'로 업데이트 (PUT)
             const updatedOrderPayload = {
                 ...orderReviewDetails,
                 status: 'Confirmed', // 주문 상태 변경

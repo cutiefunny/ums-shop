@@ -30,7 +30,7 @@ export default function GuideModal({ isOpen, title, stepText, message, buttonTex
             <div className={styles.modalContent}>
                 <div className={styles.stepIndicator}>{stepText}</div>
                 <h3 className={styles.modalTitle}>{title}</h3>
-                <p className={styles.modalMessage}>{message}</p>
+                <div className={styles.modalMessage} dangerouslySetInnerHTML={{ __html: message }} />
 
                 <label className={styles.checkboxLabel}>
                     <input
