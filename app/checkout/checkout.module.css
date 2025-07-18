@@ -114,7 +114,7 @@
 .cartItemsList {
   display: flex;
   flex-direction: column;
-  gap: 10px; /* CartItem 사이 간격 */
+  gap: 2px; /* CartItem 사이 간격 */
 }
 
 .cartItemWrapper {
@@ -137,20 +137,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 10px;
 }
 
 .messageInput {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ced4da;
+  border: none;
   border-radius: 8px;
   font-size: 1rem;
   box-sizing: border-box;
   resize: vertical;
   min-height: 60px;
+  background-color: #f1f3f5;
 }
 
 .deliveryOptions {
@@ -326,6 +325,7 @@
     margin-bottom: 10px; /* Adjusted margin */
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     position: relative;
+    width: 100%; /* Ensure full width in review stage */
 }
 
 .itemImageLink {
@@ -490,6 +490,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    border: none;
 }
 
 .messageInputContainer textarea {
@@ -502,29 +503,27 @@
     resize: none; /* Disable manual resize */
 }
 
-.sendMessageButton {
-    background-color: #f5a623;
-    color: white;
+.attachButton {
     border: none;
-    border-radius: 20px;
-    padding: 8px 15px;
-    font-size: 0.9rem;
-    font-weight: bold;
+    border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 5px;
-    transition: background-color 0.2s ease;
+    justify-content: center;
+    background-color: transparent;
+}
+
+.sendMessageButton {
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .sendMessageButton:hover {
     background-color: #d88e1a;
-}
-
-.sendMessageButton svg {
-    width: 18px;
-    height: 18px;
-    color: white;
 }
 
 /* Step 3 Payment Options */
@@ -611,6 +610,45 @@
   background-color: #e0e0e0;
   color: #adb5bd;
   cursor: not-allowed;
+}
+
+/* New styles for Step 1 Message Section to match image */
+.messageDisplayArea {
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 15px;
+    min-height: 100px; /* Adjust as needed */
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.emptyMessageText {
+    font-size: 1rem;
+    color: #868e96;
+    text-align: center;
+    width: 100%;
+}
+
+.existingMessageText {
+    font-size: 1rem;
+    color: #212529;
+    line-height: 1.4;
+    word-wrap: break-word;
+    text-align: left;
+    width: 100%;
+}
+
+.attachedImagePreview {
+    max-width: 100%;
+    height: auto;
+    max-height: 150px; /* Limit image height */
+    object-fit: contain;
+    border-radius: 8px;
+    margin-top: 10px; /* Space from text if both exist */
 }
 
 

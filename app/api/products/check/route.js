@@ -82,6 +82,7 @@ export async function GET(request) {
         priceWon: item.priceWon,
         mainImage: item.mainImage,
         calculatedPriceUsd: item.calculatedPriceUsd,
+        discount: item.discount || 0, // 할인율이 없을 경우 기본값 0
         sku: item.sku,
     })) : [];
 

@@ -1,7 +1,7 @@
 // app/checkout/page.js
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './checkout.module.css';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,13 +15,8 @@ import PaymentMethodSelectionModal from '@/components/PaymentMethodSelectionModa
 // 아이콘 컴포넌트
 const BackIcon = () => <svg width="24" height="24" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41Z" fill="black"/></svg>;
 const ChevronDown = () => <svg width="24" height="24" viewBox="0 0 24 24"><path d="M7 10L12 15L17 10" stroke="#495057" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>;
-const AttachIcon = () => ( // 메시지 첨부 아이콘
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 20h9"></path>
-    <path d="M16.5 13.5l-3.24-3.24a2.82 2.82 0 0 0-3.96 0L2 17"></path>
-    <path d="M13 7H7a2 2 0 0 0-2 2v6"></path>
-  </svg>
-);
+const AttachIcon = () => <img src="/images/attach.png" alt="Attach" width="18" height="18" />;
+const SendIcon = () => <img src="/images/send.png" alt="Send" width="24" height="24" />;
 
 
 export default function CheckoutPage() {
@@ -41,6 +36,9 @@ export default function CheckoutPage() {
     const [portName, setPortName] = useState(''); 
     const [expectedShippingDate, setExpectedShippingDate] = useState(''); 
     const [userMessage, setUserMessage] = useState('');
+    const [attachedFileForStep1, setAttachedFileForStep1] = useState(null); // Step 1 첨부 파일
+    const [filePreviewUrlForStep1, setFilePreviewUrlForStep1] = useState(null); // Step 1 첨부 파일 미리보기 URL
+    const fileInputRefForStep1 = useRef(null); // Step 1 파일 입력 Ref
     const [selectedItemsForOrder, setSelectedItemsForOrder] = useState(new Set()); // 주문할 상품 ID Set
 
     // Step 2: Order in Review - Admin Feedback State
@@ -633,13 +631,73 @@ export default function CheckoutPage() {
                                 <h2>Message</h2>
                                 <ChevronDown />
                             </div>
-                            <textarea
-                                className={styles.messageInput}
-                                placeholder="Enter your message here."
-                                value={userMessage}
-                                onChange={(e) => setUserMessage(e.target.value)}
-                                rows="3"
-                            ></textarea>
+                            {/* Message Display Area */}
+                            <div className={styles.messageDisplayArea}>
+                                {userMessage.trim() === '' && !attachedFileForStep1 ? (
+                                    <p className={styles.emptyMessageText}>No messages have been created.</p>
+                                ) : (
+                                    <>
+                                        {userMessage.trim() !== '' && (
+                                            <p className={styles.existingMessageText}>{userMessage}</p>
+                                        )}
+                                        {filePreviewUrlForStep1 && (
+                                            <img src={filePreviewUrlForStep1} alt="Attached Preview" className={styles.attachedImagePreview} />
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Message Input Area */}
+                            <div className={styles.messageInputContainer}>
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    ref={fileInputRefForStep1}
+                                    style={{ display: 'none' }}
+                                    onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            const file = e.target.files[0];
+                                            if (!file.type.startsWith('image/')) {
+                                                showModal('Only image files are allowed.');
+                                                setAttachedFileForStep1(null);
+                                                setFilePreviewUrlForStep1(null);
+                                                e.target.value = '';
+                                                return;
+                                            }
+                                            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                                                showModal('Image file size cannot exceed 5MB.');
+                                                setAttachedFileForStep1(null);
+                                                setFilePreviewUrlForStep1(null);
+                                                e.target.value = '';
+                                                return;
+                                            }
+                                            setAttachedFileForStep1(file);
+                                            setFilePreviewUrlForStep1(URL.createObjectURL(file));
+                                        }
+                                    }}
+                                />
+                                <button type="button" onClick={() => fileInputRefForStep1.current.click()} className={styles.attachButton}>
+                                    <AttachIcon />
+                                </button>
+                                <textarea
+                                    className={styles.messageInput}
+                                    placeholder={attachedFileForStep1 ? `Image attached: ${attachedFileForStep1.name}` : "Write a message"}
+                                    value={userMessage}
+                                    onChange={(e) => setUserMessage(e.target.value)}
+                                    rows="1" // 이미지에 맞춰 1줄로 조정
+                                    disabled={!!attachedFileForStep1} // 첨부파일 있으면 텍스트 입력 비활성화
+                                ></textarea>
+                                <button type="button" onClick={() => { /* Send logic handled by overall form submit for Step 1 */ }} className={styles.sendMessageButton}>
+                                    <SendIcon />
+                                </button>
+                            </div>
+                            {filePreviewUrlForStep1 && (
+                                <div style={{ padding: '10px', backgroundColor: '#f0f0f0', borderTop: '1px solid #ddd' }}>
+                                    <p style={{ margin: '0', fontSize: '0.85rem' }}>Attached image: {attachedFileForStep1?.name}
+                                        <button onClick={() => { setAttachedFileForStep1(null); setFilePreviewUrlForStep1(null); if (fileInputRefForStep1.current) fileInputRefForStep1.current.value = ''; }} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', marginLeft: '10px' }}>x</button>
+                                    </p>
+                                </div>
+                            )}
                         </section>
 
                         {/* Delivery Details Section */}

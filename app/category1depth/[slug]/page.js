@@ -97,6 +97,7 @@ export default function Category1DepthPage() {
           continue;
         }
         const productsData = await productsResponse.json();
+        console.log("productsData for subCategory1:", sub1Cat.name, productsData);
         productsMap[sub1Cat.categoryId] = productsData;
       }
       setProductsByCategory(productsMap);

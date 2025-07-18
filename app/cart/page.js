@@ -62,21 +62,39 @@ export default function CartPage() { // 컴포넌트 이름 변경
     setLoadingCart(true);
     setErrorCart(null);
     try {
-      // /api/users/[seq] 엔드포인트를 호출하여 사용자 데이터를 가져옵니다.
-      const response = await fetch(`/api/users/${user.seq}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const userData = await response.json();
-      // 사용자 데이터에서 'cart' 필드를 사용합니다.
-      setUserCartItems(userData.cart || []); 
-    } catch (err) {
-      console.error("Error fetching user cart:", err);
-      setErrorCart(`장바구니 목록을 불러오는 데 실패했습니다: ${err.message}`);
-      showModal(`장바구니 목록을 불러오는 데 실패했습니다: ${err.message}`);
-    } finally {
-      setLoadingCart(false);
-    }
+      // /api/users/[seq] 엔드포인트를 호출하여 사용자 데이터를 가져옵니다.
+      const userResponse = await fetch(`/api/users/${user.seq}`);
+      if (!userResponse.ok) {
+        throw new Error(`HTTP error! status: ${userResponse.status}`);
+      }
+      const userData = await userResponse.json();
+      let fetchedCart = userData.cart || []; 
+
+      // 각 장바구니 아이템에 대한 상품 상세 정보 (할인율 등)를 가져옵니다.
+      const enrichedCartItems = await Promise.all(
+        fetchedCart.map(async (cartItem) => {
+          try {
+            const productResponse = await fetch(`/api/products/${cartItem.productId}`);
+            if (!productResponse.ok) {
+              console.warn(`Failed to fetch product details for cart item ${cartItem.productId}`);
+              return cartItem; // 상품 정보 가져오기 실패 시 기존 cartItem 반환
+            }
+            const productData = await productResponse.json();
+            return { ...cartItem, discount: productData.discount || 0 }; // 상품의 할인율 추가
+          } catch (itemError) {
+            console.error(`Error fetching details for cart item ${cartItem.productId}:`, itemError);
+            return cartItem; // 에러 발생 시 기존 cartItem 반환
+          }
+        })
+      );
+      setUserCartItems(enrichedCartItems);
+    } catch (err) {
+      console.error("Error fetching user cart:", err);
+      setErrorCart(`장바구니 목록을 불러오는 데 실패했습니다: ${err.message}`);
+      showModal(`장바구니 목록을 불러오는 데 실패했습니다: ${err.message}`);
+    } finally {
+      setLoadingCart(false);
+    }
   }, [isLoggedIn, user?.seq, showModal]);
 
   // 컴포넌트 마운트 시 사용자 장바구니 데이터 로드
@@ -123,8 +141,10 @@ export default function CartPage() { // 컴포넌트 이름 변경
 
   // 총 주문 금액 계산
   const totalCartAmount = useMemo(() => {
+    console.log("Calculating total cart amount for items:", userCartItems);
     return userCartItems.reduce((total, item) => {
-      return total + (item.unitPrice || 0) * (item.quantity || 0);
+    const unitPriceAfterDiscount = (item.unitPrice || 0) * (1 - (item.discount || 0) / 100);
+    return total + unitPriceAfterDiscount * (item.quantity || 0);
     }, 0);
   }, [userCartItems]);
 
