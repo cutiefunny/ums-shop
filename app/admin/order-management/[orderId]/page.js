@@ -463,10 +463,10 @@ export default function OrderDetailPage() {
             {order.orderItems?.map(item => ( // orderItems가 없을 경우를 대비하여 ?. 추가
               <div key={item.productId} className={styles.orderItemCard}>
                 <div className={styles.orderItemDetails}>
-                  {item.image && <Image src={item.image} alt={item.name} width={80} height={80} className={styles.orderItemImage} />}
+                  {item.mainImage && <Image src={item.mainImage} alt={item.name} width={80} height={80} className={styles.orderItemImage} />}
                   <div>
                     <div className={styles.productName}>{item.name}</div>
-                    <div className={styles.unitPrice}>Unit Price: ${item.unitPrice?.toFixed(2)}</div>
+                    <div className={styles.unitPrice}>Unit Price: ${item.discountedUnitPrice?.toFixed(2)}</div>
                     <div className={styles.quantity}>Quantity: {item.quantity}</div>
                   </div>
                 </div>

@@ -28,7 +28,9 @@ export async function POST(request) {
     const {
       userEmail,
       userName,
-      shipName,
+      customer,
+      shipInfo,
+      shippingDetails,
       totalAmount,
       subtotal,
       shippingFee,
@@ -36,6 +38,7 @@ export async function POST(request) {
       orderItems,
       deliveryDetails,
       userMessage,
+      messages, // 이 부분 추가
       status,
       date,
       statusHistory,
@@ -50,9 +53,11 @@ export async function POST(request) {
 
     const newOrder = {
       orderId: newOrderId,
-      userEmail,
-      userName,
-      shipName,
+        userEmail: userEmail,
+        userName: userName,
+      customer : customer,
+      shipInfo: shipInfo,
+      shippingDetails: shippingDetails,
       totalAmount: parseFloat(totalAmount),
       subtotal: parseFloat(subtotal),
       shippingFee: parseFloat(shippingFee),
@@ -60,6 +65,7 @@ export async function POST(request) {
       orderItems: orderItems, // 주문 상품 목록 (객체 배열)
       deliveryDetails: deliveryDetails, // 배송 상세 (객체)
       userMessage: userMessage || null, // 사용자 메시지 (선택 사항)
+      messages: messages || [], // 이 부분 추가: 메시지 목록 저장
       status: status,
       date: date, // ISO String
       statusHistory: statusHistory || [], // 상태 변경 이력

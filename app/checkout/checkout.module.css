@@ -140,17 +140,75 @@
   margin-bottom: 10px;
 }
 
-.messageInput {
-  width: 100%;
-  padding: 10px 12px;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  box-sizing: border-box;
-  resize: vertical;
-  min-height: 60px;
-  background-color: #f1f3f5;
+/* Message Input Container (the whole bar at the bottom) */
+.messageInputContainer {
+    display: flex;
+    align-items: flex-end; /* Align items to the bottom, useful if textarea grows */
+    gap: 10px;
+    padding: 10px 0px; /* Padding for the entire input row */
+    background-color: #f8f9fa; /* Light background for the input bar area */
+    border-top: 1px solid #e9ecef; /* Separator from content above */
+    box-sizing: border-box; /* Include padding in width calculation */
 }
+
+/* Textarea inside the message input container */
+.messageInputContainer textarea.messageInput {
+    flex-grow: 1;
+    border: 1px solid #ced4da; /* Subtle border for the textarea */
+    border-radius: 25px; /* Rounded corners for chat bubble style */
+    padding: 10px 15px; /* Consistent padding */
+    font-size: 1rem;
+    box-sizing: border-box;
+    resize: none; /* Disable manual resize */
+    min-height: 40px; /* Initial height for chat */
+    max-height: 120px; /* Allow it to grow a bit more */
+    background-color: white; /* White background for the input field */
+    color: #212529; /* Text color */
+    overflow-y: auto; /* Enable scrolling if content exceeds max-height */
+}
+
+/* Attached Preview within the input container */
+.attachedPreviewInInput {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border: 1px solid #ced4da;
+    border-radius: 25px;
+    padding: 5px 10px;
+    height: 40px; /* Match min-height of textarea */
+    box-sizing: border-box;
+    overflow: hidden; /* Hide overflow */
+}
+
+.attachedImagePreviewActual {
+    max-height: 30px; /* Smaller height for preview in input */
+    max-width: 30px;
+    object-fit: contain;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.attachedPreviewInInput span {
+    flex-grow: 1;
+    font-size: 0.9rem;
+    color: #495057;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.removeAttachedImageButton {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-left: 5px;
+    padding: 0 5px;
+    line-height: 1; /* Adjust line height for better vertical centering */
+}
+
 
 .deliveryOptions {
     display: flex;
@@ -438,93 +496,128 @@
   text-align: center;
 }
 
-/* Message History Area (Chat) */
-.messageHistoryArea {
-    border: 1px solid #ced4da;
-    border-radius: 8px;
-    min-height: 150px;
-    max-height: 250px; /* Limit height for scrolling */
-    overflow-y: auto;
+/* Message History Area (Chat) - Renamed .messageDisplayArea to represent chat history better */
+.messageDisplayArea {
+    border: none; /* Remove outer border */
+    border-radius: 0; /* Remove outer border-radius */
     padding: 15px;
-    background-color: #fff;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    min-height: 100px;
+    max-height: 250px; /* Limit height for scrolling */
     margin-bottom: 10px;
-}
-
-.chatMessage {
     display: flex;
-    flex-direction: column;
-    max-width: 80%;
+    flex-direction: column; /* Ensure messages stack vertically */
+    align-items: flex-start; /* Default alignment for messages */
+    background-color: #f8f9fa; /* Background for the chat history area */
+    overflow-y: auto; /* Allow scrolling for message history */
 }
 
-.chatMessage.userMessage {
-    align-self: flex-end; /* User messages to the right */
-    background-color: #dcf8c6; /* Light green bubble */
-    border-radius: 12px 12px 0 12px;
+.messageBubble { /* Style for individual messages in history */
+    max-width: 75%; /* Limit bubble width */
     padding: 8px 12px;
+    border-radius: 18px; /* Rounded corners for message bubbles */
+    margin-bottom: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Subtle shadow for depth */
+    position: relative;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    word-wrap: break-word; /* Ensure long words wrap */
 }
 
-.chatMessage.adminMessage {
-    align-self: flex-start; /* Admin messages to the left */
-    background-color: #e9ecef; /* Light gray bubble */
-    border-radius: 12px 12px 12px 0;
-    padding: 8px 12px;
+.messageBubble:last-child {
+    margin-bottom: 0;
 }
 
-.chatMessageText {
+.messageBubble .existingMessageText {
     margin: 0;
-    font-size: 0.9rem;
-    color: #343a40;
+    padding: 0;
+    text-align: left; /* Ensure text alignment within bubble */
 }
 
-.chatMessageTime {
+.messageBubble .attachedImagePreview {
+    max-width: 100%;
+    height: auto;
+    max-height: 120px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin-top: 5px; /* Space between text and image in the same bubble */
+}
+
+.messageBubble .messageTimestamp {
+    display: block;
     font-size: 0.7rem;
     color: #868e96;
-    margin-top: 4px;
+    margin-top: 5px;
     text-align: right;
+    opacity: 0.8;
 }
 
-.messageInputContainer {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border: none;
+/* User's sent messages */
+.messageBubble[data-sender="User"] {
+    background-color: #dcf8c6; /* Light green for sent messages */
+    align-self: flex-end; /* Align to right */
+    border-bottom-right-radius: 4px; /* Pointed corner towards sender */
 }
 
-.messageInputContainer textarea {
-    flex-grow: 1;
-    border-radius: 20px;
-    padding: 8px 15px;
-    min-height: 40px; /* Adjust for single line */
-    max-height: 80px; /* Max height for multiple lines */
-    overflow-y: auto;
-    resize: none; /* Disable manual resize */
+/* Receiver's messages (e.g., Admin's feedback in Step 2, if reused) */
+.messageBubble[data-sender="Admin"] {
+    background-color: #e9ecef; /* Light grey for received messages */
+    align-self: flex-start; /* Align to left */
+    border-bottom-left-radius: 4px; /* Pointed corner towards receiver */
 }
 
+.emptyMessageText {
+    font-style: italic;
+    color: #adb5bd;
+    margin: auto; /* Center the empty message */
+}
+
+/* Adjust Attach Button */
 .attachButton {
+    width: 40px;
+    height: 40px;
     border: none;
-    border-radius: 8px;
+    border-radius: 50%; /* Make it round */
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: transparent;
+    background-color: #e9ecef; /* Light grey background for attach button */
+    transition: background-color 0.2s ease;
 }
 
+.attachButton:hover {
+    background-color: #d1d5db;
+}
+
+.attachButton img {
+    width: 18px;
+    height: 18px;
+}
+
+/* Adjust Send Button */
 .sendMessageButton {
+    
+    color: white;
+    width: 40px; /* Fixed width for icon button */
+    height: 40px; /* Fixed height */
     border: none;
-    border-radius: 8px;
-    cursor: pointer;
+    border-radius: 50%; /* Make it round */
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0; /* Remove default padding */
+    transition: background-color 0.2s ease;
 }
 
 .sendMessageButton:hover {
     background-color: #d88e1a;
 }
+
+.sendMessageButton img {
+    width: 20px; /* Adjust icon size */
+    height: 20px;
+}
+
 
 /* Step 3 Payment Options */
 .paymentOptionsGrid {
@@ -612,45 +705,54 @@
   cursor: not-allowed;
 }
 
-/* New styles for Step 1 Message Section to match image */
-.messageDisplayArea {
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
-    padding: 15px;
-    min-height: 100px; /* Adjust as needed */
-    margin-bottom: 10px;
+/* New: Draft Image Preview within the Message Display Area */
+.draftImagePreviewContainer {
     display: flex;
     align-items: center;
-    justify-content: center;
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    background-color: white; /* Light background for the preview container */
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 10px;
+    margin-top: 10px; /* Space from last message or top of section */
+    margin-bottom: 10px; /* Space before input area */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    align-self: flex-end; /* To make it appear like a draft from the user, aligned right */
+    max-width: 80%; /* Limit width */
+    position: relative; /* For positioning the remove button */
 }
 
-.emptyMessageText {
-    font-size: 1rem;
-    color: #868e96;
-    text-align: center;
-    width: 100%;
-}
-
-.existingMessageText {
-    font-size: 1rem;
-    color: #212529;
-    line-height: 1.4;
-    word-wrap: break-word;
-    text-align: left;
-    width: 100%;
-}
-
-.attachedImagePreview {
-    max-width: 100%;
-    height: auto;
-    max-height: 150px; /* Limit image height */
+.draftImagePreview {
+    width: 150px; /* Fixed small size */
     object-fit: contain;
     border-radius: 8px;
-    margin-top: 10px; /* Space from text if both exist */
+    margin-right: 10px;
 }
 
+.draftImageDetails {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.draftImageDetails span {
+    font-size: 0.9rem;
+    color: #343a40;
+    font-weight: 500;
+    word-break: break-all; /* Ensure long file names wrap */
+}
+
+.removeDraftImageButton {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-left: 10px;
+    padding: 0 5px;
+    line-height: 1;
+    align-self: flex-start; /* Align with top of image/text */
+}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {

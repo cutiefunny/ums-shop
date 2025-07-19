@@ -1,4 +1,3 @@
-// app/checkout/page.js
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -21,81 +20,30 @@ const SendIcon = () => <img src="/images/send.png" alt="Send" width="24" height=
 
 export default function CheckoutPage() {
     const router = useRouter();
-    const { user, isLoggedIn, logout } = useAuth(); // logout 함수 추가
+    const { user, isLoggedIn, logout } = useAuth();
     const { showModal, showConfirmationModal } = useModal();
 
-    const [currentStep, setCurrentStep] = useState(1); // 1: Order Review (초기), 2: Order in Review (Admin Feedback), 3: Payment
+    // Step 1: Order Review & Details State
     const [cartItems, setCartItems] = useState([]); // 현재 장바구니 항목
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Step 1: Order Review & Details State
     const [deliveryOption, setDeliveryOption] = useState('onboard'); // 'onboard' or 'alternative'
     const [deliveryAddress, setDeliveryAddress] = useState('');
     const [postalCode, setPostalCode] = useState('');
-    const [portName, setPortName] = useState(''); 
-    const [expectedShippingDate, setExpectedShippingDate] = useState(''); 
-    const [userMessage, setUserMessage] = useState('');
-    const [attachedFileForStep1, setAttachedFileForStep1] = useState(null); // Step 1 첨부 파일
-    const [filePreviewUrlForStep1, setFilePreviewUrlForStep1] = useState(null); // Step 1 첨부 파일 미리보기 URL
-    const fileInputRefForStep1 = useRef(null); // Step 1 파일 입력 Ref
+    const [portName, setPortName] = useState('');
+    const [expectedShippingDate, setExpectedShippingDate] = useState('');
+    const [userMessage, setUserMessage] = useState(''); // 현재 입력 중인 메시지 (텍스트)
+    const [attachedFileForStep1, setAttachedFileForStep1] = useState(null); // 현재 첨부된 파일
+    const [filePreviewUrlForStep1, setFilePreviewUrlForStep1] = useState(null); // 현재 첨부된 파일 미리보기 URL
+    const fileInputRefForStep1 = useRef(null);
     const [selectedItemsForOrder, setSelectedItemsForOrder] = useState(new Set()); // 주문할 상품 ID Set
+    const [messagesForStep1, setMessagesForStep1] = useState([]); // Step 1에서 주고받은 메시지 목록
 
-    // Step 2: Order in Review - Admin Feedback State
-    const [orderReviewDetails, setOrderReviewDetails] = useState(null); // 관리자 피드백 포함된 주문 상세
-    const [originalFinalTotalPrice, setOriginalFinalTotalPrice] = useState(0); // 1단계에서 계산된 최종 가격
-    const [step2UserMessage, setStep2UserMessage] = useState(''); // 2단계 채팅 메시지 입력 필드
-
-    // Derived State for totals
-    const totalItemsCount = useMemo(() => {
-        return cartItems.reduce((sum, item) => selectedItemsForOrder.has(item.productId) ? sum + item.quantity : sum, 0);
-    }, [cartItems, selectedItemsForOrder]);
-
-    const productPriceTotal = useMemo(() => {
-        return cartItems.reduce((sum, item) => selectedItemsForOrder.has(item.productId) ? sum + (item.unitPrice * item.quantity) : sum, 0);
-    }, [cartItems, selectedItemsForOrder]);
-
-    const shippingFee = 20; // Fixed shipping fee for now
-
-    const finalTotalPrice = useMemo(() => {
-        return productPriceTotal + shippingFee;
-    }, [productPriceTotal, shippingFee]);
-
-    // Step 2 (Admin Feedback)에서의 총 가격 (관리자 조정 수량/대체품 반영)
-    const currentReviewTotalPrice = useMemo(() => {
-        if (!orderReviewDetails) return 0;
-        return orderReviewDetails.orderItems.reduce((sum, item) => {
-            const price = item.unitPrice || 0;
-            let quantity = item.quantity; // 기본은 사용자 주문 수량
-            if (item.adminStatus === 'Available' || item.adminStatus === 'Limited Quantity') {
-                // 관리자가 수량을 조정한 경우 adminQuantity 사용, 아니면 원본 수량
-                quantity = item.adminQuantity !== undefined ? item.adminQuantity : item.quantity;
-            } else if (item.adminStatus === 'Out of Stock') {
-                quantity = 0; // 품절이면 0개
-            }
-            // 'Alternative Offer'는 복잡하므로 여기서는 0으로 처리하거나 별도 로직 필요
-            return sum + (price * quantity);
-        }, 0) + (orderReviewDetails.shippingFee || 0); // 배송비 포함
-    }, [orderReviewDetails]);
-
-    // 금액 변동 여부
-    const hasAmountChanged = useMemo(() => {
-        if (currentStep === 2 && orderReviewDetails) {
-            // 소수점 문제 방지를 위해 반올림 후 비교
-            return Math.abs(currentReviewTotalPrice - originalFinalTotalPrice) > 0.01; 
-        }
-        return false;
-    }, [currentStep, currentReviewTotalPrice, originalFinalTotalPrice, orderReviewDetails]);
-
-
-    // Step 3: Payment Confirmation State (for display)
-    const [estimatedDeliveryDate, setEstimatedDeliveryDate] = useState('April 20, 2026'); // Example date
-    const [showPaymentMethodSelectionModal, setShowPaymentMethodSelectionModal] = useState(false); // 결제 방식 선택 모달
-
-    // 안내 모달 관련 상태
+    // Guide Modal related states (kept for initial order guidance, but flow changes)
     const [showGuideModal, setShowGuideModal] = useState(false);
-    const [currentGuideStep, setCurrentGuideStep] = useState(0); // 0: 안내 1단계, 1: 안내 2단계, ... 3: 안내 4단계
-    const [orderSuccessfullyPlaced, setOrderSuccessfullyPlaced] = useState(false); // 첫 주문 완료 플래그 설정
+    const [currentGuideStep, setCurrentGuideStep] = useState(0);
+    const [orderSuccessfullyPlaced, setOrderSuccessfullyPlaced] = useState(false);
 
     const guideStepsContent = useMemo(() => ([
         {
@@ -129,8 +77,9 @@ export default function CheckoutPage() {
             if (currentGuideStep < guideStepsContent.length - 1) {
                 setCurrentGuideStep(prev => prev + 1);
             } else {
-                setShowGuideModal(false); 
-                setCurrentStep(2); // 변경된 부분: 안내 모달 완료 후 새로운 2단계로 이동 (Order in Review - Admin Feedback)
+                setShowGuideModal(false);
+                // After guide, redirect to orders page
+                router.push('/orders');
             }
         },
         onGoToMyOrders: () => {
@@ -138,6 +87,26 @@ export default function CheckoutPage() {
             router.push('/orders');
         }
     };
+
+    // Derived State for totals
+    const totalItemsCount = useMemo(() => {
+        return cartItems.reduce((sum, item) => selectedItemsForOrder.has(item.productId) ? sum + item.quantity : sum, 0);
+    }, [cartItems, selectedItemsForOrder]);
+
+    const productPriceTotal = useMemo(() => {
+        return cartItems.reduce((sum, item) => {
+            if (selectedItemsForOrder.has(item.productId)) {
+                return sum + (item.unitPrice || 0) * (item.quantity || 0) * (1 - (item.discount || 0) / 100); // 할인 적용
+            }
+            return sum;
+        }, 0);
+    }, [cartItems, selectedItemsForOrder]);
+
+    const shippingFee = 20; // Fixed shipping fee for now
+
+    const finalTotalPrice = useMemo(() => {
+        return productPriceTotal + shippingFee;
+    }, [productPriceTotal, shippingFee]);
 
     // 사용자 장바구니 데이터를 DB에서 가져오는 함수
     const fetchUserCart = useCallback(async () => {
@@ -149,14 +118,37 @@ export default function CheckoutPage() {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`/api/users/${user.seq}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            const userResponse = await fetch(`/api/users/${user.seq}`);
+            if (!userResponse.ok) {
+                throw new Error(`HTTP error! status: ${userResponse.status}`);
             }
-            const userData = await response.json();
+            const userData = await userResponse.json();
             const fetchedCart = userData.cart || [];
-            setCartItems(fetchedCart);
-            setSelectedItemsForOrder(new Set(fetchedCart.map(item => item.productId)));
+
+            const productDetails = await Promise.all(fetchedCart.map(async (item) => {
+                const response = await fetch(`/api/products/${item.productId}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch product details for ID: ${item.productId}`);
+                }
+                return response.json();
+            }));
+
+            // MODIFICATION START: User requested to *not* fetch productDetails
+            // This will result in missing product details (name, image, accurate price, discount)
+            // for CartItem components, which may cause display issues or incorrect total calculations.
+            const enrichedCartItems = fetchedCart.map(cartItem => ({
+                productId: cartItem.productId,
+                discount: productDetails.find(p => p.productId === cartItem.productId)?.discount || 0, // 할인율
+                name: cartItem.name,
+                unitPrice: cartItem.unitPrice,
+                mainImage: cartItem.mainImage,
+                slug: cartItem.slug,
+                quantity: cartItem.quantity,
+            }));
+            
+            setCartItems(enrichedCartItems);
+            setSelectedItemsForOrder(new Set(enrichedCartItems.map(item => item.productId)));
+            // MODIFICATION END
         } catch (err) {
             console.error("Error fetching user cart:", err);
             setError(`장바구니 목록을 불러오는 데 실패했습니다: ${err.message}`);
@@ -230,6 +222,103 @@ export default function CheckoutPage() {
         );
     }, [cartItems, selectedItemsForOrder, showModal, showConfirmationModal]);
 
+    // Step 1에서 메시지를 추가하는 함수
+    const handleAddMessageForStep1 = async () => {
+        if (!userMessage.trim() && !attachedFileForStep1) {
+            showModal('메시지 내용 또는 첨부 파일을 입력해주세요.');
+            return;
+        }
+
+        let fileData = null;
+        if (attachedFileForStep1) {
+            setLoading(true); // 파일 업로드 시작 시 로딩 상태 설정
+            try {
+                // 1. S3 Pre-Signed POST URL 요청 (GET 요청으로 변경)
+                // 서버가 createPresignedPost를 사용하므로, GET 요청으로 filename과 contentType을 쿼리 파라미터로 보냄
+                const getSignedUrlResponse = await fetch(`/api/s3-upload-url?filename=${attachedFileForStep1.name}&contentType=${attachedFileForStep1.type}`);
+
+                if (!getSignedUrlResponse.ok) {
+                    const errorData = await getSignedUrlResponse.json();
+                    throw new Error(errorData.message || 'Failed to get S3 signed URL.');
+                }
+                const { url, fields } = await getSignedUrlResponse.json(); // signedUrl 대신 url과 fields를 받음
+
+                // S3에 저장될 최종 이미지 URL 구성 (클라이언트에서 직접 구성)
+                // process.env.NEXT_PUBLIC_S3_BUCKET_NAME 및 process.env.NEXT_PUBLIC_AWS_REGION 필요
+                const S3_BUCKET_NAME_PUBLIC = process.env.NEXT_PUBLIC_S3_BUCKET_NAME || 'ums-shop-storage';
+                const AWS_REGION_PUBLIC = process.env.NEXT_PUBLIC_AWS_REGION || 'ap-southeast-2';
+                const objectKey = fields.Key; // fields 객체에 S3 객체 Key가 포함되어 있음
+                const imageUrl = `https://${S3_BUCKET_NAME_PUBLIC}.s3.${AWS_REGION_PUBLIC}.amazonaws.com/${objectKey}`;
+
+
+                // 2. FormData 생성 및 필드 추가
+                const formData = new FormData();
+                Object.entries(fields).forEach(([key, value]) => {
+                    formData.append(key, value);
+                });
+                // 실제 파일을 fields.Key에 해당하는 이름으로 FormData에 추가
+                formData.append(fields.Key, attachedFileForStep1);
+
+
+                // 3. Pre-Signed POST URL을 사용하여 S3에 파일 업로드
+                const uploadFileToS3Response = await fetch(url, { // url은 createPresignedPost에서 받은 S3 업로드 URL
+                    method: 'POST', // PUT 대신 POST 사용
+                    body: formData, // FormData를 body로 보냄
+                });
+
+                if (!uploadFileToS3Response.ok) {
+                    throw new Error('Failed to upload file to S3.');
+                }
+
+                fileData = {
+                    name: attachedFileForStep1.name,
+                    type: attachedFileForStep1.type,
+                    size: attachedFileForStep1.size,
+                    url: imageUrl, // S3에 저장된 실제 이미지 URL
+                };
+
+            } catch (uploadError) {
+                console.error("S3 upload error:", uploadError);
+                showModal(`파일 업로드 실패: ${uploadError.message}`);
+                setLoading(false); // 로딩 해제
+                return; // 업로드 실패 시 메시지 전송 중단
+            } finally {
+                setLoading(false); // 파일 업로드 완료 후 로딩 해제
+            }
+        }
+
+        const newMessage = {
+            id: messagesForStep1.length + 1,
+            sender: 'User',
+            timestamp: new Date().toISOString(),
+            text: userMessage.trim(),
+            file: fileData, // S3 업로드된 파일 정보 또는 null
+        };
+
+        setMessagesForStep1(prev => [...prev, newMessage]);
+        setUserMessage('');
+        setAttachedFileForStep1(null);
+        setFilePreviewUrlForStep1(null);
+        if (fileInputRefForStep1.current) {
+            fileInputRefForStep1.current.value = ''; // 파일 입력 필드 초기화
+        }
+    };
+
+    // 메시지 입력 필드 변경 핸들러 - 한글 입력 방지
+    const handleUserMessageChange = useCallback((e) => {
+        const inputValue = e.target.value;
+        // 한글 유니코드 범위: \uAC00-\uD7AF (가-힣), \u1100-\u11FF (자모), \u3130-\u318F (호환용 자모), \uA960-\uA97F (초성), \uD7B0-\uD7FF (종성)
+        const koreanRegex = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uD7B0-\uD7FF]/;
+        if (koreanRegex.test(inputValue)) {
+            showModal('Only English letters are allowed.');
+            // 한글을 제외한 문자열만 설정
+            setUserMessage(inputValue.replace(koreanRegex, ''));
+        } else {
+            setUserMessage(inputValue);
+        }
+    }, [showModal]);
+
+
     const handleSubmitOrderReview = async () => {
         if (selectedItemsForOrder.size === 0) {
             showModal("주문할 상품을 1개 이상 선택해주세요.");
@@ -270,30 +359,45 @@ export default function CheckoutPage() {
 
             const itemsToOrder = cartItems.filter(item => selectedItemsForOrder.has(item.productId));
 
-            // 주문 생성 페이로드 (관리자 피드백 초기값 포함)
+            // 주문 생성 페이로드
             const orderPayload = {
                 userEmail: user.email,
                 userName: user.name,
-                shipName: user.shipName,
+                customer: {
+                    email: user.email,
+                    name: user.name,
+                    phoneNumber: user.phoneNumber
+                },
+                shipInfo: {
+                    shipName: user.shipName,
+                    port: deliveryDetailsPayload.portName,
+                },
+                shippingDetails: {
+                    method: deliveryOption,
+                    estimatedDelivery: deliveryDetailsPayload.expectedShippingDate,
+                    trackingNumber: null, // 주문 생성 시에는 아직 트래킹 번호가 없음
+                    actualDelivery: null, // 실제 배송 날짜는 주문 후에 업데이트됨
+                },
                 totalAmount: finalTotalPrice,
                 subtotal: productPriceTotal,
                 shippingFee: shippingFee,
-                tax: 0, 
+                tax: 0,
                 orderItems: itemsToOrder.map(item => ({
                     productId: item.productId,
                     name: item.name,
                     quantity: item.quantity,
-                    unitPrice: item.unitPrice,
+                    unitPrice: item.unitPrice, //원본 가격
+                    discountedUnitPrice: item.unitPrice * (1 - (item.discount || 0) / 100), // 할인 적용된 가격
+                    discount: item.discount, // 할인율
                     mainImage: item.mainImage,
-                    sku: item.slug, 
-                    // 관리자 피드백 필드 초기화 (시뮬레이션)
+                    sku: item.slug,
                     adminStatus: 'Pending Review', // 초기 상태는 'Pending Review'
                     adminQuantity: item.quantity, // 초기에는 주문 수량과 동일
                 })),
-                deliveryDetails: deliveryDetailsPayload, 
-                userMessage: userMessage,
+                deliveryDetails: deliveryDetailsPayload,
+                messages: messagesForStep1, // Step 1에서 작성된 모든 메시지 포함
                 status: 'Order', // 초기 주문 상태
-                date: new Date().toISOString(), 
+                date: new Date().toISOString(),
                 statusHistory: [{
                     timestamp: new Date().toISOString(),
                     oldStatus: null,
@@ -302,190 +406,43 @@ export default function CheckoutPage() {
                 }],
             };
 
-            // const response = await fetch('/api/orders/create', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify(orderPayload),
-            // });
-
-            // if (!response.ok) {
-            //     const errorData = await response.json();
-            //     throw new Error(errorData.message || '주문 생성 실패');
-            // }
-
-            // // 주문 성공 시 장바구니 초기화 (서버에도 반영)
-            // const userUpdateResponse = await fetch(`/api/users/${user.seq}`, {
-            //     method: 'PUT',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ cart: [] }),
-            // });
-            // if (!userUpdateResponse.ok) {
-            //     console.error('Failed to clear cart after order:', await userUpdateResponse.text());
-            // }
-
-            // Step 1에서는 주문을 DB에 저장하지 않고, 상태에만 저장합니다.
-+            setOrderReviewDetails(orderPayload);
-+            setOriginalFinalTotalPrice(finalTotalPrice); // 1단계의 최종 금액 저장
-            
-            // await fetchUserCart(); // 장바구니를 비운 후, 사용자 카트 데이터를 다시 가져옴
-
-            // // 2단계에서 사용할 주문 상세 정보를 저장
-            // // API 응답에서 orderId를 가져와야 합니다. 현재는 MOCK_ORDER_ID
-            // const newOrderId = response.headers.get('x-order-id') || `ORDER_${Date.now()}`; 
-            // setOrderReviewDetails({ ...orderPayload, orderId: newOrderId }); 
-            // setOriginalFinalTotalPrice(finalTotalPrice); // 1단계의 최종 금액 저장
-
-            fetchUserCart(); // 장바구니 데이터 재로드 (현재는 Step 2에서 비웁니다)
-
-            if (isFirstOrder) {
-                setOrderSuccessfullyPlaced(true); // 첫 주문 완료 플래그 설정
-                setShowGuideModal(true); // 첫 주문일 경우 안내 모달 표시
-                setCurrentGuideStep(0); // 첫 안내 단계부터 시작
-            } else {
-                // 첫 주문이 아니면 바로 2단계로 이동
-                setCurrentStep(2); 
-            }
-        } catch (err) {
-            console.error("Order submission error:", err);
-            showModal(`주문 접수에 실패했습니다: ${err.message}`);
-        } finally {
-            setLoading(false); // 로딩 종료
-        }
-    };
-
-    // --- 새로운 2단계 (Order in Review - Admin Feedback) 로직 ---
-
-    // 2단계: 상품 수량 수정 (관리자 피드백 기반)
-    const handleAdminFeedbackQuantityChange = (productId, newQuantity) => {
-        setOrderReviewDetails(prev => {
-            if (!prev) return null;
-            const updatedItems = prev.orderItems.map(item => {
-                if (item.productId === productId) {
-                    // 관리자 상태가 'Available' 또는 'Limited Quantity'일 때만 수량 변경 가능
-                    if (item.adminStatus === 'Available' || item.adminStatus === 'Limited Quantity') {
-                         return { ...item, adminQuantity: newQuantity };
-                    }
-                }
-                return item;
-            });
-            return { ...prev, orderItems: updatedItems };
-        });
-    };
-
-    // 2단계: 메시지 전송
-    const handleSendStep2Message = () => {
-        if (!step2UserMessage.trim()) {
-            showModal('메시지 내용을 입력해주세요.');
-            return;
-        }
-        setOrderReviewDetails(prev => {
-            if (!prev) return null;
-            const newMessages = [...(prev.messages || []), {
-                id: (prev.messages?.length || 0) + 1,
-                sender: 'User', // 사용자가 보낸 메시지
-                text: step2UserMessage.trim(),
-                timestamp: new Date().toISOString(),
-            }];
-            return { ...prev, messages: newMessages };
-        });
-        setStep2UserMessage(''); // 입력 필드 초기화
-        // TODO: 백엔드 API 호출하여 메시지 저장 (PUT /api/orders/[orderId])
-    };
-
-    // 2단계: [Send Order Confirmation] 버튼 클릭
-    const handleSendOrderConfirmation = async () => {
-        if (hasAmountChanged) {
-            showModal("Order details have changed. Please review again before confirmation.");
-            return;
-        }
-
-        // 금액 변동이 없고, 최종 확인되었다고 가정
-        setLoading(true);
-        try {
-            // TODO: 백엔드 API 호출하여 주문 상태를 'Confirmed' 등으로 업데이트
-            // Step 1에서 준비된 orderReviewDetails를 사용하여 주문을 생성합니다.
-            const createOrderResponse = await fetch('/api/orders/create', {
+            const response = await fetch('/api/orders/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(orderReviewDetails), // Step 1에서 준비된 페이로드 사용
+                body: JSON.stringify(orderPayload),
             });
 
-            if (!createOrderResponse.ok) {
-                const errorData = await createOrderResponse.json();
+            if (!response.ok) {
+                const errorData = await response.json();
                 throw new Error(errorData.message || '주문 생성 실패');
             }
 
-            const createdOrderData = await createOrderResponse.json();
-            const newOrderId = createdOrderData.order.orderId; // 생성된 주문의 실제 ID
-
-            // 장바구니 초기화 (PUT)
+            // 주문 성공 시 장바구니 초기화 (서버에도 반영)
             const userUpdateResponse = await fetch(`/api/users/${user.seq}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ cart: [] }),
             });
             if (!userUpdateResponse.ok) {
-                console.error('Failed to clear cart after order confirmation:', await userUpdateResponse.text());
-                // 장바구니 초기화 실패는 주문 생성 실패로 간주하지 않고 로깅만 합니다.
+                console.error('Failed to clear cart after order:', await userUpdateResponse.text());
             }
             await fetchUserCart(); // 장바구니를 비운 후, 사용자 카트 데이터를 다시 가져옴
 
-            // 주문 상태를 'Confirmed'로 업데이트 (PUT)
-            const updatedOrderPayload = {
-                ...orderReviewDetails,
-                status: 'Confirmed', // 주문 상태 변경
-                statusHistory: [...(orderReviewDetails.statusHistory || []), {
-                    timestamp: new Date().toISOString(),
-                    oldStatus: orderReviewDetails.status,
-                    newStatus: 'Confirmed',
-                    changedBy: 'User',
-                }],
-                // 여기에 최종 확정된 orderItems (adminQuantity 등이 반영된)를 다시 보낼 수 있음
-                // 현재 orderReviewDetails의 orderItems는 이미 adminQuantity를 포함하고 있음
-            };
-
-            const response = await fetch(`/api/orders/${orderReviewDetails.orderId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedOrderPayload),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || '주문 확인 실패');
+            if (isFirstOrder) {
+                setOrderSuccessfullyPlaced(true);
+                setShowGuideModal(true);
+                setCurrentGuideStep(0);
+            } else {
+                showModal("주문이 성공적으로 접수되었습니다. 주문 목록 페이지로 이동합니다.", () => {
+                    router.push('/orders');
+                });
             }
-
-            showModal("주문이 성공적으로 확인되었습니다. 결제 페이지로 이동합니다.", () => {
-                setCurrentStep(3); // 새로운 3단계 (결제)로 이동
-            });
         } catch (err) {
-            console.error("Order confirmation error:", err);
-            showModal(`주문 확인에 실패했습니다: ${err.message}`);
+            console.error("Order submission error:", err);
+            showModal(`주문 접수에 실패했습니다: ${err.message}`);
         } finally {
             setLoading(false);
         }
-    };
-
-
-    // Step 3: Payment Actions (기존 2단계의 내용)
-    const handlePayClick = () => {
-        setShowPaymentMethodSelectionModal(true); // 결제 방식 선택 모달 열기
-    };
-
-    const handlePaymentMethodSelected = (method) => {
-        // 이 함수에서 실제 결제 처리 로직 또는 결제 완료 후속 로직을 구현합니다.
-        showConfirmationModal(
-            "결제 진행",
-            `선택된 결제 방식: ${method}.\n실제 결제는 구현되지 않았습니다. 주문 완료 처리하시겠습니까?`,
-            () => {
-                // 결제 완료 후 최종 주문 상태 업데이트 및 orders 페이지로 이동
-                showModal("결제 완료! 주문이 처리되었습니다.", () => {
-                    router.push('/orders');
-                });
-            },
-            () => { /* do nothing on cancel */ }
-        );
-        setShowPaymentMethodSelectionModal(false); // 결제 방식 선택 모달 닫기
     };
 
     const handleCancelOrder = () => {
@@ -528,7 +485,6 @@ export default function CheckoutPage() {
         return null;
     }
 
-    // --- 핵심 수정 부분: 렌더링 우선순위 ---
     // 1. 주문이 성공적으로 완료되었고 첫 주문 안내 모달을 표시해야 할 경우
     if (orderSuccessfullyPlaced && showGuideModal) {
         return (
@@ -545,7 +501,7 @@ export default function CheckoutPage() {
     }
 
     // 2. 장바구니가 비어있고, 첫 주문 완료 상태가 아닐 경우 (초기 상태 또는 이미 안내를 봤거나 첫 주문이 아닌 경우)
-    if (cartItems.length === 0 && currentStep === 1 && !orderSuccessfullyPlaced) {
+    if (cartItems.length === 0 && !orderSuccessfullyPlaced) {
         return (
             <div className={styles.pageContainer}>
                 <header className={styles.header}>
@@ -567,398 +523,214 @@ export default function CheckoutPage() {
             </div>
         );
     }
-    // --- 핵심 수정 부분 끝 ---
 
     return (
         <div className={styles.pageContainer}>
             <header className={styles.header}>
-                {/* currentStep 1이 아니거나, 1이면서 첫 주문 완료 상태가 아닌 경우에만 뒤로가기 버튼 표시 */}
-                {currentStep === 1 ? (
-                    <button onClick={() => router.back()} className={styles.iconButton}>
-                        <BackIcon />
-                    </button>
-                ) : ( // 2단계나 3단계에서는 이전 단계로 돌아가는 기능
-                    <button onClick={() => setCurrentStep(prev => prev - 1)} className={styles.iconButton}>
-                         <BackIcon />
-                    </button>
-                )}
-                <h1 className={styles.title}>
-                    {currentStep === 1 ? 'Order in Review' : 
-                     currentStep === 2 ? 'Order in Review' : // 새로운 2단계 제목
-                     'Payment'} {/* 새로운 3단계 제목 */}
-                </h1>
+                <button onClick={() => router.back()} className={styles.iconButton}>
+                    <BackIcon />
+                </button>
+                <h1 className={styles.title}>Order in Review</h1>
                 <div style={{ width: '24px' }}></div>
             </header>
 
             <main className={styles.mainContent}>
-                {currentStep === 1 && (
-                    <>
-                        {/* Order Items Section */}
-                        <section className={styles.section}>
-                            <div className={styles.sectionHeader}>
-                                <label className={styles.totalCheckboxLabel}>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedItemsForOrder.size === cartItems.length && cartItems.length > 0}
-                                        onChange={handleTotalCheckboxToggle}
-                                    />
-                                    Total({selectedItemsForOrder.size}/{cartItems.length})
-                                </label>
-                                <button onClick={handleDeleteSelected} className={styles.deleteButton}>Delete</button>
-                            </div>
-                            <div className={styles.cartItemsList}>
-                                {cartItems.map(item => (
-                                    <div key={item.productId} className={styles.cartItemWrapper}>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedItemsForOrder.has(item.productId)}
-                                            onChange={() => handleItemCheckboxToggle(item.productId)}
-                                            className={styles.itemCheckbox}
-                                        />
-                                        <CartItem
-                                            item={item}
-                                            onUpdateQuantity={handleUpdateQuantity}
-                                            onRemoveItem={handleRemoveItem}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* Message Section */}
-                        <section className={styles.section}>
-                            <div className={styles.messageHeader}>
-                                <h2>Message</h2>
-                                <ChevronDown />
-                            </div>
-                            {/* Message Display Area */}
-                            <div className={styles.messageDisplayArea}>
-                                {userMessage.trim() === '' && !attachedFileForStep1 ? (
-                                    <p className={styles.emptyMessageText}>No messages have been created.</p>
-                                ) : (
-                                    <>
-                                        {userMessage.trim() !== '' && (
-                                            <p className={styles.existingMessageText}>{userMessage}</p>
-                                        )}
-                                        {filePreviewUrlForStep1 && (
-                                            <img src={filePreviewUrlForStep1} alt="Attached Preview" className={styles.attachedImagePreview} />
-                                        )}
-                                    </>
-                                )}
-                            </div>
-
-                            {/* Message Input Area */}
-                            <div className={styles.messageInputContainer}>
+                {/* Order Items Section */}
+                <section className={styles.section}>
+                    <div className={styles.sectionHeader}>
+                        <label className={styles.totalCheckboxLabel}>
+                            <input
+                                type="checkbox"
+                                checked={selectedItemsForOrder.size === cartItems.length && cartItems.length > 0}
+                                onChange={handleTotalCheckboxToggle}
+                            />
+                            Total({selectedItemsForOrder.size}/{cartItems.length})
+                        </label>
+                        <button onClick={handleDeleteSelected} className={styles.deleteButton}>Delete</button>
+                    </div>
+                    <div className={styles.cartItemsList}>
+                        {cartItems.map(item => (
+                            <div key={item.productId} className={styles.cartItemWrapper}>
                                 <input
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/webp"
-                                    ref={fileInputRefForStep1}
-                                    style={{ display: 'none' }}
-                                    onChange={(e) => {
-                                        if (e.target.files && e.target.files[0]) {
-                                            const file = e.target.files[0];
-                                            if (!file.type.startsWith('image/')) {
-                                                showModal('Only image files are allowed.');
-                                                setAttachedFileForStep1(null);
-                                                setFilePreviewUrlForStep1(null);
-                                                e.target.value = '';
-                                                return;
-                                            }
-                                            if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                                                showModal('Image file size cannot exceed 5MB.');
-                                                setAttachedFileForStep1(null);
-                                                setFilePreviewUrlForStep1(null);
-                                                e.target.value = '';
-                                                return;
-                                            }
-                                            setAttachedFileForStep1(file);
-                                            setFilePreviewUrlForStep1(URL.createObjectURL(file));
-                                        }
-                                    }}
+                                    type="checkbox"
+                                    checked={selectedItemsForOrder.has(item.productId)}
+                                    onChange={() => handleItemCheckboxToggle(item.productId)}
+                                    className={styles.itemCheckbox}
                                 />
-                                <button type="button" onClick={() => fileInputRefForStep1.current.click()} className={styles.attachButton}>
-                                    <AttachIcon />
-                                </button>
-                                <textarea
-                                    className={styles.messageInput}
-                                    placeholder={attachedFileForStep1 ? `Image attached: ${attachedFileForStep1.name}` : "Write a message"}
-                                    value={userMessage}
-                                    onChange={(e) => setUserMessage(e.target.value)}
-                                    rows="1" // 이미지에 맞춰 1줄로 조정
-                                    disabled={!!attachedFileForStep1} // 첨부파일 있으면 텍스트 입력 비활성화
-                                ></textarea>
-                                <button type="button" onClick={() => { /* Send logic handled by overall form submit for Step 1 */ }} className={styles.sendMessageButton}>
-                                    <SendIcon />
-                                </button>
+                                <CartItem
+                                    item={item}
+                                    onUpdateQuantity={handleUpdateQuantity}
+                                    onRemoveItem={handleRemoveItem}
+                                />
                             </div>
-                            {filePreviewUrlForStep1 && (
-                                <div style={{ padding: '10px', backgroundColor: '#f0f0f0', borderTop: '1px solid #ddd' }}>
-                                    <p style={{ margin: '0', fontSize: '0.85rem' }}>Attached image: {attachedFileForStep1?.name}
-                                        <button onClick={() => { setAttachedFileForStep1(null); setFilePreviewUrlForStep1(null); if (fileInputRefForStep1.current) fileInputRefForStep1.current.value = ''; }} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', marginLeft: '10px' }}>x</button>
-                                    </p>
+                        ))}
+                    </div>
+                </section>
+
+                {/* Message Section */}
+                <section className={styles.section}>
+                    <div className={styles.messageHeader}>
+                        <h2>Message</h2>
+                        <ChevronDown />
+                    </div>
+                    {/* Message Display Area */}
+                    <div className={styles.messageDisplayArea}>
+                        {messagesForStep1.length === 0 && !attachedFileForStep1 ? (
+                            <p className={styles.emptyMessageText}>No messages have been created.</p>
+                        ) : (
+                            messagesForStep1.map((msg, index) => (
+                                <div key={index} className={styles.messageBubble} data-sender={msg.sender}>
+                                    {msg.text && <p className={styles.existingMessageText}>{msg.text}</p>}
+                                    {msg.file && (
+                                        <img src={msg.file.url} alt="Attached Preview" className={styles.attachedImagePreview} />
+                                    )}
+                                    <span className={styles.messageTimestamp}>{moment(msg.timestamp).format('YYYY-MM-DD HH:mm')}</span>
                                 </div>
-                            )}
-                        </section>
+                            ))
+                        )}
 
-                        {/* Delivery Details Section */}
-                        <section className={styles.section}>
-                            <h2>Delivery Details</h2>
-                            <div className={styles.deliveryOptions}>
-                                <label>
-                                    <input
-                                        type="radio"
-                                        name="deliveryOption"
-                                        value="onboard"
-                                        checked={deliveryOption === 'onboard'}
-                                        onChange={(e) => setDeliveryOption(e.target.value)}
-                                    /> Onboard Delivery
-                                </label>
-                                <label>
-                                    <input
-                                        type="radio"
-                                        name="deliveryOption"
-                                        value="alternative"
-                                        checked={deliveryOption === 'alternative'}
-                                        onChange={(e) => setDeliveryOption(e.target.value)}
-                                    /> Alternative Pickup Location
-                                </label>
+                        {/* New: Display draft image preview within message display area */}
+                        {attachedFileForStep1 && (
+                            <div className={styles.draftImagePreviewContainer}>
+                                <img src={filePreviewUrlForStep1} alt="Attachment Preview" className={styles.draftImagePreview} />
+                                <div className={styles.draftImageDetails}>
+                                    <button onClick={() => { setAttachedFileForStep1(null); setFilePreviewUrlForStep1(null); if (fileInputRefForStep1.current) fileInputRefForStep1.current.value = ''; }} className={styles.removeDraftImageButton}>x</button>
+                                </div>
                             </div>
-                            {deliveryOption === 'onboard' ? (
-                                <>
-                                    <input
-                                        type="text"
-                                        className={styles.deliveryInput}
-                                        placeholder="Port Name"
-                                        value={portName}
-                                        onChange={(e) => setPortName(e.target.value)}
-                                    />
-                                    <input
-                                        type="date"
-                                        className={styles.deliveryInput}
-                                        placeholder="Expected Shipping Date"
-                                        value={expectedShippingDate}
-                                        onChange={(e) => setExpectedShippingDate(e.target.value)}
-                                    />
-                                </>
-                            ) : (
-                                <>
-                                    <input
-                                        type="text"
-                                        className={styles.deliveryInput}
-                                        placeholder="Address"
-                                        value={deliveryAddress}
-                                        onChange={(e) => setDeliveryAddress(e.target.value)}
-                                    />
-                                    <input
-                                        type="text"
-                                        className={styles.deliveryInput}
-                                        placeholder="Postal Code"
-                                        value={postalCode}
-                                        onChange={(e) => setPostalCode(e.target.value)}
-                                    />
-                                </>
-                            )}
-                        </section>
-                    </>
-                )}
+                        )}
+                    </div>
 
-                {currentStep === 2 && orderReviewDetails && ( // 새로운 2단계 UI
-                    <>
-                        <div className={styles.infoBanner}>
-                            <p>Each item will be reviewed and labeled as one of the following: (within approx. 2 business days)</p>
-                            <ul>
-                                <li>- Available</li>
-                                <li>- Limited Quantity</li>
-                                <li>- Out of Stock</li>
-                                <li>- Alternative Offer</li>
-                            </ul>
-                            <p>Edit and resubmit after availability check.</p>
-                        </div>
-                        {/* Order Items with Admin Feedback */}
-                        <section className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Order List</h2>
-                            <div className={styles.cartItemsList}>
-                                {orderReviewDetails.orderItems.map(item => (
-                                    <div key={item.productId} className={styles.cartItemCard}>
-                                        <div className={styles.itemImageLink}>
-                                            <img
-                                                src={item.mainImage}
-                                                alt={item.name}
-                                                width={80}
-                                                height={80}
-                                                style={{ objectFit: 'cover' }}
-                                            />
-                                        </div>
-                                        <div className={styles.itemDetails}>
-                                            <h3 className={styles.itemName}>{item.name}</h3>
-                                            <p className={styles.itemUnitPrice}>${(item.unitPrice || 0).toFixed(2)} / pc</p>
-                                            <div className={styles.adminFeedback}>
-                                                <span className={styles.adminStatusTag} data-status={item.adminStatus}>{item.adminStatus}</span>
-                                                {(item.adminStatus === 'Available' || item.adminStatus === 'Limited Quantity') && (
-                                                    <div className={styles.quantityControl}>
-                                                        <button onClick={() => handleAdminFeedbackQuantityChange(item.productId, (item.adminQuantity || item.quantity) - 1)} disabled={(item.adminQuantity || item.quantity) <= 1}>-</button>
-                                                        <span className={styles.itemQuantity}>{item.adminQuantity !== undefined ? item.adminQuantity : item.quantity}</span>
-                                                        <button onClick={() => handleAdminFeedbackQuantityChange(item.productId, (item.adminQuantity || item.quantity) + 1)}>+</button>
-                                                    </div>
-                                                )}
-                                                {item.adminStatus === 'Out of Stock' && (
-                                                    <span className={styles.outOfStockText}>Out of Stock</span>
-                                                )}
-                                                {item.adminStatus === 'Alternative Offer' && (
-                                                    <button className={styles.alternativeOfferButton}>View Alternative</button>
-                                                )}
-                                            </div>
-                                            <p className={styles.itemTotalPrice}>Subtotal: ${((item.adminQuantity !== undefined ? item.adminQuantity : item.quantity) * (item.unitPrice || 0)).toFixed(2)}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
+                    {/* Message Input Area */}
+                    <div className={styles.messageInputContainer}>
+                        <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            ref={fileInputRefForStep1}
+                            style={{ display: 'none' }}
+                            onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                    const file = e.target.files[0];
+                                    if (!file.type.startsWith('image/')) {
+                                        showModal('Only image files are allowed.');
+                                        setAttachedFileForStep1(null);
+                                        setFilePreviewUrlForStep1(null);
+                                        e.target.value = '';
+                                        return;
+                                    }
+                                    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                                        showModal('Image file size cannot exceed 5MB.');
+                                        setAttachedFileForStep1(null);
+                                        setFilePreviewUrlForStep1(null);
+                                        e.target.value = '';
+                                        return;
+                                    }
+                                    setAttachedFileForStep1(file);
+                                    setFilePreviewUrlForStep1(URL.createObjectURL(file));
+                                    // userMessage is not cleared here, as text and image can be sent together
+                                }
+                            }}
+                        />
+                        <button type="button" onClick={() => fileInputRefForStep1.current.click()} className={styles.attachButton}>
+                            <AttachIcon />
+                        </button>
+                        <textarea
+                            className={styles.messageInput}
+                            placeholder={"Write a message"}
+                            value={userMessage}
+                            onChange={handleUserMessageChange} // 변경된 핸들러 사용
+                            rows="1"
+                        ></textarea>
+                        <button type="button" onClick={handleAddMessageForStep1} className={styles.sendMessageButton}>
+                            <SendIcon />
+                        </button>
+                    </div>
+                </section>
 
-                        {/* Message Section (Chat-like) */}
-                        <section className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Message</h2>
-                            <div className={styles.messageHistoryArea}>
-                                {orderReviewDetails.messages?.map(msg => (
-                                    <div key={msg.id} className={`${styles.chatMessage} ${msg.sender === 'Admin' ? styles.adminMessage : styles.userMessage}`}>
-                                        <p className={styles.chatMessageText}>{msg.text}</p>
-                                        <span className={styles.chatMessageTime}>{moment(msg.timestamp).format('YYYY-MM-DD HH:mm')}</span>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className={styles.messageInputContainer}>
-                                <textarea
-                                    className={styles.messageInput}
-                                    placeholder="Enter your message here."
-                                    value={step2UserMessage}
-                                    onChange={(e) => setStep2UserMessage(e.target.value)}
-                                    rows="1"
-                                />
-                                <button onClick={handleSendStep2Message} className={styles.sendMessageButton}><AttachIcon />Send</button>
-                            </div>
-                        </section>
-
-                        {/* Order Summary for Step 2 */}
-                        <section className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Order Summary</h2>
-                            <div className={styles.summaryRow}>
-                                <span>Product Price</span>
-                                <span>${currentReviewTotalPrice.toFixed(2)}</span>
-                            </div>
-                            <div className={styles.summaryRow}>
-                                <span>Shipping Fee</span>
-                                <span>${(orderReviewDetails.shippingFee || 0).toFixed(2)}</span>
-                            </div>
-                            <div className={`${styles.summaryRow} ${styles.finalTotalRow}`}>
-                                <span>Final Total</span>
-                                <span>${(currentReviewTotalPrice + (orderReviewDetails.shippingFee || 0)).toFixed(2)} <span className={styles.currency}>USD</span></span>
-                            </div>
-                        </section>
-                    </>
-                )}
-
-                {currentStep === 3 && orderReviewDetails && ( // 새로운 3단계 UI (결제)
-                    <>
-                        <section className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Order Summary</h2>
-                            <div className={styles.summaryRow}>
-                                <span>Product Price</span>
-                                <span>${(orderReviewDetails.subtotal || 0).toFixed(2)}</span>
-                            </div>
-                            <div className={styles.summaryRow}>
-                                <span>Shipping Fee</span>
-                                <span>${(orderReviewDetails.shippingFee || 0).toFixed(2)}</span>
-                            </div>
-                            <div className={`${styles.summaryRow} ${styles.finalTotalRow}`}>
-                                <span>Final Total</span>
-                                <span>${(orderReviewDetails.totalAmount || 0).toFixed(2)} <span className={styles.currency}>USD</span></span>
-                            </div>
-                        </section>
-
-                        {/* Delivery Details - copied from Step 2 */}
-                        <section className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Delivery Details</h2>
-                            {orderReviewDetails.deliveryDetails?.option === 'onboard' ? (
-                                <>
-                                    <p className={styles.detailText}>Port Name: {orderReviewDetails.deliveryDetails.portName}</p>
-                                    <p className={styles.detailText}>Expected Shipping Date: {orderReviewDetails.deliveryDetails.expectedShippingDate}</p>
-                                </>
-                            ) : (
-                                <>
-                                    <p className={styles.detailText}>{orderReviewDetails.deliveryDetails?.address}</p>
-                                    <p className={styles.detailText}>{orderReviewDetails.deliveryDetails?.postalCode}</p>
-                                </>
-                            )}
-                        </section>
-
-                        {/* Message - copied from Step 2 */}
-                        <section className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Message</h2>
-                            <div className={styles.messageHistoryArea}>
-                                {orderReviewDetails.messages?.map(msg => (
-                                    <div key={msg.id} className={`${styles.chatMessage} ${msg.sender === 'Admin' ? styles.adminMessage : styles.userMessage}`}>
-                                        <p className={styles.chatMessageText}>{msg.text}</p>
-                                        <span className={styles.chatMessageTime}>{moment(msg.timestamp).format('YYYY-MM-DD HH:mm')}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* Estimated Delivery Date */}
-                        <section className={styles.section}>
-                            <h2 className={styles.sectionTitle}>Estimated Delivery Date</h2>
-                            <p className={styles.detailText}>{estimatedDeliveryDate}</p> {/* Still a mock date for now */}
-                            <p className={styles.smallText}>Delays may occur due to changes in schedules.</p>
-                            <p className={styles.smallText}>No changes can be made at this stage.</p>
-                        </section>
-                    </>
-                )}
+                {/* Delivery Details Section */}
+                <section className={styles.section}>
+                    <h2>Delivery Details</h2>
+                    <div className={styles.deliveryOptions}>
+                        <label>
+                            <input
+                                type="radio"
+                                name="deliveryOption"
+                                value="onboard"
+                                checked={deliveryOption === 'onboard'}
+                                onChange={(e) => setDeliveryOption(e.target.value)}
+                            /> Onboard Delivery
+                        </label>
+                        <label>
+                            <input
+                                type="radio"
+                                name="deliveryOption"
+                                value="alternative"
+                                checked={deliveryOption === 'alternative'}
+                                onChange={(e) => setDeliveryOption(e.target.value)}
+                            /> Alternative Pickup Location
+                        </label>
+                    </div>
+                    {deliveryOption === 'onboard' ? (
+                        <>
+                            <input
+                                type="text"
+                                className={styles.deliveryInput}
+                                placeholder="Port Name"
+                                value={portName}
+                                onChange={(e) => setPortName(e.target.value)}
+                            />
+                            <input
+                                type="date"
+                                className={styles.deliveryInput}
+                                placeholder="Expected Shipping Date"
+                                value={expectedShippingDate}
+                                onChange={(e) => setExpectedShippingDate(e.target.value)}
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <input
+                                type="text"
+                                className={styles.deliveryInput}
+                                placeholder="Address"
+                                value={deliveryAddress}
+                                onChange={(e) => setDeliveryAddress(e.target.value)}
+                            />
+                            <input
+                                type="text"
+                                className={styles.deliveryInput}
+                                placeholder="Postal Code"
+                                value={postalCode}
+                                onChange={(e) => setPostalCode(e.target.value)}
+                            />
+                        </>
+                    )}
+                </section>
             </main>
 
             {/* Fixed Footer for buttons */}
             <footer className={styles.fixedFooter}>
-                {currentStep === 1 && (
-                    <div className={styles.totalSummaryBox}>
-                        <div className={styles.totalSummaryRow}>
-                            <span className={styles.totalSummaryLabel}>Total Quantity</span>
-                            <span className={styles.totalSummaryValue}>{totalItemsCount} items</span>
-                        </div>
-                        <div className={styles.totalSummaryRow}>
-                            <span className={styles.totalSummaryLabel}>Product Price</span>
-                            <span className={styles.totalSummaryValue}>${productPriceTotal.toFixed(2)}</span>
-                        </div>
-                        <div className={styles.totalSummaryRow}>
-                            <span className={styles.totalSummaryLabel}>Shipping fee</span>
-                            <span className={styles.totalSummaryValue}>${shippingFee.toFixed(2)}</span>
-                        </div>
-                        <div className={styles.totalSummaryDivider}></div>
-                        <div className={styles.totalSummaryRow}>
-                            <span className={styles.totalSummaryLabel}>Total Price</span>
-                            <span className={`${styles.totalSummaryValue} ${styles.highlightPrice}`}>${finalTotalPrice.toFixed(2)}</span>
-                        </div>
+                <div className={styles.totalSummaryBox}>
+                    <div className={styles.totalSummaryRow}>
+                        <span className={styles.totalSummaryLabel}>Total Quantity</span>
+                        <span className={styles.totalSummaryValue}>{totalItemsCount} items</span>
                     </div>
-                )}
-                {currentStep === 1 ? (
+                    <div className={styles.totalSummaryRow}>
+                        <span className={styles.totalSummaryLabel}>Product Price</span>
+                        <span className={styles.totalSummaryValue}>${productPriceTotal.toFixed(2)}</span>
+                    </div>
+                    <div className={styles.totalSummaryRow}>
+                        <span className={styles.totalSummaryLabel}>Shipping fee</span>
+                        <span className={styles.totalSummaryValue}>${shippingFee.toFixed(2)}</span>
+                    </div>
+                    <div className={styles.totalSummaryDivider}></div>
+                    <div className={styles.totalSummaryRow}>
+                        <span className={styles.totalSummaryLabel}>Total Price</span>
+                        <span className={`${styles.totalSummaryValue} ${styles.highlightPrice}`}>${finalTotalPrice.toFixed(2)}</span>
+                    </div>
+                </div>
                     <button onClick={handleSubmitOrderReview} className={styles.submitButton}>
                         Submit
                     </button>
-                ) : currentStep === 2 ? ( // 새로운 2단계 버튼
-                    <div className={styles.paymentButtons}>
-                        <button onClick={() => setCurrentStep(1)} className={styles.cancelButton}>Back to Step 1</button>
-                        <button 
-                            onClick={handleSendOrderConfirmation} 
-                            className={styles.payButton}
-                            disabled={hasAmountChanged} // 금액 변동 시 비활성화
-                        >
-                            Send Order Confirmation
-                        </button>
-                    </div>
-                ) : ( // 새로운 3단계 버튼 (기존 2단계의 Pay/Cancel)
-                    <div className={styles.paymentButtons}>
-                        <button onClick={handleCancelOrder} className={styles.cancelButton}>Cancel</button>
-                        <button onClick={handlePayClick} className={styles.payButton}>Pay</button>
-                    </div>
-                )}
             </footer>
 
             {showGuideModal && currentGuideStep < guideStepsContent.length && (
@@ -970,14 +742,6 @@ export default function CheckoutPage() {
                     buttonText={guideStepsContent[currentGuideStep].buttonText}
                     onNext={guideModalHandlers.onNext}
                     onGoToMyOrders={guideModalHandlers.onGoToMyOrders}
-                />
-            )}
-
-            {showPaymentMethodSelectionModal && (
-                <PaymentMethodSelectionModal
-                    isOpen={showPaymentMethodSelectionModal}
-                    onClose={() => setShowPaymentMethodSelectionModal(false)}
-                    onSelectMethod={handlePaymentMethodSelected}
                 />
             )}
         </div>
