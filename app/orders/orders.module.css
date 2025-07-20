@@ -156,72 +156,169 @@
 }
 
 .orderItem {
-  background-color: #fff;
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
+  background-color: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 15px;
   padding: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
 }
 
 .orderHeader {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   margin-bottom: 10px;
-  border-bottom: 1px dashed #e9ecef; /* 점선 구분선 */
-  padding-bottom: 8px;
+  gap:8px;
 }
 
 .orderId {
+  font-weight: 500;
+  color: var(--primary-text-color);
   font-size: 1rem;
-  font-weight: bold;
-  color: #212529;
+}
+
+.orderInfoContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orderInfoLine {
+  display: flex;
+  width: 100%;
+  gap: 20px;
+}
+
+.orderInfoLeft {
+  display: flex;
+  width : 80px;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+  color: var(--secondary-text-color);
+}
+
+.orderInfoRight {
+  align-items: flex-start;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--primary-text-color);
 }
 
 .orderStatusBadge {
-  display: inline-block;
-  padding: 4px 10px;
+  padding: 10px;
   border-radius: 15px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 500;
+  background-color: #f5a623;
   color: white;
-  text-transform: capitalize; /* 첫 글자 대문자 */
 }
 
-/* Status specific colors (from admin common.module.css or similar) */
-.orderStatusBadge.order { background-color: #007bff; } /* Blue */
-.orderStatusBadge.paypal { background-color: #0070ba; } /* PayPal blue */
-.orderStatusBadge.payincash { background-color: #28a745; } /* Green */
-.orderStatusBadge.ems { background-color: #ffc107; } /* Orange */
-.orderStatusBadge.delivered { background-color: #6c757d; } /* Gray */
-
-
-.orderDetails {
-  font-size: 0.9rem;
-  color: #495057;
-  line-height: 1.4;
+.statusOrder {
+  background-color: var(--status-order); /* 예: #4a90e2 (파랑) */
 }
 
-.orderDetails p {
-  margin-bottom: 5px;
+.statusPaypal {
+  background-color: var(--status-paypal); /* 예: #0070ba (페이팔 파랑) */
+}
+
+.statusPayInCash {
+  background-color: var(--status-pay-in-cash); /* 예: #f5a623 (주황) */
+}
+
+.statusEms {
+  background-color: var(--status-ems); /* 예: #7ed321 (초록) */
+}
+
+.statusDelivered {
+  background-color: var(--status-delivered); /* 예: #9b9b9b (회색) */
+}
+
+/* 새롭게 추가된 부분: 가로 스크롤 가능한 제품 리스트 */
+.horizontalProductList {
+  display: flex;
+  overflow-x: auto; /* 가로 스크롤 활성화 */
+  -webkit-overflow-scrolling: touch; /* iOS Safari 부드러운 스크롤 */
+  gap: 15px; /* 제품 카드 사이 간격 */
+  padding-bottom: 10px; /* 스크롤바 공간 확보 */
+  border-bottom: 1px solid var(--border-color-light); /* 하단 구분선 */
+}
+
+.productLink {
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0; /* 링크 내부 아이템이 줄어들지 않도록 */
+}
+
+.productCardWrapper {
+  width: 150px; /* ProductCard의 고정 너비 */
+  /* ProductCard 자체의 스타일은 ProductCard.module.css에서 관리 */
+}
+
+/* 기존 orderDetails 스타일을 .orderDetailsBottom으로 변경 */
+.orderDetailsBottom {
+  font-size: 1.1rem;
+  align-self: center;
+  color: var(--secondary-text-color);
+}
+
+.orderDetailsBottom p {
+  margin: 3px 0;
+  align-items: center;
+}
+
+.orderDetailsBottom strong {
+  color: var(--primary-text-color);
 }
 
 .moreButton {
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
+  background-color: gray;
+  width : 95%;
+  color: white;
+  border: none;
+  border-radius: 16px;
   padding: 8px 15px;
   font-size: 0.9rem;
-  color: #495057;
-  font-weight: 500;
   cursor: pointer;
-  width: 100%;
-  margin-top: 10px;
-  transition: background-color 0.2s ease;
+  align-self: center;
+  transition: background-color 0.2s ease-in-out;
+  margin-top: 10px; /* 주문 상세 정보와 간격 */
 }
 
 .moreButton:hover {
-  background-color: #e9ecef;
+  background-color: var(--primary-dark-color); /* 예: #0056b3 */
+}
+
+/* Empty State */
+.emptyMessage {
+  text-align: center;
+  padding: 20px;
+  color: var(--secondary-text-color);
+  font-size: 1rem;
+}
+
+.emptyFilterMessage {
+  text-align: center;
+  padding: 20px;
+  color: var(--secondary-text-color);
+  font-size: 0.9rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.errorText {
+  color: var(--error-color); /* 예: #dc3545 */
+  font-weight: bold;
+}
+
+.loadingSpinner {
+  display: block;
+  margin: 50px auto;
+  width: 50px;
+  height: 50px;
 }
 
 /* Responsive adjustments */
@@ -256,7 +353,7 @@
     font-size: 0.95rem;
   }
   .orderStatusBadge {
-    padding: 3px 8px;
+    padding: 5px 15px;
     font-size: 0.7rem;
   }
   .orderDetails {

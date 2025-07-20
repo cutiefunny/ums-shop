@@ -541,12 +541,7 @@ export default function OrderDetailPage() {
                 onChange={handleImageChange}
               />
               <button onClick={handleImageAttachClick} className={styles.attachButton}>
-                {/* 첨부 파일 아이콘 (SVG) */}
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 20h9"></path>
-                  <path d="M16.5 13.5l-3.24-3.24a2.82 2.82 0 0 0-3.96 0L2 17"></path>
-                  <path d="M13 7H7a2 2 0 0 0-2 2v6"></path>
-                </svg>
+                <img src="/images/imageBox.png" alt="Attach" />
               </button>
               <input
                 type="text"

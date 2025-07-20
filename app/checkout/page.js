@@ -401,7 +401,7 @@ export default function CheckoutPage() {
                 statusHistory: [{
                     timestamp: new Date().toISOString(),
                     oldStatus: null,
-                    newStatus: 'Order',
+                    newStatus: 'Order Request',
                     changedBy: 'User',
                 }],
             };
