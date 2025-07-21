@@ -1,0 +1,795 @@
+/* app/checkout/checkout.module.css */
+
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #fff;
+  padding-bottom: 70px; /* For BottomNav if used */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 10;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.mainContent {
+  padding: 16px;
+}
+
+.loadingSpinner {
+  width: 48px;
+  height: 48px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.emptyMessage {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 200px); /* Adjust height as needed */
+  color: #868e96;
+  font-size: 1rem;
+}
+
+.shopNowButton {
+  background-color: #f5a623;
+  border-color: #f5a623;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.section {
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.sectionHeader h2,
+.section h2 { /* common for all section titles */
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #212529;
+  margin: 0;
+}
+
+.totalCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #212529;
+  cursor: pointer;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  color: #dc3545;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.cartItemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px; /* CartItem 사이 간격 */
+}
+
+.cartItemWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.itemCheckbox {
+  transform: scale(1.1); /* 체크박스 크기 키우기 */
+  margin-right: 5px;
+}
+
+/* Reusing CartItem.module.css styles here for .cartItemCard, .itemImageLink, etc.
+   If CartItem.module.css is correctly imported into CartItem.jsx,
+   these styles will automatically apply. No need to duplicate here unless
+   overriding or creating new elements that share names. */
+
+.messageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+/* Message Input Container (the whole bar at the bottom) */
+.messageInputContainer {
+    display: flex;
+    align-items: flex-end; /* Align items to the bottom, useful if textarea grows */
+    gap: 10px;
+    padding: 10px 0px; /* Padding for the entire input row */
+    background-color: #f8f9fa; /* Light background for the input bar area */
+    border-top: 1px solid #e9ecef; /* Separator from content above */
+    box-sizing: border-box; /* Include padding in width calculation */
+}
+
+/* Textarea inside the message input container */
+.messageInputContainer textarea.messageInput {
+    flex-grow: 1;
+    border: 1px solid #ced4da; /* Subtle border for the textarea */
+    border-radius: 25px; /* Rounded corners for chat bubble style */
+    padding: 10px 15px; /* Consistent padding */
+    font-size: 1rem;
+    box-sizing: border-box;
+    resize: none; /* Disable manual resize */
+    min-height: 40px; /* Initial height for chat */
+    max-height: 120px; /* Allow it to grow a bit more */
+    background-color: white; /* White background for the input field */
+    color: #212529; /* Text color */
+    overflow-y: auto; /* Enable scrolling if content exceeds max-height */
+}
+
+/* Attached Preview within the input container */
+.attachedPreviewInInput {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border: 1px solid #ced4da;
+    border-radius: 25px;
+    padding: 5px 10px;
+    height: 40px; /* Match min-height of textarea */
+    box-sizing: border-box;
+    overflow: hidden; /* Hide overflow */
+}
+
+.attachedImagePreviewActual {
+    max-height: 30px; /* Smaller height for preview in input */
+    max-width: 30px;
+    object-fit: contain;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.attachedPreviewInInput span {
+    flex-grow: 1;
+    font-size: 0.9rem;
+    color: #495057;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.removeAttachedImageButton {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-left: 5px;
+    padding: 0 5px;
+    line-height: 1; /* Adjust line height for better vertical centering */
+}
+
+
+.deliveryOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.deliveryOptions label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #212529;
+  cursor: pointer;
+}
+
+.deliveryOptions input[type="radio"] {
+  accent-color: #f5a623;
+}
+
+.deliveryInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.deliveryInput:last-child {
+  margin-bottom: 0;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 1rem;
+  color: #495057;
+}
+
+.summaryRow span:first-child {
+  font-weight: 500;
+}
+
+.finalTotalRow {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #212529;
+  border-top: 1px solid #e9ecef;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.finalTotalRow span:last-child {
+  color: #e57373; /* Highlight color for final price */
+}
+
+.currency {
+  font-size: 0.9em;
+  color: #868e96;
+  margin-left: 5px;
+}
+
+.submitButton {
+  width: 95%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f5a623;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.submitButton:disabled {
+  background-color: #e0e0e0;
+  color: #adb5bd;
+  cursor: not-allowed;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #d88e1a;
+}
+
+.fixedFooter {
+  position: sticky; /* fixed 대신 sticky를 사용하여 스크롤 따라다니게 */
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  padding: 16px;
+  /* padding-bottom: calc(16px + env(safe-area-inset-bottom)); */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  z-index: 10;
+}
+
+.totalSummaryBox {
+  width: 100%;
+  background-color: #f7f7f7;
+  margin-bottom: 5px;
+}
+
+.totalSummaryRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 0.95rem;
+  color: #495057;
+}
+
+.totalSummaryLabel {
+  font-weight: 500;
+}
+
+.totalSummaryValue {
+  font-weight: 600;
+}
+
+.totalSummaryDivider {
+  border-top: 2px solid #808080;
+  margin: 8px 0;
+}
+
+.highlightPrice {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #e57373; /* Final price highlight */
+}
+
+/* New styles for Step 2: Order in Review - Admin Feedback */
+.infoBanner {
+    background-color: #fffbeb; /* Light yellow background */
+    border: 1px solid #ffe082; /* Yellow border */
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #495057;
+    text-align: left;
+}
+
+.infoBanner ul {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding-left: 20px;
+    list-style-type: disc;
+}
+
+.infoBanner li {
+    margin-bottom: 5px;
+}
+
+.cartItemCard { /* Reusing styles from CartItem.module.css */
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 10px; /* Adjusted margin */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    position: relative;
+    width: 100%; /* Ensure full width in review stage */
+}
+
+.itemImageLink {
+  flex-shrink: 0;
+  display: block;
+}
+
+.itemDetails {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.itemName {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.itemUnitPrice {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}
+
+.adminFeedback {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.adminStatusTag {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: white;
+    background-color: #6c757d; /* Default gray, will be overridden by specific status */
+}
+/* Specific admin status tags (example colors, adjust as needed) */
+.adminStatusTag[data-status="Available"] { background-color: #28a745; } /* Green */
+.adminStatusTag[data-status="Limited Quantity"] { background-color: #ffc107; } /* Yellow */
+.adminStatusTag[data-status="Out of Stock"] { background-color: #dc3545; } /* Red */
+.adminStatusTag[data-status="Alternative Offer"] { background-color: #17a2b8; } /* Teal */
+.adminStatusTag[data-status="Pending Review"] { background-color: #6c757d; } /* Grey */
+
+
+.outOfStockText {
+    color: #dc3545;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.alternativeOfferButton {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.itemTotalPrice { /* Total price per item in the review stage */
+  font-size: 1rem;
+  font-weight: 700;
+  color: #212529;
+  margin-top: 10px;
+}
+
+/* Quantity control for admin feedback */
+.quantityControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quantityControl button {
+  width: 30px;
+  height: 30px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.quantityControl button:hover:not(:disabled) {
+  background-color: #e0e0e0;
+}
+
+.quantityControl button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.itemQuantity {
+  font-size: 1rem;
+  font-weight: 500;
+  min-width: 25px;
+  text-align: center;
+}
+
+/* Message History Area (Chat) - Renamed .messageDisplayArea to represent chat history better */
+.messageDisplayArea {
+    border: none; /* Remove outer border */
+    border-radius: 0; /* Remove outer border-radius */
+    padding: 15px;
+    min-height: 100px;
+    max-height: 250px; /* Limit height for scrolling */
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column; /* Ensure messages stack vertically */
+    align-items: flex-start; /* Default alignment for messages */
+    background-color: #f8f9fa; /* Background for the chat history area */
+    overflow-y: auto; /* Allow scrolling for message history */
+}
+
+.messageBubble { /* Style for individual messages in history */
+    max-width: 75%; /* Limit bubble width */
+    padding: 8px 12px;
+    border-radius: 18px; /* Rounded corners for message bubbles */
+    margin-bottom: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Subtle shadow for depth */
+    position: relative;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    word-wrap: break-word; /* Ensure long words wrap */
+}
+
+.messageBubble:last-child {
+    margin-bottom: 0;
+}
+
+.messageBubble .existingMessageText {
+    margin: 0;
+    padding: 0;
+    text-align: left; /* Ensure text alignment within bubble */
+}
+
+.messageBubble .attachedImagePreview {
+    max-width: 100%;
+    height: auto;
+    max-height: 120px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin-top: 5px; /* Space between text and image in the same bubble */
+}
+
+.messageBubble .messageTimestamp {
+    display: block;
+    font-size: 0.7rem;
+    color: #868e96;
+    margin-top: 5px;
+    text-align: right;
+    opacity: 0.8;
+}
+
+/* User's sent messages */
+.messageBubble[data-sender="User"] {
+    background-color: #dcf8c6; /* Light green for sent messages */
+    align-self: flex-end; /* Align to right */
+    border-bottom-right-radius: 4px; /* Pointed corner towards sender */
+}
+
+/* Receiver's messages (e.g., Admin's feedback in Step 2, if reused) */
+.messageBubble[data-sender="Admin"] {
+    background-color: #e9ecef; /* Light grey for received messages */
+    align-self: flex-start; /* Align to left */
+    border-bottom-left-radius: 4px; /* Pointed corner towards receiver */
+}
+
+.emptyMessageText {
+    font-style: italic;
+    color: #adb5bd;
+    margin: auto; /* Center the empty message */
+}
+
+/* Adjust Attach Button */
+.attachButton {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%; /* Make it round */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e9ecef; /* Light grey background for attach button */
+    transition: background-color 0.2s ease;
+}
+
+.attachButton:hover {
+    background-color: #d1d5db;
+}
+
+.attachButton img {
+    width: 18px;
+    height: 18px;
+}
+
+/* Adjust Send Button */
+.sendMessageButton {
+    
+    color: white;
+    width: 40px; /* Fixed width for icon button */
+    height: 40px; /* Fixed height */
+    border: none;
+    border-radius: 50%; /* Make it round */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0; /* Remove default padding */
+    transition: background-color 0.2s ease;
+}
+
+.sendMessageButton:hover {
+    background-color: #d88e1a;
+}
+
+.sendMessageButton img {
+    width: 20px; /* Adjust icon size */
+    height: 20px;
+}
+
+
+/* Step 3 Payment Options */
+.paymentOptionsGrid {
+    display: grid;
+    grid-template-columns: 1fr; /* Default to single column */
+    gap: 10px;
+}
+
+@media (min-width: 600px) {
+  .paymentOptionsGrid {
+    grid-template-columns: repeat(2, 1fr); /* Two columns on larger screens */
+  }
+}
+
+.paymentMethodButton {
+    background-color: #e9ecef;
+    color: #212529;
+    border: 1px solid #dee2e6;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.paymentMethodButton:hover {
+    background-color: #d1d5db;
+}
+
+
+/* General detail text style */
+.detailText {
+    font-size: 0.95rem;
+    color: #212529;
+    margin-bottom: 5px;
+}
+
+.smallText {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+/* Payment buttons (in fixed footer for step 2) */
+.paymentButtons {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.paymentButtons .cancelButton {
+  flex: 1;
+  background-color: #6c757d; /* Gray for Back/Cancel */
+  color: white;
+  padding: 14px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.paymentButtons .cancelButton:hover {
+  background-color: #5a6268;
+}
+
+.paymentButtons .payButton {
+  flex: 1;
+  background-color: #f5a623; /* Yellow for Pay/Confirm */
+  color: white;
+  padding: 14px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.paymentButtons .payButton:hover {
+  background-color: #d88e1a;
+}
+
+.paymentButtons .payButton:disabled {
+  background-color: #e0e0e0;
+  color: #adb5bd;
+  cursor: not-allowed;
+}
+
+/* New: Draft Image Preview within the Message Display Area */
+.draftImagePreviewContainer {
+    display: flex;
+    align-items: center;
+    background-color: white; /* Light background for the preview container */
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 10px;
+    margin-top: 10px; /* Space from last message or top of section */
+    margin-bottom: 10px; /* Space before input area */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    align-self: flex-end; /* To make it appear like a draft from the user, aligned right */
+    max-width: 80%; /* Limit width */
+    position: relative; /* For positioning the remove button */
+}
+
+.draftImagePreview {
+    width: 150px; /* Fixed small size */
+    object-fit: contain;
+    border-radius: 8px;
+    margin-right: 10px;
+}
+
+.draftImageDetails {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.draftImageDetails span {
+    font-size: 0.9rem;
+    color: #343a40;
+    font-weight: 500;
+    word-break: break-all; /* Ensure long file names wrap */
+}
+
+.removeDraftImageButton {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-left: 10px;
+    padding: 0 5px;
+    line-height: 1;
+    align-self: flex-start; /* Align with top of image/text */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .mainContent {
+    padding: 0px;
+  }
+  .section {
+    padding: 15px;
+  }
+  .sectionHeader h2,
+  .section h2 {
+    font-size: 1rem;
+  }
+  .totalCheckboxLabel {
+    font-size: 0.9rem;
+  }
+  .deleteButton {
+    font-size: 0.8rem;
+  }
+  .messageInput,
+  .deliveryInput,
+  .summaryRow,
+  .detailText,
+  .paymentMethodButton {
+    font-size: 0.9rem;
+  }
+  .fixedFooter {
+    padding: 0px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+  .totalSummaryBox {
+    padding: 10px;
+  }
+  .totalSummaryRow {
+    font-size: 0.85rem;
+  }
+  .highlightPrice {
+    font-size: 1rem;
+  }
+}
