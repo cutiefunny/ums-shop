@@ -210,6 +210,7 @@ export default function OrderDetailPage() {
     setOrder(prevOrder => ({
       ...prevOrder,
       messages: updatedMessages,
+      userId: user?.seq,
     }));
 
     setNewMessageText('');

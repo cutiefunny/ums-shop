@@ -364,17 +364,18 @@ export default function CheckoutPage() {
 
         try {
             // Send the entire updated messages array to DynamoDB
+            console.log('userId:', user?.seq, 'orderId:', orderId, 'messages:', updatedMessagesLocally);
             const response = await fetch(`/api/orders/${orderId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: updatedMessagesLocally }), // Send updated messages array
+                body: JSON.stringify({ messages: updatedMessagesLocally, userId: user?.seq }), // Send updated messages array
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Failed to save message to database.');
             }
-            console.log('Message saved to DynamoDB successfully!');
+            console.log('Message saved to DynamoDB successfully2!');
 
         } catch (err) {
             console.error("Error saving message:", err);

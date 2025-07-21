@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand, PutCommand } from '@aws-sdk/lib-dynamodb'; // PutCommand 추가
 import { v4 as uuidv4 } from 'uuid'; // uuidv4 추가
+import { firebaseAdmin } from '@/utils/firebaseAdmin';
 
 // AWS SDK 클라이언트 초기화
 const client = new DynamoDBClient({
@@ -65,6 +66,9 @@ export async function PUT(request, { params }) { // context.params 대신 { para
   try {
     const { orderId } = params; // 이제 params는 직접 사용 가능
     const body = await request.json(); // 업데이트할 데이터
+    const { messages, userId, ...otherUpdates } = body;
+
+    console.log(`messages: ${messages}`);
 
     if (!orderId) {
       return NextResponse.json({ message: 'Missing order ID' }, { status: 400 });
@@ -111,6 +115,56 @@ export async function PUT(request, { params }) { // context.params 대신 { para
     });
 
     const { Attributes } = await docClient.send(updateCommand);
+
+    console.log(`userId: ${userId}, firebaseAdmin : ${firebaseAdmin}`);
+    // =========================================================
+    // FCM 푸시 알림 전송 로직 시작
+    // =========================================================
+    if (userId && firebaseAdmin) { // userId와 firebaseAdmin이 유효한지 확인
+      // 1. DynamoDB에서 해당 userId의 FCM 토큰 조회
+      const getUserCommand = new GetCommand({
+        TableName: process.env.DYNAMODB_TABLE_USERS, // 사용자 테이블
+        Key: { seq: userId }, // 사용자 ID를 통해 조회
+        ProjectionExpression: 'fcmToken', // fcmToken만 가져오기
+      });
+
+      const { Item: userItem } = await docClient.send(getUserCommand);
+      const fcmToken = userItem?.fcmToken;
+
+      console.log(`Fetched FCM token for user ID ${userId}:`, fcmToken);
+
+      if (fcmToken) {
+        const message = {
+          notification: {
+            title: '메세지 알림',
+            body: `메세지 알림 테스트입니다.`,
+          },
+          data: { // 데이터 메시지 (클라이언트에서 추가 로직 처리 가능)
+            orderId: orderId,
+            type: 'order_status_update',
+            click_action: `/notifications/${orderId}`, // 알림 클릭 시 이동할 URL
+          },
+          token: fcmToken,
+        };
+
+        console.log('Sending FCM message:', message);
+
+        try {
+          const response = await firebaseAdmin.messaging().send(message);
+          console.log('Successfully sent FCM message:', response);
+        } catch (error) {
+          console.error('Error sending FCM message:', error);
+          // 알림 전송 실패는 사용자 업데이트 실패로 이어지지 않으므로 여기서 에러를 throw하지 않습니다.
+        }
+      } else {
+        console.warn(`No FCM token found for user ID: ${userId}. Push notification not sent.`);
+      }
+    }
+    // =========================================================
+    // FCM 푸시 알림 전송 로직 끝
+    // =========================================================
+
+
     return NextResponse.json({ message: 'Order updated successfully', order: Attributes }, { status: 200 });
   } catch (error) {
     console.error(`Error updating order ${params.orderId} in DynamoDB:`, error); // context.params 대신 params 사용

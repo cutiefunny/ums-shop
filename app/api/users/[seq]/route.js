@@ -25,7 +25,7 @@ const USERS_TABLE_NAME = process.env.DYNAMODB_TABLE_USERS || 'user-management';
  */
 export async function GET(request, context) {
   try {
-    const { seq } = context.params;
+    const { seq } = (await context.params);
 
     if (!seq) {
       return NextResponse.json({ message: 'Missing user sequence ID' }, { status: 400 });
@@ -60,7 +60,7 @@ export async function GET(request, context) {
  */
 export async function PUT(request, context) {
   try {
-    const { seq } = context.params;
+    const { seq } = (await context.params);
     const body = await request.json(); // 업데이트할 데이터
 
     if (!seq) {

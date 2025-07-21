@@ -1,9 +1,11 @@
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import AuthInitializer from "@/components/AuthInitializer"; // AuthInitializer import
-import { ModalProvider } from "@/contexts/ModalContext";
-import { AuthProvider } from "@/contexts/AuthContext"; // [신규] AuthProvider import
-import { WishlistProvider } from "@/contexts/WishlistContext"; // [신규] WishlistProvider import
+import Script from 'next/script';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ModalProvider } from '@/contexts/ModalContext';
+import { AdminModalProvider } from '@/contexts/AdminModalContext';
+import { WishlistProvider } from '@/contexts/WishlistContext';
+import AuthInitializer from '@/components/AuthInitializer';
+import './globals.css';
 
 
 const geistSans = Geist({
@@ -19,6 +21,10 @@ const geistMono = Geist_Mono({
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-8X1Z3V5F6H" strategy="afterInteractive" />
+        <Script id="google-analytics" strategy="afterInteractive" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {/* [수정] Provider들로 앱 전체를 감쌉니다. */}
         <AuthProvider>
