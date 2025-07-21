@@ -1,3 +1,4 @@
+// app/orders/detail/[orderId]/page.js
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -5,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import styles from './order-detail.module.css';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModal } from '@/contexts/ModalContext';
-import CartItem from '@/components/CartItem'; // CartItem 컴포넌트 재사용
+import CartItem from '@/components/ProductCardOrderDetail'; // ProductCardOrderDetail 컴포넌트 임포트
 import moment from 'moment'; // 날짜 형식을 위해 moment 사용
 import BottomNav from '@/app/home/components/BottomNav'; // BottomNav 컴포넌트 임포트 추가
 import GuideModal from '@/components/GuideModal'; // GuideModal 임포트
@@ -42,6 +43,7 @@ export default function CheckoutPage() {
     const fileInputRefForStep1 = useRef(null);
     const [selectedItemsForOrder, setSelectedItemsForOrder] = useState(new Set()); // 주문할 상품 ID Set
     const [messagesForStep1, setMessagesForStep1] = useState([]); // Step 1에서 주고받은 메시지 목록
+    const [productDetailsMap, setProductDetailsMap] = useState({}); // 각 상품의 최신 가격 및 할인율을 저장
 
     // Guide Modal related states (kept for initial order guidance, but flow changes)
     const [showGuideModal, setShowGuideModal] = useState(false);
@@ -72,51 +74,159 @@ export default function CheckoutPage() {
     const fetchOrderDetail = useCallback(async () => {
         if (!orderId) return;
 
-        setMessagesForStep1([]); // Step 1 메시지 초기화
-        setLoading(true);
+        setLoading(true); // 메시지 초기화 이전에 로딩 시작
         setError(null);
         try {
-            const response = await fetch(`/api/orders/${orderId}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            const orderResponse = await fetch(`/api/orders/${orderId}`);
+            if (!orderResponse.ok) {
+                throw new Error(`HTTP error! status: ${orderResponse.status}`);
             }
-            const orderData = await response.json();
+            const orderData = await orderResponse.json();
             const items = orderData.orderItems || [];
             const messages = orderData.messages || [];
+            const deliveryDetails = orderData.deliveryDetails || {}; // deliveryDetails 추가
+
+            // 메시지를 순회하며 필요한 필드를 포함하고 기존 ID를 사용
+            const processedMessages = messages.map(msg => ({
+                id: msg.id, // 기존 ID를 그대로 사용
+                sender: msg.sender || 'User',
+                timestamp: msg.timestamp || new Date().toISOString(),
+                text: msg.text || '',
+                imageUrl: msg.imageUrl || null, // 이미지 URL이 있을 경우
+            }));
+            setMessagesForStep1(processedMessages);
+
+            // 각 주문 상품에 대한 최신 상품 정보 fetch
+            const productDetailsPromises = items.map(async item => {
+                try {
+                    const productResponse = await fetch(`/api/products/${item.productId}`);
+                    if (!productResponse.ok) {
+                        // 상품 정보를 가져오지 못하면 경고를 출력하고 주문 시점의 가격 정보로 대체
+                        console.warn(`Failed to fetch product details for ${item.productId}. Using order item data.`);
+                        return {
+                            productId: item.productId,
+                            calculatedPriceUsd: item.unitPrice, // 주문 시점의 unitPrice 사용
+                            discount: item.discount || 0, // 주문 시점의 discount 사용
+                        };
+                    }
+                    const productData = await productResponse.json();
+                    return {
+                        productId: item.productId,
+                        calculatedPriceUsd: productData.calculatedPriceUsd,
+                        discount: productData.discount || 0,
+                    };
+                } catch (productFetchError) {
+                    console.error(`Error fetching product ${item.productId} details:`, productFetchError);
+                    // 네트워크 오류 등 발생 시 주문 시점의 가격 정보로 대체
+                    return {
+                        productId: item.productId,
+                        calculatedPriceUsd: item.unitPrice,
+                        discount: item.discount || 0,
+                    };
+                }
+            });
+
+            const fetchedProductDetails = await Promise.all(productDetailsPromises);
+            const newProductDetailsMap = {};
+            fetchedProductDetails.forEach(detail => {
+                newProductDetailsMap[detail.productId] = detail;
+            });
+            setProductDetailsMap(newProductDetailsMap); // 최신 상품 정보 맵 업데이트
+
 
             items.forEach(item => {
                 item.unitPrice = item.originalUnitPrice || item.unitPrice; // 원본 가격을 unitPrice로 설정
             });
-
-            messages.forEach(msg => {
-                setMessagesForStep1(prev => [...prev, {
-                    id: prev.length + 1,
-                    sender: msg.sender || 'User',
-                    timestamp: msg.timestamp || new Date().toISOString(),
-                    text: msg.text || '',
-                    imageUrl: msg.imageUrl || null, // 이미지 URL이 있을 경우
-                }]);
-            });
-
-            console.log("Fetched order detail:", orderData);
-
             setCartItems(items);
             setSelectedItemsForOrder(new Set(items.map(item => item.productId)));
-            // MODIFICATION END
+
+            // deliveryDetails 세팅 [새로운 부분]
+            if (deliveryDetails.option) {
+                setDeliveryOption(deliveryDetails.option);
+                if (deliveryDetails.option === 'onboard') {
+                    setPortName(deliveryDetails.portName || '');
+                    setExpectedShippingDate(deliveryDetails.expectedShippingDate || '');
+                    setDeliveryAddress(''); // 다른 옵션 필드 초기화
+                    setPostalCode(''); // 다른 옵션 필드 초기화
+                } else { // 'alternative'
+                    setDeliveryAddress(deliveryDetails.address || '');
+                    setPostalCode(deliveryDetails.postalCode || '');
+                    setPortName(''); // 다른 옵션 필드 초기화
+                    setExpectedShippingDate(''); // 다른 옵션 필드 초기화
+                }
+            }
+
+
         } catch (err) {
-            console.error("Error fetching user cart:", err);
-            setError(`주문 목록을 불러오는 데 실패했습니다: ${err.message}`);
-            showModal(`주문 목록을 불러오는 데 실패했습니다: ${err.message}`);
-            logout(); // 보안상 장바구니 데이터 로드 실패 시 로그아웃
+            console.error("Error fetching order or product details:", err);
+            setError(`주문 및 상품 상세 정보를 불러오는 데 실패했습니다: ${err.message}`);
+            showModal(`주문 및 상품 상세 정보를 불러오는 데 실패했습니다: ${err.message}`);
+            logout();
             router.replace('/');
         } finally {
             setLoading(false);
         }
-    }, [isLoggedIn, user?.seq, showModal, logout, router]);
+    }, [orderId, isLoggedIn, user?.seq, showModal, logout, router]);
 
     useEffect(() => {
         fetchOrderDetail();
     }, [fetchOrderDetail]);
+
+    // 상품 가격 및 할인율 일치 여부 확인 Memo
+    const arePricesAndDiscountsMatching = useMemo(() => {
+        // 로딩 중이거나 데이터가 없거나, 상품 디테일 맵이 아직 채워지지 않았다면 비교 불가능
+        if (loading || !orderId || cartItems.length === 0 || Object.keys(productDetailsMap).length === 0) {
+            return false;
+        }
+
+        // 선택된 모든 상품에 대해 가격 및 할인율 비교
+        for (const item of cartItems) {
+            // 선택되지 않은 상품은 비교 대상에서 제외
+            if (!selectedItemsForOrder.has(item.productId)) {
+                continue;
+            }
+
+            const productDetails = productDetailsMap[item.productId];
+
+            // 특정 상품의 최신 정보가 없는 경우, 불일치로 간주
+            if (!productDetails) {
+                console.warn(`Product details not found in map for item ${item.productId}. Assuming mismatch.`);
+                return false;
+            }
+
+            // 주문 시점의 가격 및 할인율
+            const orderedUnitPrice = parseFloat(item.unitPrice?.toFixed(2));
+            const orderedDiscount = parseFloat((item.discount || 0)?.toFixed(2));
+
+            // 현재 상품의 가격 및 할인율 (API에서 가져온 최신 정보)
+            const currentUnitPrice = parseFloat(productDetails.calculatedPriceUsd?.toFixed(2));
+            const currentDiscount = parseFloat((productDetails.discount || 0)?.toFixed(2));
+
+            // 가격 또는 할인율이 일치하지 않으면 false 반환
+            if (orderedUnitPrice !== currentUnitPrice || orderedDiscount !== currentDiscount) {
+                console.log(`Mismatch detected for item ${item.productId}:`);
+                console.log(`  Ordered: Price=${orderedUnitPrice}, Discount=${orderedDiscount}`);
+                console.log(`  Current: Price=${currentUnitPrice}, Discount=${currentDiscount}`);
+                return false;
+            }
+        }
+        return true; // 모든 선택된 상품이 일치
+    }, [cartItems, productDetailsMap, selectedItemsForOrder, loading, orderId]); // 의존성 추가
+
+
+    // 페이지 로드 시 가격 불일치 모달 발생
+    useEffect(() => {
+        // 로딩이 완료되고 (loading이 false), orderId가 존재하며,
+        // cartItems와 productDetailsMap이 비어있지 않고,
+        // arePricesAndDiscountsMatching의 계산이 의미를 가질 때 실행
+        // 즉, 데이터 로드가 모두 끝나고 나서야 유효한 비교를 수행
+        if (!loading && orderId && cartItems.length > 0 && Object.keys(productDetailsMap).length > 0) {
+            if (!arePricesAndDiscountsMatching) {
+                showModal("Order details have changed. Please review again before confirmation");
+            }
+        }
+    }, [arePricesAndDiscountsMatching, loading, orderId, cartItems.length, productDetailsMap, showModal]);
+
 
     const handleUpdateQuantity = useCallback(async (productId, newQuantity) => {
         if (newQuantity < 1) {
@@ -184,40 +294,32 @@ export default function CheckoutPage() {
         }
 
         let fileData = null;
-        if (attachedFileForStep1) {
-            setLoading(true); // 파일 업로드 시작 시 로딩 상태 설정
-            try {
-                // 1. S3 Pre-Signed POST URL 요청 (GET 요청으로 변경)
-                // 서버가 createPresignedPost를 사용하므로, GET 요청으로 filename과 contentType을 쿼리 파라미터로 보냄
-                const getSignedUrlResponse = await fetch(`/api/s3-upload-url?filename=${attachedFileForStep1.name}&contentType=${attachedFileForStep1.type}`);
+        setLoading(true); // Start loading state for message sending
 
+        // S3 upload logic
+        if (attachedFileForStep1) {
+            try {
+                const getSignedUrlResponse = await fetch(`/api/s3-upload-url?filename=${attachedFileForStep1.name}&contentType=${attachedFileForStep1.type}`);
                 if (!getSignedUrlResponse.ok) {
                     const errorData = await getSignedUrlResponse.json();
                     throw new Error(errorData.message || 'Failed to get S3 signed URL.');
                 }
-                const { url, fields } = await getSignedUrlResponse.json(); // signedUrl 대신 url과 fields를 받음
+                const { url, fields } = await getSignedUrlResponse.json();
 
-                // S3에 저장될 최종 이미지 URL 구성 (클라이언트에서 직접 구성)
-                // process.env.NEXT_PUBLIC_S3_BUCKET_NAME 및 process.env.NEXT_PUBLIC_AWS_REGION 필요
                 const S3_BUCKET_NAME_PUBLIC = process.env.NEXT_PUBLIC_S3_BUCKET_NAME || 'ums-shop-storage';
                 const AWS_REGION_PUBLIC = process.env.NEXT_PUBLIC_AWS_REGION || 'ap-southeast-2';
-                const objectKey = fields.Key; // fields 객체에 S3 객체 Key가 포함되어 있음
+                const objectKey = fields.Key;
                 const imageUrl = `https://${S3_BUCKET_NAME_PUBLIC}.s3.${AWS_REGION_PUBLIC}.amazonaws.com/${objectKey}`;
 
-
-                // 2. FormData 생성 및 필드 추가
                 const formData = new FormData();
                 Object.entries(fields).forEach(([key, value]) => {
                     formData.append(key, value);
                 });
-                // 실제 파일을 fields.Key에 해당하는 이름으로 FormData에 추가
                 formData.append(fields.Key, attachedFileForStep1);
 
-
-                // 3. Pre-Signed POST URL을 사용하여 S3에 파일 업로드
-                const uploadFileToS3Response = await fetch(url, { // url은 createPresignedPost에서 받은 S3 업로드 URL
-                    method: 'POST', // PUT 대신 POST 사용
-                    body: formData, // FormData를 body로 보냄
+                const uploadFileToS3Response = await fetch(url, {
+                    method: 'POST',
+                    body: formData,
                 });
 
                 if (!uploadFileToS3Response.ok) {
@@ -228,33 +330,60 @@ export default function CheckoutPage() {
                     name: attachedFileForStep1.name,
                     type: attachedFileForStep1.type,
                     size: attachedFileForStep1.size,
-                    url: imageUrl, // S3에 저장된 실제 이미지 URL
+                    url: imageUrl,
                 };
 
             } catch (uploadError) {
                 console.error("S3 upload error:", uploadError);
                 showModal(`파일 업로드 실패: ${uploadError.message}`);
-                setLoading(false); // 로딩 해제
-                return; // 업로드 실패 시 메시지 전송 중단
-            } finally {
-                setLoading(false); // 파일 업로드 완료 후 로딩 해제
+                setLoading(false); // Stop loading on error
+                return;
             }
         }
 
+        // Prepare the new message
         const newMessage = {
-            id: messagesForStep1.length + 1,
+            id: messagesForStep1.length > 0 ? Math.max(...messagesForStep1.map(m => m.id)) + 1 : 1,
             sender: 'User',
             timestamp: new Date().toISOString(),
             text: userMessage.trim(),
-            file: fileData, // S3 업로드된 파일 정보 또는 null
+            imageUrl: fileData ? fileData.url : null,
         };
 
-        setMessagesForStep1(prev => [...prev, newMessage]);
+        // Optimistically update local state
+        const updatedMessagesLocally = [...messagesForStep1, newMessage];
+        setMessagesForStep1(updatedMessagesLocally);
+
+        // Clear input fields immediately
         setUserMessage('');
         setAttachedFileForStep1(null);
         setFilePreviewUrlForStep1(null);
         if (fileInputRefForStep1.current) {
-            fileInputRefForStep1.current.value = ''; // 파일 입력 필드 초기화
+            fileInputRefForStep1.current.value = '';
+        }
+
+        try {
+            // Send the entire updated messages array to DynamoDB
+            const response = await fetch(`/api/orders/${orderId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: updatedMessagesLocally }), // Send updated messages array
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to save message to database.');
+            }
+            console.log('Message saved to DynamoDB successfully!');
+
+        } catch (err) {
+            console.error("Error saving message:", err);
+            setError(`Failed to send message: ${err.message}`);
+            showModal(`메시지 전송 중 오류가 발생했습니다: ${err.message}`);
+            // Optionally, revert local state if save fails:
+            // setMessagesForStep1(messagesForStep1); // Revert to previous state
+        } finally {
+            setLoading(false); // Stop loading after save attempt
         }
     };
 
@@ -277,6 +406,12 @@ export default function CheckoutPage() {
         if (selectedItemsForOrder.size === 0) {
             showModal("주문할 상품을 1개 이상 선택해주세요.");
             return;
+        }
+
+        // 가격 및 할인율 불일치 시 모달 띄우기
+        if (!arePricesAndDiscountsMatching) {
+            showModal("Order details have changed. Please review again before confirmation");
+            return; // 제출 중단
         }
 
         let deliveryDetailsPayload = {};
@@ -380,7 +515,8 @@ export default function CheckoutPage() {
             if (!userUpdateResponse.ok) {
                 console.error('Failed to clear cart after order:', await userUpdateResponse.text());
             }
-            await fetchUserCart(); // 장바구니를 비운 후, 사용자 카트 데이터를 다시 가져옴
+            // `fetchUserCart` 함수가 현재 스코프에 없으므로 주석 처리하거나 해당 함수를 정의해야 함.
+            // await fetchUserCart(); // 장바구니를 비운 후, 사용자 카트 데이터를 다시 가져옴
 
             if (isFirstOrder) {
                 setOrderSuccessfullyPlaced(true);
@@ -499,6 +635,7 @@ export default function CheckoutPage() {
                                     item={item}
                                     onUpdateQuantity={handleUpdateQuantity}
                                     onRemoveItem={handleRemoveItem}
+                                    showAdminDetails={true} // showAdminDetails prop 추가
                                 />
                             </div>
                         ))}
@@ -517,7 +654,7 @@ export default function CheckoutPage() {
                             <p className={styles.emptyMessageText}>No messages have been created.</p>
                         ) : (
                             messagesForStep1.map((msg, index) => (
-                                <div key={index} className={styles.messageBubble} data-sender={msg.sender}>
+                                <div key={msg.id || index} className={`${styles.messageBubble} ${msg.sender === 'User' ? styles.user : styles.admin}`} data-sender={msg.sender}>
                                     {msg.text && <p className={styles.existingMessageText}>{msg.text}</p>}
                                     {msg.imageUrl && (
                                         <img src={msg.imageUrl} alt="Attached Preview" className={styles.attachedImagePreview} />
@@ -666,8 +803,8 @@ export default function CheckoutPage() {
                         <span className={`${styles.totalSummaryValue} ${styles.highlightPrice}`}>${finalTotalPrice.toFixed(2)}</span>
                     </div>
                 </div>
-                    <button onClick={handleSubmitOrderReview} className={styles.submitButton}>
-                        Submit
+                    <button onClick={handleSubmitOrderReview} className={styles.submitButton} disabled={!arePricesAndDiscountsMatching}>
+                        Send Order Confirmation
                     </button>
             </footer>
 

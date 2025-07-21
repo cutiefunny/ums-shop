@@ -69,7 +69,12 @@ export default function OrderDetailPage() {
         setError("Order not found.");
         setOrder(null);
       } else {
-        setOrder(data); // 조회된 항목으로 order 상태 업데이트
+        // orderItems의 packingStatus에 기본값(false) 설정
+        const processedOrderItems = data.orderItems?.map(item => ({
+            ...item,
+            packingStatus: item.packingStatus ?? false // packingStatus가 undefined 또는 null일 경우 false로 설정/page.js]
+        })) || [];
+        setOrder({ ...data, orderItems: processedOrderItems }); // 조회된 항목으로 order 상태 업데이트/page.js]
       }
 
     } catch (err) {
