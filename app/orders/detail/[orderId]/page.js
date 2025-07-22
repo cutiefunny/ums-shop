@@ -27,7 +27,7 @@ export default function CheckoutPage() {
     const { orderId } = params; // URL에서 orderId 값 가져오기
 
     // Step 1: Order Review & Details State
-    const [orderDetail, setOrderDetail] = useState([]); // 현재 주문 상세 정보
+    const [orderDetail, setOrderDetail] = useState(null); // 현재 주문 상세 정보 (초기값 null로 변경)
     const [cartItems, setCartItems] = useState([]); // 장바구니 아이템 목록
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -82,6 +82,7 @@ export default function CheckoutPage() {
                 throw new Error(`HTTP error! status: ${orderResponse.status}`);
             }
             const orderData = await orderResponse.json();
+            setOrderDetail(orderData); // orderDetail 상태 업데이트
             const items = orderData.orderItems || [];
             const messages = orderData.messages || [];
             const deliveryDetails = orderData.deliveryDetails || {}; // deliveryDetails 추가
@@ -140,7 +141,7 @@ export default function CheckoutPage() {
             setCartItems(items);
             setSelectedItemsForOrder(new Set(items.map(item => item.productId)));
 
-            // deliveryDetails 세팅 [새로운 부분]
+            // deliveryDetails 세팅
             if (deliveryDetails.option) {
                 setDeliveryOption(deliveryDetails.option);
                 if (deliveryDetails.option === 'onboard') {
@@ -237,6 +238,12 @@ export default function CheckoutPage() {
             item.productId === productId ? { ...item, quantity: newQuantity } : item
         );
         setCartItems(updatedCart);
+        // 제품 수량이 변경되면 해당 제품의 체크박스를 해제합니다.
+        setSelectedItemsForOrder(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(productId);
+            return newSet;
+        });
     }, [cartItems, showModal]);
 
     const handleRemoveItem = useCallback(async (productId) => {
@@ -440,97 +447,89 @@ export default function CheckoutPage() {
 
         setLoading(true);
         try {
-            const userOrdersResponse = await fetch(`/api/orders?userEmail=${user.email}`);
-            if (!userOrdersResponse.ok) {
-                throw new Error("Failed to fetch user's past orders.");
-            }
-            const pastOrders = await userOrdersResponse.json();
-            const isFirstOrder = pastOrders.length === 0;
-
             const itemsToOrder = cartItems.filter(item => selectedItemsForOrder.has(item.productId));
 
-            // 주문 생성 페이로드
-            const orderPayload = {
+            // Prepare the updated order payload
+            const updatedOrderPayload = {
                 userEmail: user.email,
                 userName: user.name,
                 customer: {
                     email: user.email,
                     name: user.name,
-                    phoneNumber: user.phoneNumber
+                    phoneNumber: user.phoneNumber // Assuming user.phoneNumber is available from AuthContext
                 },
                 shipInfo: {
-                    shipName: user.shipName,
+                    shipName: user.shipName, // Assuming user.shipName is available from AuthContext
                     port: deliveryDetailsPayload.portName,
                 },
                 shippingDetails: {
                     method: deliveryOption,
                     estimatedDelivery: deliveryDetailsPayload.expectedShippingDate,
-                    trackingNumber: null, // 주문 생성 시에는 아직 트래킹 번호가 없음
-                    actualDelivery: null, // 실제 배송 날짜는 주문 후에 업데이트됨
+                    trackingNumber: orderDetail?.shippingDetails?.trackingNumber || null, // Preserve existing
+                    actualDelivery: orderDetail?.shippingDetails?.actualDelivery || null, // Preserve existing
                 },
-                totalAmount: finalTotalPrice,
+                totalAmount: finalTotalPrice, // Recalculated total
                 subtotal: productPriceTotal,
                 shippingFee: shippingFee,
-                tax: 0,
+                tax: 0, // Assuming tax is always 0 based on current code
                 orderItems: itemsToOrder.map(item => ({
                     productId: item.productId,
                     name: item.name,
                     quantity: item.quantity,
-                    unitPrice: item.unitPrice, //원본 가격
-                    discountedUnitPrice: item.unitPrice * (1 - (item.discount || 0) / 100), // 할인 적용된 가격
-                    discount: item.discount, // 할인율
+                    unitPrice: item.unitPrice,
+                    discountedUnitPrice: item.unitPrice * (1 - (item.discount || 0) / 100),
+                    discount: item.discount,
                     mainImage: item.mainImage,
                     sku: item.slug,
-                    adminStatus: 'Pending Review', // 초기 상태는 'Pending Review'
-                    adminQuantity: item.quantity, // 초기에는 주문 수량과 동일
+                    adminStatus: item.adminStatus || 'Pending Review', // Preserve or default
+                    adminQuantity: item.adminQuantity || item.quantity, // Preserve or default
                 })),
                 deliveryDetails: deliveryDetailsPayload,
-                messages: messagesForStep1, // Step 1에서 작성된 모든 메시지 포함
-                status: 'Order', // 초기 주문 상태
-                date: new Date().toISOString(),
-                statusHistory: [{
-                    timestamp: new Date().toISOString(),
-                    oldStatus: null,
-                    newStatus: 'Order Request',
-                    changedBy: 'User',
-                }],
+                messages: messagesForStep1, // Include all messages
+                status: 'Order', // Change status to 'Confirmed'
+                date: orderDetail?.date || new Date().toISOString(), // Preserve original order date
+                statusHistory: [
+                    ...(orderDetail?.statusHistory || []), // Keep existing history
+                    {
+                        timestamp: new Date().toISOString(),
+                        oldStatus: orderDetail?.status || null,
+                        newStatus: 'Order(Confirmed)', // Reflect the new status
+                        changedBy: 'User',
+                    }
+                ],
             };
 
-            const response = await fetch('/api/orders/create', {
-                method: 'POST',
+            // Send PUT request to update the order
+            const response = await fetch(`/api/orders/${orderId}`, {
+                method: 'PUT', // Change to PUT
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(orderPayload),
+                body: JSON.stringify(updatedOrderPayload),
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || '주문 생성 실패');
+                throw new Error(errorData.message || '주문 정보 업데이트 실패');
             }
 
-            // 주문 성공 시 장바구니 초기화 (서버에도 반영)
+            // After successful update, clear cart (if applicable)
+            // This assumes that after order confirmation, items from the cart are "moved" to the order.
             const userUpdateResponse = await fetch(`/api/users/${user.seq}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ cart: [] }),
             });
             if (!userUpdateResponse.ok) {
-                console.error('Failed to clear cart after order:', await userUpdateResponse.text());
+                console.error('Failed to clear cart after order confirmation:', await userUpdateResponse.text());
             }
-            // `fetchUserCart` 함수가 현재 스코프에 없으므로 주석 처리하거나 해당 함수를 정의해야 함.
-            // await fetchUserCart(); // 장바구니를 비운 후, 사용자 카트 데이터를 다시 가져옴
 
-            if (isFirstOrder) {
-                setOrderSuccessfullyPlaced(true);
-                setShowGuideModal(true);
-                setCurrentGuideStep(0);
-            } else {
-                showModal("주문이 성공적으로 접수되었습니다. 주문 목록 페이지로 이동합니다.", () => {
-                    router.push('/orders');
-                });
-            }
+            // Redirect to the new payment page
+            showModal("주문이 성공적으로 확정되었습니다. 결제 페이지로 이동합니다.", () => {
+                router.push(`/orders/payment/${orderId}`); // Redirect to the new payment page
+            });
+
         } catch (err) {
-            console.error("Order submission error:", err);
-            showModal(`주문 접수에 실패했습니다: ${err.message}`);
+            console.error("Order confirmation error:", err);
+            showModal(`주문 확정에 실패했습니다: ${err.message}`);
         } finally {
             setLoading(false);
         }
@@ -804,7 +803,11 @@ export default function CheckoutPage() {
                         <span className={`${styles.totalSummaryValue} ${styles.highlightPrice}`}>${finalTotalPrice.toFixed(2)}</span>
                     </div>
                 </div>
-                    <button onClick={handleSubmitOrderReview} className={styles.submitButton} disabled={!arePricesAndDiscountsMatching}>
+                    <button
+                        onClick={handleSubmitOrderReview}
+                        className={styles.submitButton}
+                        disabled={!arePricesAndDiscountsMatching || selectedItemsForOrder.size !== cartItems.length}
+                    >
                         Send Order Confirmation
                     </button>
             </footer>

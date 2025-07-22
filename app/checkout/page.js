@@ -391,7 +391,7 @@ export default function CheckoutPage() {
                     discount: item.discount, // 할인율
                     mainImage: item.mainImage,
                     sku: item.slug,
-                    adminStatus: 'Pending Review', // 초기 상태는 'Pending Review'
+                    adminStatus: 'Available', // 초기 상태는 'Available'
                     adminQuantity: item.quantity, // 초기에는 주문 수량과 동일
                 })),
                 deliveryDetails: deliveryDetailsPayload,
@@ -401,7 +401,7 @@ export default function CheckoutPage() {
                 statusHistory: [{
                     timestamp: new Date().toISOString(),
                     oldStatus: null,
-                    newStatus: 'Order Request',
+                    newStatus: 'Order(Request)',
                     changedBy: 'User',
                 }],
             };

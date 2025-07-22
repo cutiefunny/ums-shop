@@ -207,7 +207,6 @@
 
 /* Totals */
 .totalsSection {
-  margin-top: 20px;
   display: flex;
   flex-direction: row;
   gap: 10px;
@@ -215,11 +214,12 @@
 
 .totalRow {
   display: flex;
-  justify-content: space-between;
+  /* justify-content: space-between; */
   font-size: 1rem;
   font-weight: 500;
   flex-direction: column;
   row-gap: 10px;
+  margin-left:20px;
 }
 
 .totalInput {
@@ -233,12 +233,11 @@
 
 .finalTotalRow {
   display: flex;
-  justify-content: space-between;
+  /* justify-content: space-between; */
   font-size: 1.1rem;
   font-weight: bold;
   color: #333;
   margin-left: 20px;
-  margin-top: 30px;
 }
 
 .totalAmount {
@@ -371,8 +370,14 @@
 .bottomActions {
     margin-top: 10px;
     display: flex;
-    justify-content: flex-end; /* Align items to the right */
+    justify-content: space-between;
     gap: 15px;
+}
+
+.ButtonGroupContainer {
+  display: flex;
+  flex-direction: column; /* Default to column for mobile */
+  gap: 10px;
 }
 
 .actionButtonsGroup {
@@ -397,6 +402,7 @@
 .saveButton {
   background-color: black; /* Black */
   color: white;
+  width: 150px;
 }
 
 .saveButton:hover {
