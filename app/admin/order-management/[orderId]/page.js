@@ -210,7 +210,7 @@ export default function OrderDetailPage() {
     setOrder(prevOrder => ({
       ...prevOrder,
       messages: updatedMessages,
-      userId: user?.seq,
+      userId: prevOrder.userId,
     }));
 
     setNewMessageText('');
@@ -225,7 +225,7 @@ export default function OrderDetailPage() {
       const response = await fetch(`/api/orders/${order.orderId}`, {
         method: 'PUT', 
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: updatedMessages }), // 업데이트된 messages 배열 전송
+        body: JSON.stringify({ messages: updatedMessages, userId: order.userId }), // 업데이트된 messages 배열 전송
       });
 
       if (!response.ok) {

@@ -212,15 +212,15 @@
 /* New: Admin Feedback Display [새로운 부분] */
 .adminFeedbackDisplay {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  flex-direction: row;
   gap: 3px;
   margin-top: 5px;
   font-size: 0.85rem;
   color: #555;
-  background-color: #f0f0f0; /* Light background to distinguish */
-  padding: 5px 8px;
+  background-color: #f8f8f8; /* Light background to distinguish */
+  padding: 8px 15px;
   border-radius: 6px;
-  border: 1px solid #e0e0e0;
 }
 
 .adminFeedbackDisplay strong {
@@ -228,8 +228,18 @@
     font-weight: bold;
 }
 
-.adminFeedbackDisplay.disabled {
+.adminFeedbackDisplay.OutOfStock {
   color: #999; /* 회색으로 표시 */
   opacity: 0.4; /* 투명도 조정 */
   background-color:#dc3545
+}
+
+.adminFeedbackDisplay.Limited {
+  color: #ff2003; /* 빨간색으로 표시 */
+}
+
+.limitedIcon {
+  width: 12px;
+  height: 12px;
+  margin-right: 10px;
 }

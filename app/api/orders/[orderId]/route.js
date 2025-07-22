@@ -1,23 +1,24 @@
 // app/api/orders/[orderId]/route.js
 import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand, PutCommand } from '@aws-sdk/lib-dynamodb'; // PutCommand 추가
-import { v4 as uuidv4 } from 'uuid'; // uuidv4 추가
+import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { v4 as uuidv4 } from 'uuid';
 import { firebaseAdmin } from '@/utils/firebaseAdmin';
 
 // AWS SDK 클라이언트 초기화
 const client = new DynamoDBClient({
-  region: process.env.AWS_REGION, // .env.local에 설정된 AWS_REGION 사용
+  region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID, // .env.local에 설정된 AWS_ACCESS_KEY_ID 사용
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, // .env.local에 설정된 AWS_SECRET_ACCESS_KEY 사용
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
 const docClient = DynamoDBDocumentClient.from(client);
 
 // DynamoDB 테이블 이름 (환경 변수에서 가져옴)
 const ORDER_MANAGEMENT_TABLE_NAME = process.env.DYNAMODB_TABLE_ORDERS || 'order-management';
-const HISTORY_TABLE_NAME = process.env.DYNAMODB_TABLE_HISTORY || 'history'; // History 테이블 이름 추가
+const HISTORY_TABLE_NAME = process.env.DYNAMODB_TABLE_HISTORY || 'history';
+const USER_TABLE_NAME = process.env.DYNAMODB_TABLE_USERS || 'user-management';
 
 /**
  * GET 요청 처리: 특정 주문 상세 데이터를 조회합니다.
@@ -26,10 +27,9 @@ const HISTORY_TABLE_NAME = process.env.DYNAMODB_TABLE_HISTORY || 'history'; // H
  * @param {{params: {orderId: string}}} context - Next.js 동적 라우트 파라미터
  * @returns {NextResponse} 주문 상세 데이터 또는 오류 응답
  */
-export async function GET(request, context) { // context 파라미터 사용
+export async function GET(request, context) {
   try {
-    // context.params를 await하여 orderId에 접근 (오류 메시지에 따른 수정)
-    const { orderId } = await context.params; 
+    const { orderId } = await context.params;
 
     if (!orderId) {
       return NextResponse.json({ message: 'Missing order ID' }, { status: 400 });
@@ -38,7 +38,7 @@ export async function GET(request, context) { // context 파라미터 사용
     const command = new GetCommand({
       TableName: ORDER_MANAGEMENT_TABLE_NAME,
       Key: {
-        orderId: orderId, // orderId가 String 타입의 파티션 키라고 가정
+        orderId: orderId,
       },
     });
 
@@ -59,19 +59,32 @@ export async function GET(request, context) { // context 파라미터 사용
  * PUT 요청 처리: 특정 주문 데이터를 업데이트합니다.
  * URL: /api/orders/[orderId]
  * @param {Request} request - 요청 객체 (업데이트할 주문 데이터 포함)
- * @param {{ params: { orderId: string } }} context - Next.js 동적 라우트 파라미터 (params를 직접 구조 분해)
+ * @param {{ params: { orderId: string } }} context - Next.js 동적 라우트 파라미터
  * @returns {NextResponse} 업데이트된 주문 데이터 또는 오류 응답
  */
-export async function PUT(request, { params }) { // context.params 대신 { params }로 직접 구조 분해
+export async function PUT(request, { params }) {
+    const { orderId } = await params;
   try {
-    const { orderId } = params; // 이제 params는 직접 사용 가능
-    const body = await request.json(); // 업데이트할 데이터
+    const body = await request.json();
     const { messages, userId, ...otherUpdates } = body;
-
-    console.log(`messages: ${messages}`);
+    console.log(`Backend - User ID for update: ${userId}`); // userId 로그
 
     if (!orderId) {
       return NextResponse.json({ message: 'Missing order ID' }, { status: 400 });
+    }
+
+    // 1. 기존 주문 정보 가져오기: 주문 소유자의 seq 및 기존 메시지 목록을 얻기 위함
+    const getExistingOrderCommand = new GetCommand({
+      TableName: ORDER_MANAGEMENT_TABLE_NAME,
+      Key: { orderId: orderId },
+      // userId를 ProjectionExpression에 추가
+      ProjectionExpression: 'userId, userEmail, customer, messages',
+    });
+    const { Item: existingOrder } = await docClient.send(getExistingOrderCommand);
+    const existingMessages = existingOrder?.messages || [];
+
+    if (!existingOrder) {
+      console.warn(`Backend - Order ${orderId} not found. Cannot determine recipient or compare messages for push notification.`);
     }
 
     // DynamoDB UpdateExpression을 동적으로 생성
@@ -81,20 +94,15 @@ export async function PUT(request, { params }) { // context.params 대신 { para
     let first = true;
 
     for (const key in body) {
-      // orderId는 키이므로 업데이트 대상에서 제외
-      if (key === 'orderId') continue; 
+      if (key === 'orderId') continue;
 
       if (!first) {
         UpdateExpression += ',';
       }
-      
-      // 'status', 'messages', 'orderItems', 'note' 등 복합 타입 또는 예약어일 수 있는 속성 처리
-      // 이 로직은 DynamoDB 스키마와 데이터 구조에 따라 더 정교하게 구성되어야 합니다.
-      // 여기서는 간단화를 위해 #key를 사용하고, 필요시 예약어 매핑을 합니다.
       let attributeName = `#${key}`;
       ExpressionAttributeNames[attributeName] = key;
       ExpressionAttributeValues[`:${key}`] = body[key];
-      
+
       UpdateExpression += ` ${attributeName} = :${key}`;
       first = false;
     }
@@ -106,68 +114,88 @@ export async function PUT(request, { params }) { // context.params 대신 { para
     const updateCommand = new UpdateCommand({
       TableName: ORDER_MANAGEMENT_TABLE_NAME,
       Key: {
-        orderId: orderId, // orderId가 String 타입의 파티션 키라고 가정
+        orderId: orderId,
       },
       UpdateExpression,
       ExpressionAttributeNames,
       ExpressionAttributeValues,
-      ReturnValues: "ALL_NEW", // 업데이트된 항목의 모든 속성을 반환
+      ReturnValues: "ALL_NEW",
     });
 
     const { Attributes } = await docClient.send(updateCommand);
 
-    console.log(`userId: ${userId}, firebaseAdmin : ${firebaseAdmin}`);
     // =========================================================
-    // FCM 푸시 알림 전송 로직 시작
+    // FCM 푸시 알림 전송 로직 시작 (관리자 메시지에만, 메시지 변경 시)
     // =========================================================
-    if (userId && firebaseAdmin) { // userId와 firebaseAdmin이 유효한지 확인
-      // 1. DynamoDB에서 해당 userId의 FCM 토큰 조회
-      const getUserCommand = new GetCommand({
-        TableName: process.env.DYNAMODB_TABLE_USERS, // 사용자 테이블
-        Key: { seq: userId }, // 사용자 ID를 통해 조회
-        ProjectionExpression: 'fcmToken', // fcmToken만 가져오기
-      });
+    // 새 메시지가 추가되었고, firebaseAdmin이 초기화되어 있으며, 기존 주문 정보가 있을 경우
+    if (messages && messages.length > existingMessages.length && firebaseAdmin && existingOrder) {
+      const lastMessage = messages[messages.length - 1]; // 새로 추가된 마지막 메시지를 가져옴
+      console.log(`Backend - Last message sender for order ${orderId}: ${lastMessage.sender}`); // 메시지 보낸 사람 로그
 
-      const { Item: userItem } = await docClient.send(getUserCommand);
-      const fcmToken = userItem?.fcmToken;
+      if (lastMessage.sender === 'Admin') { // 마지막 메시지를 보낸 사람이 'Admin'일 경우에만 푸시 알림 발송
+        // 주문 소유자(고객)의 userId 가져오기
+        // const userId = existingOrder.userId; // <-- userId 사용
 
-      console.log(`Fetched FCM token for user ID ${userId}:`, fcmToken);
+        if (userId) {
+          // 2. DynamoDB에서 해당 userId의 FCM 토큰 조회 (사용자 테이블)
+          // USER_TABLE_NAME의 Primary Key는 'id'이므로 GetCommand로 조회 가능
+          const getUserCommand = new GetCommand({
+            TableName: USER_TABLE_NAME,
+            Key: { seq: userId }, // <-- id를 키로 사용하여 사용자 정보 조회
+            ProjectionExpression: 'fcmToken', // fcmToken만 가져옴
+          });
 
-      if (fcmToken) {
-        const message = {
-          notification: {
-            title: '메세지 알림',
-            body: `메세지 알림 테스트입니다.`,
-          },
-          data: { // 데이터 메시지 (클라이언트에서 추가 로직 처리 가능)
-            orderId: orderId,
-            type: 'order_status_update',
-            click_action: `/notifications/${orderId}`, // 알림 클릭 시 이동할 URL
-          },
-          token: fcmToken,
-        };
+          const { Item: userItem } = await docClient.send(getUserCommand);
+          const fcmToken = userItem?.fcmToken;
 
-        console.log('Sending FCM message:', message);
+          console.log(`Backend - Fetched FCM token for customer Seq ${userId}: ${fcmToken}`); // 가져온 FCM 토큰 로그
 
-        try {
-          const response = await firebaseAdmin.messaging().send(message);
-          console.log('Successfully sent FCM message:', response);
-        } catch (error) {
-          console.error('Error sending FCM message:', error);
-          // 알림 전송 실패는 사용자 업데이트 실패로 이어지지 않으므로 여기서 에러를 throw하지 않습니다.
+          if (fcmToken) {
+            const notificationBody = lastMessage.text || '새로운 메시지가 도착했습니다.'; // 관리자가 보낸 메시지 내용으로 알림 본문 설정
+            const fcmMessage = {
+              notification: {
+                title: '관리자 메시지 도착', // 관리자 메시지임을 나타내는 제목
+                body: notificationBody,
+              },
+              data: {
+                orderId: orderId,
+                type: 'admin_message',
+                click_action: `/orders/detail/${orderId}`, // 알림 클릭 시 주문 상세 페이지로 이동
+              },
+              token: fcmToken,
+            };
+
+            console.log('Backend - Sending FCM message to user:', fcmMessage); // 전송할 FCM 메시지 객체 로그
+
+            try {
+              const response = await firebaseAdmin.messaging().send(fcmMessage);
+              console.log('Backend - Successfully sent FCM message:', response);
+            } catch (error) {
+              console.error('Backend - Error sending FCM message to user:', error);
+            }
+          } else {
+            console.warn(`Backend - No FCM token found for customer Seq: ${userId}. Push notification not sent.`);
+          }
+        } else {
+          console.warn(`Backend - Customer Seq not found in order ${orderId}. Cannot send push notification.`);
         }
       } else {
-        console.warn(`No FCM token found for user ID: ${userId}. Push notification not sent.`);
+        console.log('Backend - Message is from user, skipping push notification to user.');
       }
+    } else {
+      console.log('Backend - Conditions not met for sending push notification.');
+      // 상세 조건 로깅 (디버깅용)
+      console.log(`Backend - has new message: ${messages && messages.length > existingMessages.length}`);
+      console.log(`Backend - firebaseAdmin initialized: ${!!firebaseAdmin}`);
+      console.log(`Backend - existingOrder found: ${!!existingOrder}`);
     }
     // =========================================================
     // FCM 푸시 알림 전송 로직 끝
     // =========================================================
 
-
     return NextResponse.json({ message: 'Order updated successfully', order: Attributes }, { status: 200 });
   } catch (error) {
-    console.error(`Error updating order ${params.orderId} in DynamoDB:`, error); // context.params 대신 params 사용
+    console.error(`Backend - Error updating order ${orderId} in DynamoDB:`, error);
     return NextResponse.json({ message: 'Failed to update order', error: error.message }, { status: 500 });
   }
 }
@@ -212,7 +240,7 @@ export async function DELETE(request, { params }) {
         details: `주문 '${deletedOrder?.orderId || orderId}' (고객: ${deletedOrder?.userName || 'N/A'})이(가) 삭제되었습니다.`,
     };
     const putHistoryCommand = new PutCommand({
-        TableName: HISTORY_TABLE_NAME,
+        TableName: HISTORY_TABLE_TABLE_NAME, // HISTORY_TABLE_NAME 변수 사용
         Item: historyItem,
     });
     await docClient.send(putHistoryCommand);

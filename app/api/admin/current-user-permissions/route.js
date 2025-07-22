@@ -25,7 +25,7 @@ const ADMIN_USERS_TABLE_NAME = process.env.DYNAMODB_TABLE_ADMIN_USERS || 'admin-
 export async function GET() {
     try {
         const cookieStore = cookies();
-        const token = cookieStore.get('admin_jwt')?.value;
+        const token = await cookieStore.get('admin_jwt')?.value;
 
         if (!token) {
             return NextResponse.json({ message: 'Unauthorized: No token' }, { status: 401 });

@@ -115,10 +115,23 @@ export default function ProductCardOrderDetail({ item, onUpdateQuantity, onRemov
             <p className={styles.itemTotalPrice}>Subtotal: ${(itemTotalPrice).toFixed(2)}</p>
         </div>
 
-        <div className={`${styles.adminFeedbackDisplay} ${item.adminStatus === 'Out of Stock' ? styles.disabled : ''}`}>
-            <span>Admin Status: <strong>{item.adminStatus || 'N/A'}</strong></span>
+        <div className={`${styles.adminFeedbackDisplay} ${styles[item.adminStatus.replace(/\s+/g, '')]}`}>
+            <span>
+              {item.adminStatus === 'Limited' && (
+              <>
+                <img src="/images/caution.png" alt="Limited" className={styles.limitedIcon} />
+              </>
+            )}
+              {item.adminStatus || 'N/A'}
+            </span>
             {item.adminStatus !== 'Out of Stock' && (
-              <span>Admin Quantity: <strong>{item.adminQuantity || 'N/A'}</strong></span>
+              <>
+                {item.adminStatus === 'Limited' ? (
+                  <span>max {item.adminQuantity || 'N/A'}</span>
+                ) : (
+                  <span>{item.adminQuantity || 'N/A'}</span>
+                )}
+              </>
             )}
         </div>
     </div>
