@@ -68,34 +68,40 @@ export default function PaymentPage() {
         fetchOrderDetail();
     }, [fetchOrderDetail, isLoggedIn, router]);
 
-    // 결제 처리 함수
-    const handlePayment = async () => {
-        if (!selectedPaymentMethod) {
-            showModal("결제 수단을 선택해주세요.");
-            return;
-        }
-
+    // 결제 처리 함수 (모달에서 선택 후 호출될 실제 결제 로직)
+    const processPayment = useCallback(async (method) => {
         setLoading(true);
         try {
             // 결제 처리 시뮬레이션
             const paymentSuccess = await new Promise(resolve => setTimeout(() => {
                 // 데모를 위해 무작위로 성공/실패 시뮬레이션 (PayPal은 90% 성공, 현금은 항상 성공)
-                if (selectedPaymentMethod === 'paypal') {
-                    resolve(Math.random() > 0.1);
+                if (method === 'paypal') {
+                    resolve(Math.random() > 0.5);
                 } else {
                     resolve(true);
                 }
             }, 1500)); // 1.5초 지연 시뮬레이션
 
+            const methodName = method === 'paypal' ? 'PayPal' : 'Cash on Delivery';
+
+            const updatedStatusHistory = [
+                ...(order.statusHistory || []),
+                {
+                    timestamp: new Date().toISOString(),
+                    oldStatus: 'Order(Confirmed)',
+                    newStatus: methodName,
+                    changedBy: 'Admin',
+                }
+            ];
+
             if (paymentSuccess) {
-                // DynamoDB의 주문 상태를 'Payment Confirmed' 또는 'Paid'로 업데이트
                 const updateResponse = await fetch(`/api/orders/${orderId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        status: 'Payment Confirmed', // 상태 흐름에 따라 'Paid' 등으로 변경 가능
-                        paymentMethod: selectedPaymentMethod,
-                        // 기타 결제 관련 정보 추가
+                        status: methodName,
+                        paymentMethod: method,
+                        statusHistory: updatedStatusHistory,
                     }),
                 });
 
@@ -110,7 +116,7 @@ export default function PaymentPage() {
             } else {
                 // 결제 실패
                 showModal(
-                    "결제에 실패했습니다. 결제 처리 중 문제가 발생했습니다.",
+                    "결제에 실패했습니다.", // 이미지에 맞게 메시지 간결화
                     () => { /* '다시 시도' 버튼 클릭 시 현재 페이지에 머무름 */ },
                     true, // isConfirmation 파라미터를 사용하여 두 버튼 표시
                     "다시 시도",
@@ -124,6 +130,12 @@ export default function PaymentPage() {
         } finally {
             setLoading(false);
         }
+    }, [orderId, router, showModal]);
+
+
+    // "Pay" 버튼 클릭 시 모달 열기
+    const handlePayButtonClick = () => {
+        setIsPaymentModalOpen(true);
     };
 
     if (loading) {
@@ -291,25 +303,27 @@ export default function PaymentPage() {
                     onClick={() => router.back()}
                     className={styles.backButtonFooter} // 새로운 스타일 적용
                 >
-                    Back
+                    Cancel
                 </button>
                 <button
-                    onClick={handlePayment}
+                    onClick={handlePayButtonClick} // handlePayment 대신 모달을 여는 함수 호출
                     className={styles.submitButton}
-                    disabled={!selectedPaymentMethod || loading}
+                    disabled={loading} // 로딩 중에는 비활성화
                 >
-                    Pay ${finalTotalPrice.toFixed(2)}
+                    Pay
                 </button>
             </footer>
 
             <PaymentMethodSelectionModal
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
-                onSelect={(method) => {
+                onSelectMethod={(method) => { // 'onSelect'를 'onSelectMethod'로 변경
                     setSelectedPaymentMethod(method);
                     setIsPaymentModalOpen(false);
+                    processPayment(method); // 모달에서 선택 후 실제 결제 처리 함수 호출
                 }}
                 selectedMethod={selectedPaymentMethod}
+                finalTotalPrice={finalTotalPrice} // total price를 prop으로 전달
             />
         </div>
     );

@@ -28,6 +28,12 @@
     animation: slideUp 0.3s ease-out; /* Simple slide-up animation */
 }
 
+.paymentIcon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px; /* Space between icon and text */
+}
+
 @keyframes slideUp {
   from {
     transform: translateY(100%);
@@ -48,13 +54,13 @@
 .paymentOptionsGrid {
     display: flex; /* Use flex for vertical stacking as in image */
     flex-direction: column;
-    gap: 10px; /* Space between buttons */
+    gap: 0px; /* Space between buttons */
 }
 
 .paymentMethodButton {
-    background-color: #f8f9fa; /* Light background */
+    background-color: #fff; /* Light background */
     color: #212529;
-    border: 1px solid #dee2e6;
+    border: 0px solid #dee2e6;
     padding: 15px;
     border-radius: 8px;
     font-size: 1rem;
@@ -62,6 +68,7 @@
     cursor: pointer;
     transition: background-color 0.2s ease;
     text-align: left; /* Align text to left as in image */
+    display: flex;
 }
 
 .paymentMethodButton:hover {

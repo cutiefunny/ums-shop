@@ -138,10 +138,10 @@ export default function OrdersPage() {
   // 서브 필터 옵션 정의
   const subFilterOptions = useMemo(() => {
     if (activeStatusTab === 'Order') {
-      // 'Order' 탭에는 'Order Request'와 'Order Confirmed' 옵션 제공
-      return ['All', 'Order Request', 'Order Confirmed'];
+      // 'Order' 탭에는 'Order(Request)'와 'Order(Confirmed)' 옵션 제공
+      return ['All', 'Order(Request)', 'Order(Confirmed)'];
     } else if (activeStatusTab === 'Payment') {
-      return ['All', 'Paypal', 'Pay in Cash'];
+      return ['All', 'Paypal', 'pay in cash'];
     } else if (activeStatusTab === 'Delivered') {
       return ['All', 'Delivered'];
     }

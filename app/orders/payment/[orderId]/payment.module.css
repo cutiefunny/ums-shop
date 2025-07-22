@@ -234,20 +234,17 @@
 .submitButton {
     flex: 1; /* 공간을 균등하게 차지 */
     padding: 15px 20px;
-    background-color: #FFD700; /* 황금색 */
-    color: #333;
+    background-color: #FBC926;
+    color: #ffffff;
     border: none;
     border-radius: 10px; /* Rounded corners */
     font-size: 1.1rem;
     font-weight: 700;
     cursor: pointer;
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
 }
 
 .submitButton:hover:not(:disabled) {
-    background-color: #e6c200;
-    box-shadow: 0 6px 12px rgba(255, 215, 0, 0.4);
+    background-color: rgb(196, 166, 0);
 }
 
 .submitButton:disabled {

@@ -12,19 +12,20 @@ export default function PaymentMethodSelectionModal({ isOpen, onClose, onSelectM
     return (
         <div className={styles.overlay} onClick={onClose}>
             <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                <h3 className={styles.modalTitle}>Payment Options</h3>
                 <div className={styles.paymentOptionsGrid}>
                     <button
                         onClick={() => onSelectMethod('PayPal')}
                         className={styles.paymentMethodButton}
                     >
-                        PayPal (Recommended)
+                        <img src="/images/device-message.png" alt="PayPal" className={styles.paymentIcon} />
+                        PayPal
                     </button>
                     <button
-                        onClick={() => onSelectMethod('Cash upon onboard delivery')}
+                        onClick={() => onSelectMethod('Pay in cash')}
                         className={styles.paymentMethodButton}
                     >
-                        Cash upon onboard delivery
+                        <img src="/images/file.png" alt="Cash on Delivery" className={styles.paymentIcon} />
+                        Pay in cash
                     </button>
                 </div>
                 {/* Optional: Add a close button if needed */}

@@ -228,6 +228,36 @@ export default function CheckoutPage() {
         }
     }, [arePricesAndDiscountsMatching, loading, orderId, cartItems.length, productDetailsMap, showModal]);
 
+    // 새롭게 추가된 함수: 전체 주문을 삭제하는 로직
+    const deleteEntireOrder = useCallback(async () => {
+        showConfirmationModal(
+            "Order Deletion",
+            "There are no items left in this order. Do you want to delete the entire order?",
+            async () => {
+                setLoading(true);
+                try {
+                    const response = await fetch(`/api/orders/${orderId}`, {
+                        method: 'DELETE', // DELETE 요청으로 전체 주문 삭제
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Failed to delete order.');
+                    }
+
+                    showModal("Order successfully deleted. Redirecting to order list.", () => {
+                        router.replace('/orders'); // router.push 대신 router.replace 사용
+                    });
+                } catch (err) {
+                    console.error("Error deleting order:", err);
+                    showModal(`Failed to delete order: ${err.message}`);
+                } finally {
+                    setLoading(false);
+                }
+            },
+            () => { /* do nothing on cancel */ }
+        );
+    }, [orderId, router, showConfirmationModal, showModal]);
 
     const handleUpdateQuantity = useCallback(async (productId, newQuantity) => {
         if (newQuantity < 1) {
@@ -248,13 +278,20 @@ export default function CheckoutPage() {
 
     const handleRemoveItem = useCallback(async (productId) => {
         const updatedCart = cartItems.filter(item => item.productId !== productId);
-        setCartItems(updatedCart);
         setSelectedItemsForOrder(prev => {
             const newSet = new Set(prev);
             newSet.delete(productId);
             return newSet;
         });
-    }, [cartItems]);
+
+        if (updatedCart.length === 0) {
+            setCartItems(updatedCart); // 로컬 상태 먼저 업데이트
+            deleteEntireOrder(); // 전체 주문 삭제 트리거
+        } else {
+            setCartItems(updatedCart);
+            showModal("Selected item removed.");
+        }
+    }, [cartItems, deleteEntireOrder, showModal]);
 
     const handleTotalCheckboxToggle = useCallback((e) => {
         if (e.target.checked) {
@@ -286,12 +323,18 @@ export default function CheckoutPage() {
             "선택된 상품들을 장바구니에서 삭제하시겠습니까?",
             () => {
                 const updatedCart = cartItems.filter(item => !selectedItemsForOrder.has(item.productId));
-                setCartItems(updatedCart);
                 setSelectedItemsForOrder(new Set()); // 선택 초기화
-                showModal("선택된 상품이 삭제되었습니다.");
+
+                if (updatedCart.length === 0) {
+                    setCartItems(updatedCart); // 로컬 상태 먼저 업데이트
+                    deleteEntireOrder(); // 전체 주문 삭제 트리거
+                } else {
+                    setCartItems(updatedCart);
+                    showModal("선택된 상품이 삭제되었습니다.");
+                }
             }
         );
-    }, [cartItems, selectedItemsForOrder, showModal, showConfirmationModal]);
+    }, [cartItems, selectedItemsForOrder, showModal, showConfirmationModal, deleteEntireOrder]); // deleteEntireOrder 의존성 추가
 
     // Step 1에서 메시지를 추가하는 함수
     const handleAddMessageForStep1 = async () => {

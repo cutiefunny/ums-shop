@@ -19,6 +19,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 const ORDER_MANAGEMENT_TABLE_NAME = process.env.DYNAMODB_TABLE_ORDERS || 'order-management';
 const HISTORY_TABLE_NAME = process.env.DYNAMODB_TABLE_HISTORY || 'history';
 const USER_TABLE_NAME = process.env.DYNAMODB_TABLE_USERS || 'user-management';
+const HISTORY_TABLE_TABLE_NAME = process.env.DYNAMODB_TABLE_HISTORY || 'history';
 
 /**
  * GET 요청 처리: 특정 주문 상세 데이터를 조회합니다.
