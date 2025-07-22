@@ -98,6 +98,17 @@ export default function OrderDetailPage() {
         }
     }, [order?.messages]); // 메시지 목록이 업데이트될 때마다 스크롤
 
+    // 'Order Confirmation' 버튼 비활성화 여부를 판단하는 useMemo
+    const isOrderConfirmed = useMemo(() => {
+        if (!order || !order.statusHistory || order.statusHistory.length === 0) {
+            return false; // 주문 정보나 상태 기록이 없으면 비활성화하지 않음
+        }
+        // 가장 최신 상태 기록의 newStatus를 확인
+        const latestStatus = order.statusHistory[order.statusHistory.length - 1];
+        return latestStatus.newStatus === 'Order(Confirmed)';
+    }, [order?.statusHistory]); // order.statusHistory가 변경될 때마다 재계산
+
+
     const handleItemPackingChange = (productId) => {
         setOrder(prevOrder => ({
             ...prevOrder,
@@ -393,14 +404,15 @@ export default function OrderDetailPage() {
 
     const handleOrderConfirmation = async () => {
         showAdminConfirmationModal(
-            "Packing Complete",
-            "모든 상품의 Packing이 완료되었음을 확정하시겠습니까? 주문 상태가 'Packed'로 변경됩니다.",
+            "Order Confirmation",
+            "주문을 확정하시겠습니까? 주문 상태가 'Order(Confirmed)'로 변경됩니다.", // 메시지 수정
             async () => {
                 setLoading(true);
                 try {
+                    // 모든 상품의 packingStatus를 true로 변경하는 로직은 그대로 유지 (요청에 따라)
                     const updatedOrderItems = order.orderItems.map(item => ({
                         ...item,
-                        packingStatus: true // 모든 상품의 packingStatus를 true로 변경
+                        packingStatus: true 
                     }));
 
                     const updatedStatusHistory = [
@@ -408,14 +420,13 @@ export default function OrderDetailPage() {
                         {
                             timestamp: new Date().toISOString(),
                             oldStatus: order.status,
-                            newStatus: 'Packed', // 새로운 상태: Packed
+                            newStatus: 'Order(Confirmed)', // 새로운 상태: Order(Confirmed)로 변경
                             changedBy: 'Admin',
                         }
                     ];
 
                     const updatedOrderData = {
                         orderItems: updatedOrderItems,
-                        status: 'Packed', // 주문 전체 상태도 Packed로 변경
                         statusHistory: updatedStatusHistory,
                     };
 
@@ -427,20 +438,20 @@ export default function OrderDetailPage() {
 
                     if (!response.ok) {
                         const errorData = await response.json();
-                        throw new Error(errorData.message || 'Failed to update packing status.');
+                        throw new Error(errorData.message || 'Failed to confirm order status.'); // 메시지 수정
                     }
 
                     // 로컬 상태 업데이트
                     setOrder(prevOrder => ({
                         ...prevOrder,
                         orderItems: updatedOrderItems,
-                        status: 'Packed',
+                        status: 'Order(Confirmed)', // 로컬 상태도 Order(Confirmed)로 변경
                         statusHistory: updatedStatusHistory,
                     }));
-                    showAdminNotificationModal('Packing status updated to "Packed" successfully!');
+                    showAdminNotificationModal('Order status updated to "Order(Confirmed)" successfully!'); // 메시지 수정
                 } catch (err) {
-                    console.error("Error updating packing status:", err);
-                    showAdminNotificationModal(`Failed to update packing status: ${err.message}`);
+                    console.error("Error confirming order status:", err); // 메시지 수정
+                    showAdminNotificationModal(`Failed to confirm order status: ${err.message}`); // 메시지 수정
                 } finally {
                     setLoading(false);
                 }
@@ -750,10 +761,18 @@ export default function OrderDetailPage() {
                       </button>
                   </div>
                   <div className={styles.actionButtonsGroup}> {/* Download and Save buttons group */}
-                      <button onClick={handleDownload} className={styles.saveButton}>
+                      <button 
+                          onClick={handleDownload} 
+                          className={styles.saveButton}
+                      >
                           Download
                       </button>
-                      <button onClick={handleOrderConfirmation} className={styles.saveButton}>
+                      <button 
+                          onClick={handleOrderConfirmation} 
+                          className={styles.saveButton}
+                          disabled={isOrderConfirmed} // isOrderConfirmed 값에 따라 버튼 활성화/비활성화
+                          title={isOrderConfirmed ? "주문이 이미 확정되었습니다." : "주문 확정"} // 툴팁 추가
+                      >
                           Order Confirmation
                       </button>
                   </div>

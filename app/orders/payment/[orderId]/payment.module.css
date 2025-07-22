@@ -1,230 +1,313 @@
 /* app/orders/payment/[orderId]/payment.module.css */
-
 .pageContainer {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: #fff;
-  padding-bottom: 70px; /* For BottomNav if used */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #fff;
+    color: #333;
+    font-family: 'Inter', sans-serif;
+    padding-bottom: 80px; /* Footer 높이만큼 여백 추가 */
 }
 
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  position: sticky;
-  top: 0;
-  background-color: white;
-  z-index: 10;
-  border-bottom: 1px solid #f1f3f5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
-.title {
-  font-size: 1.2rem;
-  font-weight: 600;
+.sectionDivider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 10px 0;
 }
 
 .iconButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  padding: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px; /* Rounded corners */
+    transition: background-color 0.2s ease;
+}
+
+.iconButton:hover {
+    background-color: #f0f0f0;
+}
+
+.title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
 }
 
 .mainContent {
-  padding: 16px;
-  flex-grow: 1; /* Allow content to grow */
+    flex-grow: 1;
+    padding: 20px;
+    padding-top: 10px; /* 상단 여백 줄임 */
 }
 
-.loadingSpinner {
-  width: 48px;
-  height: 48px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.emptyMessage {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: calc(100vh - 200px); /* Adjust height as needed */
-  color: #868e96;
-  font-size: 1rem;
-}
-
-.shopNowButton {
-  background-color: #f5a623;
-  border-color: #f5a623;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-  margin-top: 20px;
-  cursor: pointer;
-  font-weight: bold;
+.totalCount {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 15px;
+    padding-left: 5px; /* 이미지의 Total(2) 위치에 맞춤 */
 }
 
 .section {
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 16px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    background-color: #f8f8f8;
+    border-radius: 12px; /* Rounded corners */
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
-.sectionHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.sectionHeader h2,
-.section h2 { /* common for all section titles */
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #212529;
-  margin: 0;
-}
-
-/* General detail text style */
-.detailText {
-    font-size: 0.95rem;
-    color: #212529;
-    margin-bottom: 8px; /* Adjusted margin */
-}
-
-.detailText strong {
+.section h2 {
+    font-size: 1rem;
     font-weight: 600;
-    margin-right: 5px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    display: flex;
+    align-items: center;
+}
+
+.sectionTitleWithIcon {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.sectionIcon {
+    margin-right: 8px;
+    width: 20px;
+    height: 20px;
 }
 
 
 .summaryRow {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  font-size: 1rem;
-  color: #495057;
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    color: #555;
 }
 
-.summaryRow span:first-child {
-  font-weight: 500;
+.summaryRow:last-of-type {
+    border-bottom: none;
 }
 
-.finalTotalRow {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #212529;
-  border-top: 1px solid #e9ecef;
-  padding-top: 10px;
-  margin-top: 10px;
+.finalTotalDisplayRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 0 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #333;
+    border-top: 1px dashed #eee; /* 이미지와 유사한 점선 구분선 */
+    margin-top: 10px;
 }
 
-.finalTotalRow span:last-child {
-  color: #e57373; /* Highlight color for final price */
+.highlightPrice {
+    color: #FF5722; /* 주황색 강조 */
+    font-size: 1.2rem;
 }
 
-.currency {
-  font-size: 0.9em;
-  color: #868e96;
-  margin-left: 5px;
+.detailText {
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 5px;
 }
 
-.submitButton {
-  width: 95%;
-  padding: 14px;
-  border: none;
-  border-radius: 8px;
-  background-color: #f5a623;
-  color: white;
-  font-size: 1.1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+.messageContent {
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 15px;
+    max-height: 150px; /* 메시지 영역 높이 제한 */
+    overflow-y: auto; /* 스크롤 가능 */
 }
 
-.submitButton:disabled {
-  background-color: #e0e0e0;
-  color: #adb5bd;
-  cursor: not-allowed;
+.messageItem {
+    margin-bottom: 8px;
 }
 
-.submitButton:hover:not(:disabled) {
-  background-color: #d88e1a;
+.messageItem:last-child {
+    margin-bottom: 0;
 }
 
-.fixedFooter {
-  position: sticky; /* fixed 대신 sticky를 사용하여 스크롤 따라다니게 */
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: white;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
-  z-index: 10;
+.messageText {
+    font-size: 0.85rem;
+    color: #444;
+    margin: 0;
+    line-height: 1.4;
 }
 
-/* Payment Method Selection Button/Area */
+.messageText a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.messageText a:hover {
+    text-decoration: underline;
+}
+
+.deliveryNote {
+    font-size: 0.85rem;
+    color: #777;
+    margin-bottom: 10px;
+}
+
+.deliveryDate {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.noChangesNote {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #999;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
 .paymentMethodSelect {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: white;
-    border: 1px solid #ced4da;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
     border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 1rem;
     cursor: pointer;
-    transition: border-color 0.2s ease;
-    margin-top: 10px; /* Space from section title */
+    background-color: #fdfdfd;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .paymentMethodSelect:hover {
-    border-color: #f5a623;
+    border-color: #b0b0b0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .selectedMethodText {
-    font-weight: 600;
-    color: #212529;
+    font-size: 1rem;
+    color: #333;
+    font-weight: 500;
 }
 
 .placeholderText {
-    color: #868e96;
+    font-size: 1rem;
+    color: #888;
 }
 
-/* Responsive adjustments */
+.fixedFooter {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-around; /* 버튼들을 양쪽으로 분리 */
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #fff;
+    border-top: 1px solid #eee;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+    gap: 15px; /* 버튼 사이 간격 */
+}
+
+.submitButton {
+    flex: 1; /* 공간을 균등하게 차지 */
+    padding: 15px 20px;
+    background-color: #FFD700; /* 황금색 */
+    color: #333;
+    border: none;
+    border-radius: 10px; /* Rounded corners */
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
+}
+
+.submitButton:hover:not(:disabled) {
+    background-color: #e6c200;
+    box-shadow: 0 6px 12px rgba(255, 215, 0, 0.4);
+}
+
+.submitButton:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.backButtonFooter {
+    flex: 1; /* 공간을 균등하게 차지 */
+    padding: 15px 20px;
+    background-color: #e0e0e0; /* 회색 */
+    color: #333;
+    border: none;
+    border-radius: 10px; /* Rounded corners */
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.backButtonFooter:hover {
+    background-color: #c0c0c0;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.loadingSpinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000; /* Ensure it appears above other content */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width : 48px;
+    height: 48px;
+}
+
+/* 모바일 뷰포트 최적화 */
 @media (max-width: 768px) {
-  .mainContent {
-    padding: 0px;
-  }
-  .section {
-    padding: 15px;
-  }
-  .sectionHeader h2,
-  .section h2 {
-    font-size: 1rem;
-  }
-  .summaryRow,
-  .detailText {
-    font-size: 0.9rem;
-  }
-  .fixedFooter {
-    padding: 0px;
-    padding-bottom: calc(10px + env(safe-area-inset-bottom));
-  }
-  .highlightPrice {
-    font-size: 1rem;
-  }
+    .mainContent {
+        padding: 15px;
+    }
+
+    .section {
+        padding: 15px;
+    }
+
+    .header {
+        padding: 10px 15px;
+    }
+
+    .title {
+        font-size: 1rem;
+    }
+
+    .submitButton, .backButtonFooter {
+        font-size: 1rem;
+        padding: 12px 15px;
+    }
 }

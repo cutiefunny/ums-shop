@@ -409,6 +409,12 @@
   background-color: #333;
 }
 
+.saveButton:disabled {
+  background-color: #e0e0e0;
+  color: #adb5bd;
+  cursor: not-allowed;
+}
+
 /* Helper styles for error messages */
 .errorText {
   color: red;

@@ -3,7 +3,20 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+// import Image from 'next/image'; // Image 컴포넌트 대신 <img> 태그를 사용하므로 더 이상 필요 없음
 import styles from './payment.module.css'; // 새로운 CSS 파일 임포트
+
+// 엑셀 다운로드 라이브러리 임포트 (xlsx 대신 exceljs 사용)
+import ExcelJS from 'exceljs'; // exceljs 임포트
+import { saveAs } from 'file-saver'; // file-saver는 계속 사용
+import moment from 'moment'; // 날짜 형식을 위해 moment 사용
+
+// DynamoDB 관련 import (클라이언트 컴포넌트에서 직접 접근)
+// WARN: 클라이언트 컴포넌트에서 AWS 자격 증명을 직접 사용하는 것은 보안상 위험합니다.
+// 프로덕션 환경에서는 반드시 Next.js API Routes를 통해 서버 사이드에서 통신하도록 리팩토링하세요.
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useModal } from '@/contexts/ModalContext';
 import PaymentMethodSelectionModal from '@/components/PaymentMethodSelectionModal'; // PaymentMethodSelectionModal 임포트
@@ -160,22 +173,38 @@ export default function PaymentPage() {
     const shippingFee = orderDetail.shippingFee || 20; // 실제 배송비가 없으면 기본값 20 사용
     const finalTotalPrice = productPriceTotal + shippingFee + (orderDetail.tax || 0);
 
+    // 이미지에 맞춰 상품명 요약
+    const productSummary = orderDetail.orderItems.length > 0
+        ? `${orderDetail.orderItems[0].name} x ${orderDetail.orderItems.reduce((sum, item) => sum + item.quantity, 0)}`
+        : '상품 없음';
+
     return (
         <div className={styles.pageContainer}>
             <header className={styles.header}>
                 <button onClick={() => router.back()} className={styles.iconButton}>
                     <BackIcon />
                 </button>
-                <h1 className={styles.title}>Final Payment</h1>
+                <h1 className={styles.title}>Payment</h1> {/* Title changed to "Payment" */}
                 <div style={{ width: '24px' }}></div>
             </header>
 
             <main className={styles.mainContent}>
+                {/* Total(2) */}
+                <div className={styles.totalCount}>Total({orderDetail.orderItems.length})</div>
+
                 {/* Order Summary Section */}
                 <section className={styles.section}>
-                    <h2>Order Summary</h2>
+                    <h2 className={styles.sectionTitleWithIcon}>
+                        <img src="/images/cart.png" alt="Order Summary Icon" width={20} height={20} className={styles.sectionIcon} />
+                        Order Summary
+                    </h2>
                     <div className={styles.summaryRow}>
-                        <span>Product Price</span>
+                        <span>{productSummary}</span>
+                        <span>${productPriceTotal.toFixed(2)}</span>
+                    </div>
+                    <hr className={styles.sectionDivider} />
+                    <div className={styles.summaryRow}>
+                        <span>Subtotal</span>
                         <span>${productPriceTotal.toFixed(2)}</span>
                     </div>
                     <div className={styles.summaryRow}>
@@ -188,64 +217,82 @@ export default function PaymentPage() {
                             <span>${orderDetail.tax.toFixed(2)}</span>
                         </div>
                     )}
-                    <div className={styles.totalSummaryDivider}></div>
-                    <div className={`${styles.summaryRow} ${styles.finalTotalRow}`}>
-                        <span>Total Price</span>
-                        <span className={styles.highlightPrice}>${finalTotalPrice.toFixed(2)}</span>
+                    <div className={styles.finalTotalDisplayRow}>
+                        <span>Final Total</span>
+                        <span className={styles.highlightPrice}>${finalTotalPrice.toFixed(2)} (USD)</span>
                     </div>
                 </section>
 
                 {/* Delivery Details Section (Readonly) */}
                 <section className={styles.section}>
-                    <h2>Delivery Details</h2>
+                    <h2 className={styles.sectionTitleWithIcon}>
+                        <img src="/images/Delivery.png" alt="Delivery Icon" width={20} height={20} className={styles.sectionIcon} />
+                        Delivery Details
+                    </h2>
                     <div className={styles.detailText}>
-                        <strong>Option:</strong> {orderDetail.deliveryDetails.option === 'onboard' ? 'Onboard Delivery' : 'Alternative Pickup Location'}
+                        {orderDetail.deliveryDetails.option === 'onboard' ? (
+                            <>
+                                {orderDetail.deliveryDetails.portName}
+                                <br />
+                                {orderDetail.deliveryDetails.expectedShippingDate}
+                            </>
+                        ) : (
+                            <>
+                                {orderDetail.deliveryDetails.address}
+                                <br />
+                                {orderDetail.deliveryDetails.postalCode}
+                            </>
+                        )}
                     </div>
-                    {orderDetail.deliveryDetails.option === 'onboard' ? (
-                        <>
-                            <div className={styles.detailText}>
-                                <strong>Port Name:</strong> {orderDetail.deliveryDetails.portName}
-                            </div>
-                            <div className={styles.detailText}>
-                                <strong>Expected Shipping Date:</strong> {orderDetail.deliveryDetails.expectedShippingDate}
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <div className={styles.detailText}>
-                                <strong>Address:</strong> {orderDetail.deliveryDetails.address}
-                            </div>
-                            <div className={styles.detailText}>
-                                <strong>Postal Code:</strong> {orderDetail.deliveryDetails.postalCode}
-                            </div>
-                        </>
-                    )}
-                    {/* 요청사항 필드는 orderDetail에 userMessage로 존재할 수 있습니다. */}
-                    {orderDetail.messages && orderDetail.messages.some(msg => msg.sender === 'User' && msg.text) && (
-                         <div className={styles.detailText}>
-                             <strong>User Message:</strong> {orderDetail.messages.filter(msg => msg.sender === 'User' && msg.text).map(msg => msg.text).join('; ')}
-                         </div>
-                    )}
                 </section>
 
-                {/* Payment Method Section */}
+                {/* Message Section */}
                 <section className={styles.section}>
-                    <h2>Payment Method</h2>
-                    <div className={styles.paymentMethodSelect} onClick={() => setIsPaymentModalOpen(true)}>
-                        {selectedPaymentMethod ? (
-                            <span className={styles.selectedMethodText}>
-                                {selectedPaymentMethod === 'paypal' ? 'PayPal' : 'Pay in Cash'}
-                            </span>
+                    <h2 className={styles.sectionTitleWithIcon}>
+                        <img src="/images/bell.png" alt="Message Icon" width={20} height={20} className={styles.sectionIcon} />
+                        Message
+                    </h2>
+                    <div className={styles.messageContent}>
+                        {orderDetail.messages && orderDetail.messages.length > 0 ? (
+                            orderDetail.messages.map((msg, index) => (
+                                <div key={index} className={styles.messageItem}>
+                                    {msg.text && msg.sender === 'Admin' && <p className={styles.messageText}>→ {msg.text}</p>}
+                                    {msg.imageUrl && msg.sender === 'Admin' && <p className={styles.messageText}>→ <a href={msg.imageUrl} target="_blank" rel="noopener noreferrer">image.jpg</a></p>}
+                                </div>
+                            ))
                         ) : (
-                            <span className={styles.placeholderText}>Select Payment Method</span>
+                            <p className={styles.messageText}>No messages.</p>
                         )}
-                        <ChevronDown />
                     </div>
                 </section>
+
+                {/* Estimated Delivery Date Section */}
+                <section className={styles.section}>
+                    <h2 className={styles.sectionTitleWithIcon}>
+                        <img src="/images/Caret Down.png" alt="Estimated Delivery Icon" width={20} height={20} className={styles.sectionIcon} />
+                        Estimated Delivery Date
+                    </h2>
+                    <p className={styles.deliveryNote}>
+                        Delays may occur due to changes in schedules.
+                    </p>
+                    <div className={styles.deliveryDate}>
+                        → {orderDetail.shippingDetails?.estimatedDelivery || 'N/A'}
+                    </div>
+                </section>
+
+                <p className={styles.noChangesNote}>
+                    No changes can be made at this stage.
+                </p>
             </main>
 
-            {/* Fixed Footer for Pay button */}
+            {/* Fixed Footer for Pay button and Back button */}
             <footer className={styles.fixedFooter}>
+                <button
+                    onClick={() => router.back()}
+                    className={styles.backButtonFooter} // 새로운 스타일 적용
+                >
+                    Back
+                </button>
                 <button
                     onClick={handlePayment}
                     className={styles.submitButton}
