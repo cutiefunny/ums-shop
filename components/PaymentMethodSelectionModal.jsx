@@ -21,11 +21,11 @@ export default function PaymentMethodSelectionModal({ isOpen, onClose, onSelectM
                         PayPal
                     </button>
                     <button
-                        onClick={() => onSelectMethod('Pay in cash')}
+                        onClick={() => onSelectMethod('Pay in Cash')}
                         className={styles.paymentMethodButton}
                     >
                         <img src="/images/file.png" alt="Cash on Delivery" className={styles.paymentIcon} />
-                        Pay in cash
+                        Pay in Cash
                     </button>
                 </div>
                 {/* Optional: Add a close button if needed */}
