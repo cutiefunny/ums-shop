@@ -427,19 +427,28 @@ export default function PaymentPage() {
             </main>
 
             <footer className={styles.fixedFooter}>
-                <button
-                    onClick={() => router.back()}
-                    className={styles.backButtonFooter}
-                >
-                    Cancel
-                </button>
-                <button
-                    onClick={handlePayButtonClick}
-                    className={styles.submitButton}
-                    disabled={loading}
-                >
-                    Pay
-                </button>
+                { orderDetail.statusHistory && orderDetail.statusHistory.length > 0 && orderDetail.statusHistory[orderDetail.statusHistory.length - 1].newStatus === 'Payment(Request)' && (
+                    <div className={styles.paymentRequestNote}>
+                        Wait for admin confirmation
+                    </div>
+                )}
+                { orderDetail.statusHistory && orderDetail.statusHistory.length > 0 && orderDetail.statusHistory[orderDetail.statusHistory.length - 1].newStatus === 'Payment(Confirmed)' && (
+                    <>
+                        <button
+                        onClick={() => router.back()}
+                        className={styles.backButtonFooter}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handlePayButtonClick}
+                            className={styles.submitButton}
+                            disabled={loading}
+                        >
+                            Pay
+                        </button>
+                    </>
+                )}
             </footer>
 
             <PaymentMethodSelectionModal

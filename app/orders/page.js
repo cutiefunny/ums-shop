@@ -25,7 +25,7 @@ export default function OrdersPage() {
   const [error, setError] = useState(null);
 
   const [activeStatusTab, setActiveStatusTab] = useState('Order'); // Order, Payment, Delivered
-  const [activeSubFilter, setActiveSubFilter] = useState('All'); // Order Request, Order Confirmed, Paypal, Pay in Cash, EMS, Delivered
+  const [activeSubFilter, setActiveSubFilter] = useState('All'); // Order Request, Order Confirmed, Payment Request, Payment Confirmed, Paypal, Pay in Cash, Delivered
 
   const [showPaymentDetailModal, setShowPaymentDetailModal] = useState(false);
   const [selectedPaymentOrder, setSelectedPaymentOrder] = useState(null);
@@ -87,17 +87,13 @@ export default function OrdersPage() {
       Delivered: 0,
     };
     allOrders.forEach(order => {
-      const status = order.status?.toLowerCase();
-      // 'order' 상태는 'Order' 탭에 포함
-      if (status === 'order' || status === 'ems') {
+      const latestStatus = order.statusHistory?.[order.statusHistory.length - 1]?.newStatus;
+      
+      if (latestStatus === 'Order(Request)' || latestStatus === 'Order(Confirmed)') {
         counts.Order++;
-      }
-      // 'paypal' 또는 'pay in cash' 상태는 'Payment' 탭에 포함
-      else if (status === 'paypal' || status === 'pay in cash') {
+      } else if (latestStatus === 'Payment(Request)' || latestStatus === 'Payment(Confirmed)' || latestStatus === 'Paypal' || latestStatus === 'Pay in Cash') {
         counts.Payment++;
-      }
-      // 'delivered' 상태는 'Delivered' 탭에 포함
-      else if (status === 'delivered') {
+      } else if (latestStatus === 'Delivered') {
         counts.Delivered++;
       }
     });
@@ -110,25 +106,23 @@ export default function OrdersPage() {
 
     // 탭 필터링
     filtered = filtered.filter(order => {
-      const status = order.status?.toLowerCase();
+      const latestStatus = order.statusHistory?.[order.statusHistory.length - 1]?.newStatus;
+
       if (activeStatusTab === 'Order') {
-        // 'Order' 탭에는 'order'와 'ems' 상태의 주문 포함
-        return status === 'order' || status === 'ems';
+        return latestStatus === 'Order(Request)' || latestStatus === 'Order(Confirmed)';
       } else if (activeStatusTab === 'Payment') {
-        // 'Payment' 탭에는 'paypal'과 'pay in cash' 상태의 주문 포함
-        return status === 'paypal' || status === 'pay in cash';
+        return latestStatus === 'Payment(Request)' || latestStatus === 'Payment(Confirmed)' || latestStatus === 'Paypal' || latestStatus === 'Pay in Cash';
       } else if (activeStatusTab === 'Delivered') {
-        return status === 'delivered';
+        return latestStatus === 'Delivered';
       }
-      return false; // 기본적으로 일치하지 않으면 필터링
+      return false;
     });
 
     // 서브 필터링
     if (activeSubFilter !== 'All') {
       filtered = filtered.filter(order => {
-        const status = order.statusHistory[order.statusHistory.length - 1].newStatus?.toLowerCase();
-        const subFilterLower = activeSubFilter.toLowerCase(); // 공백 제거
-        return status === subFilterLower;
+        const latestStatus = order.statusHistory?.[order.statusHistory.length - 1]?.newStatus;
+        return latestStatus === activeSubFilter;
       });
     }
 
@@ -138,10 +132,9 @@ export default function OrdersPage() {
   // 서브 필터 옵션 정의
   const subFilterOptions = useMemo(() => {
     if (activeStatusTab === 'Order') {
-      // 'Order' 탭에는 'Order(Request)'와 'Order(Confirmed)' 옵션 제공
       return ['All', 'Order(Request)', 'Order(Confirmed)'];
     } else if (activeStatusTab === 'Payment') {
-      return ['All', 'Paypal', 'pay in cash'];
+      return ['All', 'Payment(Request)', 'Payment(Confirmed)', 'Paypal', 'Pay in Cash']; // 모든 Payment 관련 상태 포함
     } else if (activeStatusTab === 'Delivered') {
       return ['All', 'Delivered'];
     }
@@ -162,24 +155,26 @@ export default function OrdersPage() {
       // 사용자 주문 상세 페이지로 이동 (예시 경로)
       router.push(`/orders/detail/${orderId}`);
     } else if (type === 'Payment') {
+      // payment 상세 페이지로 이동
+      router.push(`/orders/payment/${orderId}`);
       // 결제 상세 정보 바텀시트 노출
-      try {
-        const response = await fetch(`/api/admin/payment-tracking/${orderId}`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch payment details for order ${orderId}`);
-        }
-        const paymentDetails = await response.json();
-        setSelectedPaymentOrder(paymentDetails);
-        setShowPaymentDetailModal(true);
-        // PaymentInfoModal에 필요한 receivedBy, receivedDate, note 상태를 초기화
-        setReceivedBy(paymentDetails.receivedBy || '');
-        setReceivedDate(paymentDetails.receivedDate ? moment(paymentDetails.receivedDate).format('YYYY-MM-DD') : '');
-        setNote(paymentDetails.note || '');
+      // try {
+      //   const response = await fetch(`/api/admin/payment-tracking/${orderId}`);
+      //   if (!response.ok) {
+      //     throw new Error(`Failed to fetch payment details for order ${orderId}`);
+      //   }
+      //   const paymentDetails = await response.json();
+      //   setSelectedPaymentOrder(paymentDetails);
+      //   setShowPaymentDetailModal(true);
+      //   // PaymentInfoModal에 필요한 receivedBy, receivedDate, note 상태를 초기화
+      //   setReceivedBy(paymentDetails.receivedBy || '');
+      //   setReceivedDate(paymentDetails.receivedDate ? moment(paymentDetails.receivedDate).format('YYYY-MM-DD') : '');
+      //   setNote(paymentDetails.note || '');
         
-      } catch (err) {
-        console.error("Error fetching payment details:", err);
-        showModal(`결제 상세 정보를 불러오는 데 실패했습니다: ${err.message}`);
-      }
+      // } catch (err) {
+      //   console.error("Error fetching payment details:", err);
+      //   showModal(`결제 상세 정보를 불러오는 데 실패했습니다: ${err.message}`);
+      // }
     } else if (type === 'Delivered') {
       // 완료 화면 (임시로 알림 모달 사용)
       showModal(`주문 ${orderId} 배송 완료된 주문입니다.`);

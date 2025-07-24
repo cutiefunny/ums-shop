@@ -118,8 +118,8 @@
 .orderSummarySection,
 .messageSection,
 .noteSection {
-  flex-basis: 0; /* Allow flex items to shrink below their content size */
-  flex-grow: 1; /* Allow flex items to grow and take equal space */
+  flex-basis: 1; 
+  flex-grow: 1; 
   /* Remove fixed width if any */
 }
 
@@ -429,4 +429,88 @@
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 0.95rem;
+}
+
+/* 메시지, 노트, 상태 기록 섹션을 그룹화하는 컨테이너 */
+.messageAndNoteGroup {
+    display: flex;
+    flex-direction: row; /* 기본적으로는 수직으로 배치 */
+    gap: 20px;
+}
+
+/* 노트 섹션과 상태 기록 섹션을 가로로 배치하기 위한 컨테이너 */
+.noteAndStatusGroup {
+    display: flex;
+    flex-wrap: wrap; /* 내용이 많아지면 다음 줄로 넘어갈 수 있도록 설정 */
+    gap: 20px;
+    justify-content: space-between; /* 양 끝 정렬 */
+}
+
+.noteSection,
+.statusHistorySection {
+    flex: 1; /* 가용한 공간을 균등하게 분배 */
+    min-width: 300px; /* 최소 너비 설정 (모바일 등 작은 화면에서 줄바꿈 위함) */
+    /* 기존 .section 스타일이 적용되므로 패딩, 그림자 등은 그대로 유지됨 */
+}
+
+.statusHistorySection {
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.statusHistoryList {
+    max-height: 400px; /* 스크롤바를 위한 최대 높이 */
+    overflow-y: auto; /* 내용이 많아지면 스크롤바 생성 */
+    padding-right: 10px; /* 스크롤바 공간 확보 */
+}
+
+.statusHistoryItem {
+    background-color: #ffffff;
+    border: 1px solid #eeeeee;
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.statusHistoryItem:last-child {
+    margin-bottom: 0;
+}
+
+.statusHistoryTimestamp {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.statusHistoryChange {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #343a40;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.oldStatus {
+    color: #dc3545; /* 예전 상태는 빨간색 */
+}
+
+.arrow {
+    font-size: 1.1rem;
+    color: #6c757d;
+}
+
+.newStatus {
+    color: #28a745; /* 새 상태는 초록색 */
+    font-weight: bold;
+}
+
+.statusHistoryChangedBy {
+    font-size: 0.8rem;
+    color: #888;
+    text-align: right;
+    margin-top: 5px;
 }

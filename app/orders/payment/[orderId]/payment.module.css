@@ -285,6 +285,17 @@
     height: 48px;
 }
 
+.paymentRequestNote {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff3cd; /* Light yellow background */
+    color: #856404; /* Dark yellow text */
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
 /* 모바일 뷰포트 최적화 */
 @media (max-width: 768px) {
     .mainContent {

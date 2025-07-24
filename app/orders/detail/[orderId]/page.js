@@ -536,7 +536,7 @@ export default function CheckoutPage() {
                     {
                         timestamp: new Date().toISOString(),
                         oldStatus: orderDetail?.status || null,
-                        newStatus: 'Order(Confirmed)', // Reflect the new status
+                        newStatus: 'Payment(Request)', // Reflect the new status
                         changedBy: 'User',
                     }
                 ],
@@ -566,7 +566,7 @@ export default function CheckoutPage() {
             }
 
             // Redirect to the new payment page
-            showModal("주문이 성공적으로 확정되었습니다. 결제 페이지로 이동합니다.", () => {
+            showModal("결제 요청이 제출되었습니다. 결제 페이지로 이동합니다.", () => {
                 router.push(`/orders/payment/${orderId}`); // Redirect to the new payment page
             });
 
@@ -846,14 +846,23 @@ export default function CheckoutPage() {
                         <span className={`${styles.totalSummaryValue} ${styles.highlightPrice}`}>${finalTotalPrice.toFixed(2)}</span>
                     </div>
                 </div>
-                    <button
+                    {orderDetail?.statusHistory && orderDetail?.statusHistory.length > 0 && orderDetail?.statusHistory.slice(-1)[0]?.newStatus === "Order(Confirmed)" ? (
+                        <button
                         onClick={handleSubmitOrderReview}
                         className={styles.submitButton}
                         disabled={!arePricesAndDiscountsMatching || selectedItemsForOrder.size !== cartItems.length}
-                    >
-                        Send Order Confirmation
-                    </button>
-            </footer>
+                        >
+                            Send Order Confirmation
+                        </button>
+                    ) : (
+                        <button 
+                        className={`${styles.submitButton} ${styles.disabled}`}
+                        disabled={true}
+                        >
+                            Submit
+                        </button>
+                    )}
+                </footer>
 
             {showGuideModal && currentGuideStep < guideStepsContent.length && (
                 <GuideModal

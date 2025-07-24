@@ -100,15 +100,17 @@ export default function OrderDetailPage() {
         }
     }, [order?.messages]); // 메시지 목록이 업데이트될 때마다 스크롤
 
-    // 'Order Confirmation' 버튼 비활성화 여부를 판단하는 useMemo
-    const isOrderConfirmed = useMemo(() => {
+    // 'Order Confirmation' 버튼 활성화 여부를 판단하는 useMemo
+    const latestStatus = useMemo(() => {
         if (!order || !order.statusHistory || order.statusHistory.length === 0) {
-            return false; // 주문 정보나 상태 기록이 없으면 비활성화하지 않음
+            return false; // 주문 정보나 상태 기록이 없으면 비활성화
         }
         // 가장 최신 상태 기록의 newStatus를 확인
         const latestStatus = order.statusHistory[order.statusHistory.length - 1];
-        return latestStatus.newStatus === 'Order(Confirmed)';
+        return latestStatus.newStatus || false; // newStatus가 없으면 false 반환
     }, [order?.statusHistory]); // order.statusHistory가 변경될 때마다 재계산
+
+    console.log('Latest status:', latestStatus); // 디버깅용 로그
 
 
     const handleItemPackingChange = (productId) => {
@@ -483,6 +485,63 @@ export default function OrderDetailPage() {
         );
     };
 
+    const handlePaymentConfirmation = async () => {
+        showAdminConfirmationModal(
+            "Payment Confirmation",
+            "결제를 확정하시겠습니까? 주문 상태가 'Payment(Confirmed)'로 변경됩니다.",
+            async () => {
+                setLoading(true);
+                try {
+                    // 모든 상품의 packingStatus를 true로 변경하는 로직은 그대로 유지 (요청에 따라)
+                    const updatedOrderItems = order.orderItems.map(item => ({
+                        ...item,
+                        packingStatus: true 
+                    }));
+
+                    const updatedStatusHistory = [
+                        ...(order.statusHistory || []),
+                        {
+                            timestamp: new Date().toISOString(),
+                            oldStatus: order.status,
+                            newStatus: 'Payment(Confirmed)', // 새로운 상태: Payment(Confirmed)로 변경
+                            changedBy: 'Admin',
+                        }
+                    ];
+
+                    const updatedOrderData = {
+                        orderItems: updatedOrderItems,
+                        statusHistory: updatedStatusHistory,
+                    };
+
+                    const response = await fetch(`/api/orders/${order.orderId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedOrderData),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Failed to confirm order status.'); // 메시지 수정
+                    }
+
+                    // 로컬 상태 업데이트
+                    setOrder(prevOrder => ({
+                        ...prevOrder,
+                        orderItems: updatedOrderItems,
+                        status: 'Payment(Confirmed)', // 로컬 상태도 Payment(Confirmed)로 변경
+                        statusHistory: updatedStatusHistory,
+                    }));
+                    showAdminNotificationModal('Order status updated to "Payment(Confirmed)" successfully!'); // 메시지 수정
+                } catch (err) {
+                    console.error("Error confirming order status:", err); // 메시지 수정
+                    showAdminNotificationModal(`Failed to confirm order status: ${err.message}`); // 메시지 수정
+                } finally {
+                    setLoading(false);
+                }
+            }
+        );
+    };
+
     const handleSend = async () => {
         showAdminConfirmationModal(
             "Delivery Complete",
@@ -675,79 +734,101 @@ export default function OrderDetailPage() {
                     {/* <div className={styles.totalsSection}>...</div> */}
                 </section>
 
-                {/* 메시지 영역 */}
-                <section className={`${styles.section} ${styles.messageSection}`}>
-                    <h2 className={styles.sectionTitle}>MESSAGE</h2>
-                    <div className={styles.messageArea}>
-                        <div className={styles.messageThread}>
-                            {order.messages?.map(msg => ( // messages가 없을 경우를 대비하여 ?. 추가
-                                <div key={msg.id} className={`${styles.messageItem} ${msg.sender === 'Admin' ? styles.admin : styles.user}`}>
-                                    {/* 삭제 아이콘 (사용자 요청에 따라 제거됨) */}
-                                    {/* <button onClick={() => handleDeleteMessage(msg.id)} className={styles.deleteMessageButton}>
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                    </button> */}
-                                    <span className={styles.messageSender}>
-                                        {/* 발신자 텍스트 '관리자' 제거 (단순히 sender 표시) */}
-                                        {msg.sender} {msg.isNew && <span className={styles.newBadge}>NEW</span>}
-                                    </span>
-                                    {msg.text && <div className={styles.messageBubble}>{msg.text}</div>}
-                                    {msg.imageUrl && (
-                                        <img src={msg.imageUrl} alt="Attached" className={styles.messageImage} />
-                                    )}
-                                </div>
-                            ))}
-                            <div ref={messagesEndRef} /> {/* 메시지 하단으로 자동 스크롤을 위한 엘리먼트 */}
-                        </div>
-                        <div className={styles.messageInputArea}>
-                            <input
-                                type="file"
-                                accept="image/jpeg, image/png, image/webp"
-                                ref={fileInputRef}
-                                style={{ display: 'none' }} // 숨김
-                                onChange={handleImageChange}
-                            />
-                            <button onClick={handleImageAttachClick} className={styles.attachButton}>
-                                <img src="/images/imageBox.png" alt="Attach" />
-                            </button>
-                            <input
-                                type="text"
-                                placeholder={attachedImage ? `Image attached: ${attachedImage.name}` : "메시지를 작성해주세요."}
-                                value={newMessageText}
-                                onChange={(e) => setNewMessageText(e.target.value)}
-                                className={styles.messageInput}
-                                disabled={!!attachedImage} // 이미지가 첨부되면 텍스트 입력 비활성화
-                            />
-                            <button onClick={handleSendMessage} className={styles.sendButton}>
-                                전송
-                            </button>
-                        </div>
-                        {attachedImage && (
-                            <div style={{ padding: '10px', backgroundColor: '#f0f0f0', borderTop: '1px solid #ddd' }}>
-                                <p style={{ margin: '0', fontSize: '0.85rem' }}>첨부 이미지: {attachedImage.name}
-                                    <button onClick={() => setAttachedImage(null)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', marginLeft: '10px' }}>x</button>
-                                </p>
+                    {/* 메시지 영역 */}
+                    <section className={`${styles.section} ${styles.messageSection}`}>
+                        <h2 className={styles.sectionTitle}>MESSAGE</h2>
+                        <div className={styles.messageArea}>
+                            <div className={styles.messageThread}>
+                                {order.messages?.map(msg => ( // messages가 없을 경우를 대비하여 ?. 추가
+                                    <div key={msg.id} className={`${styles.messageItem} ${msg.sender === 'Admin' ? styles.admin : styles.user}`}>
+                                        {/* 삭제 아이콘 (사용자 요청에 따라 제거됨) */}
+                                        {/* <button onClick={() => handleDeleteMessage(msg.id)} className={styles.deleteMessageButton}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </button> */}
+                                        <span className={styles.messageSender}>
+                                            {/* 발신자 텍스트 '관리자' 제거 (단순히 sender 표시) */}
+                                            {msg.sender} {msg.isNew && <span className={styles.newBadge}>NEW</span>}
+                                        </span>
+                                        {msg.text && <div className={styles.messageBubble}>{msg.text}</div>}
+                                        {msg.imageUrl && (
+                                            <img src={msg.imageUrl} alt="Attached" className={styles.messageImage} />
+                                        )}
+                                    </div>
+                                ))}
+                                <div ref={messagesEndRef} /> {/* 메시지 하단으로 자동 스크롤을 위한 엘리먼트 */}
                             </div>
-                        )}
-                    </div>
-                </section>
+                            <div className={styles.messageInputArea}>
+                                <input
+                                    type="file"
+                                    accept="image/jpeg, image/png, image/webp"
+                                    ref={fileInputRef}
+                                    style={{ display: 'none' }} // 숨김
+                                    onChange={handleImageChange}
+                                />
+                                <button onClick={handleImageAttachClick} className={styles.attachButton}>
+                                    <img src="/images/imageBox.png" alt="Attach" />
+                                </button>
+                                <input
+                                    type="text"
+                                    placeholder={attachedImage ? `Image attached: ${attachedImage.name}` : "메시지를 작성해주세요."}
+                                    value={newMessageText}
+                                    onChange={(e) => setNewMessageText(e.target.value)}
+                                    className={styles.messageInput}
+                                    disabled={!!attachedImage} // 이미지가 첨부되면 텍스트 입력 비활성화
+                                />
+                                <button onClick={handleSendMessage} className={styles.sendButton}>
+                                    전송
+                                </button>
+                            </div>
+                            {attachedImage && (
+                                <div style={{ padding: '10px', backgroundColor: '#f0f0f0', borderTop: '1px solid #ddd' }}>
+                                    <p style={{ margin: '0', fontSize: '0.85rem' }}>첨부 이미지: {attachedImage.name}
+                                        <button onClick={() => setAttachedImage(null)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', marginLeft: '10px' }}>x</button>
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                    
+                    {/* Status History 영역 */}
+                        <section className={`${styles.section} ${styles.statusHistorySection}`}>
+                            <h2 className={styles.sectionTitle}>Status History</h2>
+                            {order.statusHistory && order.statusHistory.length > 0 ? (
+                                <div className={styles.statusHistoryList}>
+                                    {order.statusHistory.map((history, index) => (
+                                        <div key={index} className={styles.statusHistoryItem}>
+                                            <p className={styles.statusHistoryTimestamp}>{moment(history.timestamp).format('YYYY-MM-DD HH:mm')}</p>
+                                            <p className={styles.statusHistoryChange}>
+                                                <span className={styles.oldStatus}>{history.oldStatus || 'N/A'}</span>
+                                                <span className={styles.arrow}> &#8594; </span>
+                                                <span className={styles.newStatus}>{history.newStatus}</span>
+                                            </p>
+                                            <p className={styles.statusHistoryChangedBy}>by {history.changedBy || 'System'}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p>No status history available.</p>
+                            )}
+                        </section>
 
-                {/* 배송 메모 영역 (NOTE) */}
-                <section className={`${styles.section} ${styles.noteSection}`}>
-                    <h2 className={styles.sectionTitle}>NOTE</h2>
-                    <textarea
-                        value={order.note || ''} // note가 null일 경우 빈 문자열로 설정
-                        onChange={handleNoteChange}
-                        maxLength={500}
-                        placeholder="최대 500자까지 입력 가능합니다."
-                        className={styles.noteArea}
-                    />
-                    <p style={{ textAlign: 'right', fontSize: '0.8rem', color: '#666' }}>
-                        {order.note ? order.note.length : 0}/500 {/* order.note가 undefined일 경우 0으로 표시 */}
-                    </p>
-                </section>
+                        {/* 배송 메모 영역 (NOTE) */}
+                        <section className={`${styles.section} ${styles.noteSection}`}>
+                            <h2 className={styles.sectionTitle}>NOTE</h2>
+                            <textarea
+                                value={order.note || ''} // note가 null일 경우 빈 문자열로 설정
+                                onChange={handleNoteChange}
+                                maxLength={500}
+                                placeholder="최대 500자까지 입력 가능합니다."
+                                className={styles.noteArea}
+                            />
+                            <p style={{ textAlign: 'right', fontSize: '0.8rem', color: '#666' }}>
+                                {order.note ? order.note.length : 0}/500 {/* order.note가 undefined일 경우 0으로 표시 */}
+                            </p>
+                        </section>
             </div> {/* bottomSectionGroup 끝 */}
 
             {/* 하단 액션 버튼들 - Totals Section이 이 안으로 들어옴 */}
@@ -803,14 +884,26 @@ export default function OrderDetailPage() {
                         >
                             Download
                         </button>
-                        <button 
+                      {latestStatus === 'Order(Request)' && (
+                                              <button 
                             onClick={handleOrderConfirmation} 
                             className={styles.saveButton}
-                            disabled={isOrderConfirmed} // isOrderConfirmed 값에 따라 버튼 활성화/비활성화
-                            title={isOrderConfirmed ? "주문이 이미 확정되었습니다." : "주문 확정"} // 툴팁 추가
+                            disabled={latestStatus !== 'Order(Request)'} // latestStatus가 'Order(Request)'일 때만 활성화
+                            title={latestStatus === 'Order(Request)' ? "주문 확정" : "주문 확정은 Order(Request) 상태에서만 가능합니다."} // 툴팁 추가
                         >
                             Order Confirmation
                         </button>
+                      )}
+                      {latestStatus === 'Payment(Request)' && (
+                        <button 
+                            onClick={handlePaymentConfirmation} 
+                            className={styles.saveButton}
+                            disabled={latestStatus !== 'Payment(Request)'} // latestStatus가 'Payment(Request)'일 때만 활성화
+                            title={latestStatus === 'Payment(Request)' ? "결제 확정" : "결제 확정은 Payment(Request) 상태에서만 가능합니다."} // 툴팁 추가
+                        >
+                            Payment Confirmation
+                        </button>
+                    )}
                     </div>
                 </div>
             </div>
