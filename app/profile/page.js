@@ -296,7 +296,7 @@ export default function ProfilePage() {
         <h2 className={styles.sectionTitle}>Settings</h2>
         <ul className={styles.menuList}>
           <li>
-            <button className={styles.menuItem} onClick={() => router.push('/notifications')}>
+            <button className={styles.menuItem} onClick={() => router.push('/notification-settings')}>
               <span>Notifications</span>
               <ChevronRightIcon />
             </button>
