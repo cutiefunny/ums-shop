@@ -1,0 +1,195 @@
+.container {
+  padding: 0; /* 헤더가 전체 너비를 차지하도록 padding 제거 */
+  background-color: #f9f9f9;
+  min-height: 100vh;
+  font-family: 'Arial', sans-serif;
+}
+
+.headerContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.backButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.backIcon {
+  transform: rotate(90deg); /* 이미지를 시계방향으로 90도 회전하여 왼쪽 화살표로 만듦 */
+}
+
+.headerTitle {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+  flex-grow: 1; /* 제목이 가운데로 오도록 flex-grow 설정 */
+  text-align: center;
+  transform: translateX(-12px); /* 뒤로가기 버튼 공간만큼 조정 */
+}
+
+.markAllReadButton {
+  background: none;
+  border: none;
+  color: #2f80ed;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.markAllReadButton:hover {
+  background-color: #e6f0ff;
+}
+
+.notificationList {
+  list-style: none;
+  padding: 20px; /* 목록 전체에 패딩 추가 */
+  margin: 0;
+}
+
+.notificationItem {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  position: relative;
+}
+
+.notificationItem:hover {
+  background-color: #f0f0f0;
+}
+
+.unread {
+  border-left: 5px solid #2f80ed; /* Unread indicator color */
+}
+
+.notificationIcon {
+  margin-right: 15px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px; /* 아이콘 영역 크기 조정 */
+  height: 40px;
+  border-radius: 50%; /* 원형 아이콘 배경 */
+  background-color: #e6f0ff; /* 아이콘 배경색 */
+}
+
+.notificationContent {
+  flex-grow: 1;
+}
+
+.notificationMessage {
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 5px;
+  line-height: 1.4;
+  word-break: keep-all; /* 단어 단위로 줄바꿈 */
+}
+
+.notificationDate {
+  font-size: 11px;
+  color: #888;
+}
+
+.read .notificationMessage {
+  color: #666; /* Read messages can be slightly dimmer */
+}
+
+.read .notificationDate {
+  color: #aaa;
+}
+
+.unreadIndicator {
+  width: 8px;
+  height: 8px;
+  background-color: #2f80ed;
+  border-radius: 50%;
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.read .unreadIndicator {
+  display: none;
+}
+
+.noNotifications,
+.infoMessage,
+.errorMessage {
+  text-align: center;
+  color: #777;
+  padding: 50px 0;
+  font-size: 16px;
+}
+
+.errorMessage {
+  color: #d32f2f;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .headerContainer {
+    padding: 10px 15px;
+  }
+
+  .headerTitle {
+    font-size: 17px;
+    transform: translateX(-12px); /* 뒤로가기 버튼 공간만큼 조정 */
+  }
+
+  .markAllReadButton {
+    font-size: 13px;
+    padding: 3px 8px;
+  }
+
+  .notificationList {
+    padding: 15px;
+  }
+
+  .notificationItem {
+    padding: 12px;
+  }
+
+  .notificationIcon {
+    margin-right: 10px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .notificationMessage {
+    font-size: 14px;
+  }
+
+  .notificationDate {
+    font-size: 11px;
+  }
+
+  .unreadIndicator {
+    right: 10px;
+    width: 7px;
+    height: 7px;
+  }
+}

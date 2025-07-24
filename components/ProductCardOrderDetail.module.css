@@ -243,3 +243,9 @@
   height: 12px;
   margin-right: 10px;
 }
+
+.alternativeOfferLink {
+  text-decoration: none;
+  color: #2f80ed;
+  font-weight: bold;
+}

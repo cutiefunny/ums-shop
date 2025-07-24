@@ -1,4 +1,3 @@
-// app/admin/order-management/[orderId]/page.js
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -70,10 +69,13 @@ export default function OrderDetailPage() {
                 setError("Order not found.");
                 setOrder(null);
             } else {
-                // orderItems의 packingStatus에 기본값(false) 설정
+                // orderItems의 packingStatus, adminStatus, adminQuantity, alternativeOffer에 기본값 설정
                 const processedOrderItems = data.orderItems?.map(item => ({
                     ...item,
-                    packingStatus: item.packingStatus ?? false // packingStatus가 undefined 또는 null일 경우 false로 설정
+                    packingStatus: item.packingStatus ?? false, // packingStatus가 undefined 또는 null일 경우 false로 설정
+                    adminStatus: item.adminStatus ?? 'Available', // adminStatus 기본값
+                    adminQuantity: item.adminQuantity ?? item.quantity, // adminQuantity 기본값 (주문 수량)
+                    alternativeOffer: item.alternativeOffer ?? null, // alternativeOffer 기본값
                 })) || [];
                 setOrder({ ...data, orderItems: processedOrderItems }); // 조회된 항목으로 order 상태 업데이트
             }
@@ -121,9 +123,18 @@ export default function OrderDetailPage() {
     const handleAdminStatusChange = (productId, newStatus) => {
         setOrder(prevOrder => ({
             ...prevOrder,
-            orderItems: prevOrder.orderItems.map(item =>
-                item.productId === productId ? { ...item, adminStatus: newStatus } : item
-            ),
+            orderItems: prevOrder.orderItems.map(item => {
+                if (item.productId === productId) {
+                    // Alternative Offer로 변경될 경우 adminQuantity를 null로, 아닐 경우 alternativeOffer를 null로
+                    return {
+                        ...item,
+                        adminStatus: newStatus,
+                        adminQuantity: newStatus === 'Alternative Offer' ? null : (item.adminQuantity ?? item.quantity), // 기존 값 유지 또는 주문 수량으로 기본 설정
+                        // alternativeOffer: newStatus === 'Alternative Offer' ? (item.alternativeOffer ?? '') : null,
+                    };
+                }
+                return item;
+            }),
         }));
     };
 
@@ -133,6 +144,15 @@ export default function OrderDetailPage() {
             ...prevOrder,
             orderItems: prevOrder.orderItems.map(item =>
                 item.productId === productId ? { ...item, adminQuantity: isNaN(value) ? '' : value } : item
+            ),
+        }));
+    };
+
+    const handleAlternativeOfferChange = (productId, e) => {
+        setOrder(prevOrder => ({
+            ...prevOrder,
+            orderItems: prevOrder.orderItems.map(item =>
+                item.productId === productId ? { ...item, alternativeOffer: e.target.value } : item
             ),
         }));
     };
@@ -172,6 +192,7 @@ export default function OrderDetailPage() {
         setError(null);
 
         const currentMessages = order.messages || [];
+        // 메시지 ID 생성 로직 (현재 가장 큰 ID + 1)
         const newMessageId = currentMessages.length > 0 ? Math.max(...currentMessages.map(m => m.id)) + 1 : 1;
 
         const newMessage = {
@@ -180,7 +201,7 @@ export default function OrderDetailPage() {
             text: newMessageText.trim() || null,
             imageUrl: null,
             timestamp: new Date().toISOString(),
-            isNew: false, // 새로 보낸 메시지는 New 뱃지 없음
+            isNew: false, // 새로 보낸 메시지는 New 뱃지 없음 (관리자 발신)
         };
 
         // 이미지 첨부 시 S3에 업로드 (실제 S3 API Route 구현 필요)
@@ -222,7 +243,7 @@ export default function OrderDetailPage() {
         setOrder(prevOrder => ({
             ...prevOrder,
             messages: updatedMessages,
-            userId: prevOrder.userId,
+            userId: prevOrder.userId, // userId는 유지
         }));
 
         setNewMessageText('');
@@ -335,7 +356,7 @@ export default function OrderDetailPage() {
 
         // 2. 개별 상품 목록 시트
         const productSheet = workbook.addWorksheet('Order Items');
-        const productHeaders = ['순서', '코드넘버', '상품명', '주문 수량', '개별 금액', '총액'];
+        const productHeaders = ['순서', '코드넘버', '상품명', '주문 수량', '개별 금액', '총액', '관리자 상태', '관리자 수량', '대체 상품 ID']; // 헤더에 새 필드 추가
         productSheet.addRow(productHeaders); // 헤더 추가
 
         const productData = order.orderItems?.map((item, index) => [
@@ -344,7 +365,10 @@ export default function OrderDetailPage() {
             item.name,
             item.quantity,
             parseFloat(item.unitPrice?.toFixed(2)), // Excel에서 숫자로 인식하도록 변환
-            parseFloat((item.unitPrice * item.quantity)?.toFixed(2)) // Excel에서 숫자로 인식하도록 변환
+            parseFloat((item.unitPrice * item.quantity)?.toFixed(2)), // Excel에서 숫자로 인식하도록 변환
+            item.adminStatus ?? '', // 관리자 상태
+            item.adminQuantity ?? '', // 관리자 수량
+            item.alternativeOffer ?? '', // 대체 상품 ID
         ]);
 
         (productData || []).forEach(row => {
@@ -623,13 +647,25 @@ export default function OrderDetailPage() {
                                             <option key={option} value={option}>{option}</option>
                                         ))}
                                     </select>
-                                    <input
-                                        type="number"
-                                        value={item.adminQuantity}
-                                        onChange={(e) => handleAdminQuantityChange(item.productId, e)}
-                                        className={styles.adminQuantityInput}
-                                        min="0"
-                                    />
+                                    {/* adminStatus에 따라 다른 입력 필드 렌더링 */}
+                                    {item.adminStatus === 'Alternative Offer' ? (
+                                        <input
+                                            type="text" // product ID는 문자열일 수 있으므로 text 타입
+                                            value={item.alternativeOffer || ''}
+                                            onChange={(e) => handleAlternativeOfferChange(item.productId, e)}
+                                            placeholder="Alternative Product ID"
+                                            className={styles.alternativeOfferInput}
+                                        />
+                                    ) : (
+                                        <input
+                                            type="number"
+                                            value={item.adminQuantity}
+                                            onChange={(e) => handleAdminQuantityChange(item.productId, e)}
+                                            disabled={item.adminStatus === 'Out of Stock'} // Out of Stock 상태에서는 입력 비활성화
+                                            className={styles.adminQuantityInput}
+                                            min="0"
+                                        />
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -702,7 +738,7 @@ export default function OrderDetailPage() {
                 <section className={`${styles.section} ${styles.noteSection}`}>
                     <h2 className={styles.sectionTitle}>NOTE</h2>
                     <textarea
-                        value={order.note}
+                        value={order.note || ''} // note가 null일 경우 빈 문자열로 설정
                         onChange={handleNoteChange}
                         maxLength={500}
                         placeholder="최대 500자까지 입력 가능합니다."
@@ -752,30 +788,30 @@ export default function OrderDetailPage() {
                 </div>
 
                 <div className={styles.ButtonGroupContainer}> {/* Download and Save buttons group */}
-                  <div className={styles.actionButtonsGroup}> {/* Download and Save buttons group */}
-                      <button onClick={handleSave} className={styles.saveButton}>
-                          Save
-                      </button>
-                      <button onClick={handleSend} className={styles.saveButton}>
-                          Send
-                      </button>
-                  </div>
-                  <div className={styles.actionButtonsGroup}> {/* Download and Save buttons group */}
-                      <button 
-                          onClick={handleDownload} 
-                          className={styles.saveButton}
-                      >
-                          Download
-                      </button>
-                      <button 
-                          onClick={handleOrderConfirmation} 
-                          className={styles.saveButton}
-                          disabled={isOrderConfirmed} // isOrderConfirmed 값에 따라 버튼 활성화/비활성화
-                          title={isOrderConfirmed ? "주문이 이미 확정되었습니다." : "주문 확정"} // 툴팁 추가
-                      >
-                          Order Confirmation
-                      </button>
-                  </div>
+                    <div className={styles.actionButtonsGroup}> {/* Download and Save buttons group */}
+                        <button onClick={handleSave} className={styles.saveButton}>
+                            Save
+                        </button>
+                        <button onClick={handleSend} className={styles.saveButton}>
+                            Send
+                        </button>
+                    </div>
+                    <div className={styles.actionButtonsGroup}> {/* Download and Save buttons group */}
+                        <button 
+                            onClick={handleDownload} 
+                            className={styles.saveButton}
+                        >
+                            Download
+                        </button>
+                        <button 
+                            onClick={handleOrderConfirmation} 
+                            className={styles.saveButton}
+                            disabled={isOrderConfirmed} // isOrderConfirmed 값에 따라 버튼 활성화/비활성화
+                            title={isOrderConfirmed ? "주문이 이미 확정되었습니다." : "주문 확정"} // 툴팁 추가
+                        >
+                            Order Confirmation
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

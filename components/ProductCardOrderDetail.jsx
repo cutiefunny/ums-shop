@@ -74,6 +74,30 @@ export default function ProductCardOrderDetail({ item, onUpdateQuantity, onRemov
     );
   }
 
+  // adminStatus에 따른 수량/대체 상품 정보 표시
+  const displayQuantityOrAlternative = () => {
+    if (item.adminStatus === 'Alternative Offer') {
+      return (
+        <Link href={`/products/detail/${item.alternativeOffer}`} className={styles.alternativeOfferLink}>
+          <span className={styles.alternativeOfferText}>
+            {item.alternativeOffer || 'N/A'}
+          </span>
+        </Link>
+      );
+    } else if (item.adminStatus !== 'Out of Stock') {
+      return (
+        <span>
+          {item.adminStatus === 'Limited' ? (
+            `max ${item.adminQuantity || 'N/A'}`
+          ) : (
+            `${item.adminQuantity || 'N/A'}`
+          )}
+        </span>
+      );
+    }
+    return null; // Out of Stock일 경우 표시하지 않음
+  };
+
   return (
     <div className={styles.cartItemCard}>
         <div className={styles.itemImageContainer}>
@@ -92,7 +116,6 @@ export default function ProductCardOrderDetail({ item, onUpdateQuantity, onRemov
                 <h3 className={styles.itemName}>{item.name}</h3>
                 </Link>
                 
-
                     <p className={styles.itemOriginalPrice}>${originalUnitPrice.toFixed(2)}</p>
                     <p className={styles.itemDiscountedPrice}>
                     <span className={styles.discountBadge}>{discountPercentage}%</span>
@@ -124,15 +147,7 @@ export default function ProductCardOrderDetail({ item, onUpdateQuantity, onRemov
             )}
               {item.adminStatus || 'N/A'}
             </span>
-            {item.adminStatus !== 'Out of Stock' && (
-              <>
-                {item.adminStatus === 'Limited' ? (
-                  <span>max {item.adminQuantity || 'N/A'}</span>
-                ) : (
-                  <span>{item.adminQuantity || 'N/A'}</span>
-                )}
-              </>
-            )}
+            {displayQuantityOrAlternative()} {/* 새로운 함수 호출 */}
         </div>
     </div>
   );
