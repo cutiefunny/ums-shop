@@ -36,21 +36,23 @@ export default function OrderInfoSection({ selectedDate, selectedDateOrders, d7O
         ) : (orders || []).length === 0 ? ( // orders가 null/undefined일 경우를 대비하여 다시 확인
           <p>해당 날짜에 오더가 없습니다.</p>
         ) : (
+          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {displayOrders.map(order => (
-              <li key={order.orderId} style={{ marginBottom: '10px', paddingBottom: '5px', borderBottom: '1px dashed #eee' }}>
-                <p style={{ margin: 0, fontWeight: 'bold' }}>주문번호: {order.orderId}</p>
-                <p style={{ margin: 0 }}>고객명: {order.userName}</p>
-                <p style={{ margin: 0 }}>상태: {order.status}</p>
-                <p style={{ margin: 0 }}>배송일: {formatDeliveryDate(order.shippingDetails)}</p>
-              </li>
+            <li key={order.orderId} style={{ marginBottom: '10px', paddingBottom: '5px', borderBottom: '1px dashed #eee' }}>
+              <p style={{ margin: 0, fontWeight: 'bold' }}>주문번호: {order.orderId}</p>
+              <p style={{ margin: 0 }}>고객명: {order.userName}</p>
+              <p style={{ margin: 0 }}>상태: {order.status}</p>
+              <p style={{ margin: 0 }}>배송일: {formatDeliveryDate(order.shippingDetails)}</p>
+            </li>
             ))}
             {orders.length > 5 && (
-              <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: '0.9em', color: '#666' }}>
-                [더보기] {orders.length - 5}개 항목 더 있음
-              </p>
+            <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: '0.9em', color: '#666' }}>
+              [더보기] {orders.length - 5}개 항목 더 있음
+            </p>
             )}
           </ul>
+          </div>
         )}
       </Card>
     );

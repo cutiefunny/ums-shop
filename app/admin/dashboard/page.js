@@ -26,9 +26,6 @@ export default function DashboardPage() {
         <div style={{ flex: '2 1 600px', minWidth: '400px' }}> {/* 캘린더 영역 */}
           <OrderCalendar />
         </div>
-        <div style={{ flex: '1 1 300px', minWidth: '300px' }}> {/* 오더 정보 영역 */}
-          <OrderInfoSection />
-        </div>
       </div>
     </div>
   );

@@ -16,6 +16,8 @@ export default function OrderCalendar() {
   const [d7Orders, setD7Orders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [errorOrders, setErrorOrders] = useState(null);
+  // 각 날짜별 주문 건수를 저장할 상태 추가
+  const [ordersByDay, setOrdersByDay] = useState({});
 
   const firstDayOfMonth = moment().year(currentYear).month(currentMonth).startOf('month');
   const daysInMonth = moment().year(currentYear).month(currentMonth).daysInMonth();
@@ -53,12 +55,14 @@ export default function OrderCalendar() {
     if (!allOrders.length) {
       setSelectedDateOrders([]);
       setD7Orders([]);
+      setOrdersByDay({}); // 초기화
       return;
     }
 
     const today = moment().startOf('day');
     const selectedMoment = moment(selectedDate).startOf('day');
-    const d7Moment = moment().add(7, 'days').startOf('day');
+    // D-7 오더를 위해 오늘부터 7일 후까지의 범위를 설정
+    const sevenDaysLater = moment().add(7, 'days').endOf('day'); // 7일 후의 끝까지 포함
 
     const filteredSelectedDateOrders = allOrders.filter(order => {
       // order.date는 ISO 문자열 (YYYY-MM-DDTHH:mm:ss.sssZ)이라고 가정
@@ -77,23 +81,37 @@ export default function OrderCalendar() {
         deliveryDate = moment(estimatedDelivery).startOf('day');
       }
 
-      return deliveryDate && deliveryDate.isSame(d7Moment, 'day');
+      // 배송일이 오늘부터 7일 후까지의 범위에 포함되는지 확인
+      return deliveryDate && deliveryDate.isSameOrAfter(today, 'day') && deliveryDate.isSameOrBefore(sevenDaysLater, 'day');
     });
+
+    // 월별 주문 건수를 계산
+    const currentMonthOrders = allOrders.filter(order => {
+      const orderDate = moment(order.date);
+      return orderDate.month() === currentMonth && orderDate.year() === currentYear;
+    });
+
+    const counts = currentMonthOrders.reduce((acc, order) => {
+      const day = moment(order.date).date();
+      acc[day] = (acc[day] || 0) + 1;
+      return acc;
+    }, {});
 
     setSelectedDateOrders(filteredSelectedDateOrders);
     setD7Orders(filteredD7Orders);
+    setOrdersByDay(counts); // 상태 업데이트
 
-  }, [allOrders, selectedDate]);
+  }, [allOrders, selectedDate, currentMonth, currentYear]); // currentMonth, currentYear 의존성 추가
 
   // 컴포넌트 마운트 시 모든 주문 데이터 가져오기
   useEffect(() => {
     fetchAllOrders();
   }, [fetchAllOrders]);
 
-  // allOrders 또는 selectedDate가 변경될 때마다 주문 필터링
+  // allOrders 또는 selectedDate, currentMonth, currentYear가 변경될 때마다 주문 필터링
   useEffect(() => {
     filterAndSetOrders();
-  }, [allOrders, selectedDate, filterAndSetOrders]);
+  }, [allOrders, selectedDate, currentMonth, currentYear, filterAndSetOrders]);
 
 
   const goToPreviousMonth = () => {
@@ -139,6 +157,7 @@ export default function OrderCalendar() {
 
   return (
     <>
+    <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
       <Card title="오더 캘린더" style={{ flexGrow: 1 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <button onClick={goToPreviousMonth} style={{ padding: '8px 12px', cursor: 'pointer' }}>&lt;</button>
@@ -160,14 +179,45 @@ export default function OrderCalendar() {
                 cursor: day ? 'pointer' : 'default',
                 opacity: day ? 1 : 0.5,
                 fontWeight: isSelected(day) || isToday(day) ? 'bold' : 'normal',
+                position: 'relative', // 주문 건수 배지를 위해 relative 설정
+                minHeight: '60px', // 날짜와 주문 건수가 들어갈 최소 높이
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                alignItems: 'center',
               }}
               onClick={() => handleDayClick(day)}
             >
               {day}
+              {day && ordersByDay[day] > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    bottom: '5px',
+                    right: '5px',
+                    backgroundColor: '#FBC926',
+                    color: 'white',
+                    borderRadius: '50%',
+                    padding: '2px 6px',
+                    fontSize: '0.75em',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {ordersByDay[day]}
+                </span>
+              )}
             </div>
           ))}
         </div>
       </Card>
+      <OrderInfoSection
+        selectedDate={selectedDate}
+        selectedDateOrders={selectedDateOrders}
+        d7Orders={d7Orders}
+        loading={loadingOrders}
+        error={errorOrders}
+      />
+    </div>
     </>
   );
 }
