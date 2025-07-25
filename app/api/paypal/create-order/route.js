@@ -1,12 +1,17 @@
+// app/api/paypal/create-order/route.js
 import paypal from '@paypal/checkout-server-sdk';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb'; // PutCommand 추가
 import { NextResponse } from 'next/server';
 
 // PayPal 환경 설정
 const configureEnvironment = () => {
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
   const clientSecret = process.env.PAYPAL_SECRET;
+
+  if (!clientId || !clientSecret) {
+    throw new Error('PayPal API credentials are not set. Check your .env.local file.');
+  }
 
   if (process.env.NODE_ENV === 'production') {
     return new paypal.core.LiveEnvironment(clientId, clientSecret);
@@ -27,13 +32,37 @@ const ddbClient = new DynamoDBClient({
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 
 export async function POST(req) {
+  const ORDER_MANAGEMENT_TABLE_NAME = process.env.DYNAMODB_TABLE_ORDERS || 'order-management';
   try {
-    const { orderId, finalTotalPrice } = await req.json();
+    const { orderId, finalTotalPrice, currency } = await req.json();
 
-    if (!orderId || !finalTotalPrice) {
-      return NextResponse.json({ message: 'Missing orderId or finalTotalPrice' }, { status: 400 });
+    if (!orderId || !finalTotalPrice || !currency) {
+      return NextResponse.json({ message: 'Missing orderId, finalTotalPrice, or currency' }, { status: 400 });
     }
 
+    const parsedFinalTotalPrice = parseFloat(finalTotalPrice);
+    if (isNaN(parsedFinalTotalPrice)) {
+      return NextResponse.json({ message: 'Invalid finalTotalPrice: Must be a number' }, { status: 400 });
+    }
+
+    // 1. DynamoDB에 주문 초기 데이터 생성 (PutCommand 사용)
+    const initialOrderParams = {
+      TableName: ORDER_MANAGEMENT_TABLE_NAME,
+      Item: {
+        orderId: orderId,
+        totalPrice: parsedFinalTotalPrice,
+        currency: currency,
+        status: 'Order(Confirmed)', // 초기 주문 상태
+        paymentMethod: 'PayPal (Initiated)', // 결제 시작 상태
+        createdAt: new Date().toISOString(),
+        // 다른 주문 관련 필드를 여기에 추가할 수 있습니다.
+      },
+    };
+    await ddbDocClient.send(new PutCommand(initialOrderParams));
+    console.log(`Order ${orderId} successfully initiated in DynamoDB.`);
+
+
+    // 2. PayPal 주문 생성
     const request = new paypal.orders.OrdersCreateRequest();
     request.prefer("return=representation");
     request.requestBody({
@@ -41,8 +70,8 @@ export async function POST(req) {
       purchase_units: [
         {
           amount: {
-            currency_code: 'USD',
-            value: finalTotalPrice.toFixed(2), // 2자리 소수점
+            currency_code: currency,
+            value: parsedFinalTotalPrice.toFixed(2), // 2자리 소수점
           },
           description: `Order ${orderId}`,
           custom_id: orderId, // 주문 ID를 custom_id로 전달하여 PayPal에서 식별
@@ -60,30 +89,34 @@ export async function POST(req) {
     const response = await client.execute(request);
 
     if (response.statusCode !== 201) {
-      console.error('PayPal Order Creation Error:', response.result);
-      throw new Error(`PayPal order creation failed with status ${response.statusCode}`);
+      console.error('PayPal Order Creation Error (PayPal API response):', response.result);
+      // PayPal API에서 상세 오류 메시지가 있다면 포함하여 반환합니다.
+      return NextResponse.json({ message: `PayPal order creation failed: ${JSON.stringify(response.result)}` }, { status: response.statusCode });
     }
 
-    // DynamoDB에 PayPal order ID 업데이트
+    // 3. DynamoDB에 PayPal order ID 업데이트
+    // 이제 주문 아이템이 존재하므로 UpdateCommand가 정상 작동합니다.
     const updateParams = {
       TableName: 'Orders', // DynamoDB 테이블 이름
       Key: { orderId: orderId },
       UpdateExpression: 'SET paypalOrderId = :poid, paymentMethod = :pm',
       ExpressionAttributeValues: {
         ':poid': response.result.id,
-        ':pm': 'PayPal (Pending)', // 초기 상태를 Pending으로 설정
+        ':pm': 'PayPal (Pending)', // PayPal 주문 ID를 받은 후 상태를 Pending으로 변경
       },
       ReturnValues: 'ALL_NEW',
     };
     await ddbDocClient.send(new UpdateCommand(updateParams));
+    console.log(`Order ${orderId} successfully updated with PayPal Order ID: ${response.result.id}`);
 
     return NextResponse.json({
       paypalOrderId: response.result.id,
+      orderId: orderId, // 클라이언트에서 생성한 orderId도 함께 반환
       links: response.result.links,
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Failed to create PayPal order:', error);
-    return NextResponse.json({ message: 'Failed to create PayPal order', error: error.message }, { status: 500 });
+    console.error('Failed to create PayPal order (caught error):', error);
+    return NextResponse.json({ message: 'Failed to create PayPal order', error: error.message, detail: error.stack }, { status: 500 });
   }
 }
