@@ -58,12 +58,12 @@ export async function POST(req) {
     }
 
     // 주문 상태 업데이트
-    const newStatus = 'PayPal (Paid)';
+    const newStatus = 'PayPal';
     const updatedStatusHistory = [
       ...(existingOrder.statusHistory || []),
       {
         timestamp: new Date().toISOString(),
-        oldStatus: existingOrder.status || 'Order(Confirmed)', // 이전 상태가 없을 경우 기본값
+        oldStatus: existingOrder.status || 'Payment(Confirmed)', // 이전 상태가 없을 경우 기본값
         newStatus: newStatus,
         changedBy: 'System (PayPal Capture)',
       }

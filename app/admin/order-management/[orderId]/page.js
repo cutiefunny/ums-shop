@@ -430,8 +430,7 @@ export default function OrderDetailPage() {
 
     const handleOrderConfirmation = async () => {
         showAdminConfirmationModal(
-            "Order Confirmation",
-            "주문을 확정하시겠습니까? 주문 상태가 'Order(Confirmed)'로 변경됩니다.", // 메시지 수정
+            "주문을 확정하시겠습니까? 주문 상태가 'Order(Confirmed)'로 변경됩니다.",
             async () => {
                 setLoading(true);
                 try {
@@ -481,13 +480,15 @@ export default function OrderDetailPage() {
                 } finally {
                     setLoading(false);
                 }
+            },
+            () => {
+                console.log('Order confirmation cancelled by user.'); // 취소 시 로깅
             }
         );
     };
 
     const handlePaymentConfirmation = async () => {
         showAdminConfirmationModal(
-            "Payment Confirmation",
             "결제를 확정하시겠습니까? 주문 상태가 'Payment(Confirmed)'로 변경됩니다.",
             async () => {
                 setLoading(true);
@@ -538,13 +539,15 @@ export default function OrderDetailPage() {
                 } finally {
                     setLoading(false);
                 }
+            },
+            () => {
+                console.log('Payment confirmation cancelled by user.'); // 취소 시 로깅
             }
         );
     };
 
     const handleSend = async () => {
         showAdminConfirmationModal(
-            "Delivery Complete",
             "배송 완료를 확정하시겠습니까? 주문 상태가 'Delivered'로 변경되고 실제 배송일이 기록됩니다.",
             async () => {
                 setLoading(true);
@@ -595,6 +598,9 @@ export default function OrderDetailPage() {
                 } finally {
                     setLoading(false);
                 }
+            },
+            () => {
+                console.log('Delivery confirmation cancelled by user.'); // 취소 시 로깅
             }
         );
     };
@@ -903,7 +909,17 @@ export default function OrderDetailPage() {
                         >
                             Payment Confirmation
                         </button>
-                    )}
+                      )}
+                      {(latestStatus === 'Pay in Cash' || latestStatus === 'PayPal') && (
+                        <button 
+                            onClick={handleSend} 
+                            className={styles.saveButton}
+                            disabled={latestStatus !== 'Pay in Cash' && latestStatus !== 'PayPal'} // latestStatus가 'Pay in Cash' 또는 'PayPal'일 때만 활성화
+                            title={(latestStatus === 'Pay in Cash' || latestStatus === 'PayPal') ? "제품 발송" : "제품 발송은 결제 완료 상태에서만 가능합니다."} // 툴팁 추가
+                        >
+                            Send
+                        </button>
+                      )}
                     </div>
                 </div>
             </div>

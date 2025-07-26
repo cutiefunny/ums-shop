@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useModal } from '@/contexts/ModalContext'; // useModal 사용
 import styles from './paypalPaymentModal.module.css'; // 새로 분리된 CSS 모듈 임포트
 
-const PayPalPaymentModal = ({ isOpen, onClose, orderId, finalTotalPrice, currency, onPaymentSuccess, onPaymentError, onPaymentCancel }) => {
+const PayPalPaymentModal = ({ isOpen, onClose, orderDetail, orderId, finalTotalPrice, currency, onPaymentSuccess, onPaymentError, onPaymentCancel }) => {
   const router = useRouter();
   const { showModal } = useModal();
   const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
@@ -20,10 +20,12 @@ const PayPalPaymentModal = ({ isOpen, onClose, orderId, finalTotalPrice, currenc
     }
     try {
       console.log('Calling /api/paypal/create-order from modal with:', { orderId, finalTotalPrice, currency });
+
       const response = await fetch('/api/paypal/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          orderDetail: orderDetail,
           orderId: orderId,
           finalTotalPrice: finalTotalPrice,
           currency: currency,

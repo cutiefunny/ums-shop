@@ -286,7 +286,7 @@ export default function OrderManagementPage() {
                 <td>{order.date}</td>
                 <td>{order.userName} <br/> {order.userEmail}</td>
                 <td>{order.shipName}</td>
-                <td>${order.total?.toFixed(2)}</td>
+                <td>${order.totalAmount?.toFixed(2)}</td>
                 {/* Status 셀을 클릭 가능하게 변경하고 모달을 띄웁니다. */}
                 <td onClick={(e) => handleOpenStatusModal(e, order)} style={{ cursor: 'pointer' }}>
                   <span className={`${styles.statusSelect} ${getStatusColorClass(order.status)}`}>

@@ -1,4 +1,4 @@
-// src/app/orders/payment/page.js
+// src/app/orders/payment/[detailId]/page.js
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -114,7 +114,7 @@ export default function PaymentPage() {
             console.log('Fetched order detail for status update:', updatedOrderDetailAfterCapture);
 
             // 최종 상태 업데이트
-            const newStatus = 'PayPal (Paid)';
+            const newStatus = 'PayPal(Paid)';
             const updatedStatusHistory = [
                 ...(updatedOrderDetailAfterCapture.statusHistory || []),
                 {
@@ -215,6 +215,7 @@ export default function PaymentPage() {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        orderDetail: orderDetail,
                         status: methodName,
                         paymentMethod: method,
                         statusHistory: updatedStatusHistory,
@@ -453,6 +454,7 @@ export default function PaymentPage() {
                         setLoading(false); // 로딩 상태 해제
                         console.log('PayPal payment modal closed.');
                     }}
+                    orderDetail={orderDetail}
                     orderId={orderDetail.orderId}
                     finalTotalPrice={finalTotalPrice}
                     currency={orderDetail.currency || 'USD'}

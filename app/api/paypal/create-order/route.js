@@ -34,10 +34,11 @@ const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 export async function POST(req) {
   const ORDER_MANAGEMENT_TABLE_NAME = process.env.DYNAMODB_TABLE_ORDERS || 'order-management';
   try {
-    const { orderId, finalTotalPrice, currency } = await req.json();
+    // orderDetail을 추가로 받아옵니다. orderDetail에 orderId, finalTotalPrice, currency가 포함되어 있다고 가정합니다.
+    const { orderId, finalTotalPrice, currency, orderDetail } = await req.json();
 
-    if (!orderId || !finalTotalPrice || !currency) {
-      return NextResponse.json({ message: 'Missing orderId, finalTotalPrice, or currency' }, { status: 400 });
+    if (!orderId || !finalTotalPrice || !currency || !orderDetail) {
+      return NextResponse.json({ message: 'Missing orderId, finalTotalPrice, currency, or orderDetail' }, { status: 400 });
     }
 
     const parsedFinalTotalPrice = parseFloat(finalTotalPrice);
@@ -46,16 +47,15 @@ export async function POST(req) {
     }
 
     // 1. DynamoDB에 주문 초기 데이터 생성 (PutCommand 사용)
+    // initialOrderParams의 Item을 넘겨받은 orderDetail로 설정합니다.
     const initialOrderParams = {
       TableName: ORDER_MANAGEMENT_TABLE_NAME,
       Item: {
-        orderId: orderId,
-        totalPrice: parsedFinalTotalPrice,
-        currency: currency,
-        status: 'Order(Confirmed)', // 초기 주문 상태
-        paymentMethod: 'PayPal (Initiated)', // 결제 시작 상태
-        createdAt: new Date().toISOString(),
-        // 다른 주문 관련 필드를 여기에 추가할 수 있습니다.
+        ...orderDetail, // /orders/payment/[detailId]/page.js에서 넘겨받은 orderDetail 전체를 사용합니다.
+        // 여기에 createdAt 등을 orderDetail에 이미 포함하거나 필요시 덮어쓸 수 있습니다.
+        createdAt: new Date().toISOString(), // 생성 시간은 서버에서 추가
+        status: orderDetail.status || 'Payment(Confirmed)',
+        paymentMethod: orderDetail.paymentMethod || 'PayPal', // orderDetail에 paymentMethod가 없으면 기본값 사용
       },
     };
     await ddbDocClient.send(new PutCommand(initialOrderParams));
@@ -97,7 +97,7 @@ export async function POST(req) {
     // 3. DynamoDB에 PayPal order ID 업데이트
     // 이제 주문 아이템이 존재하므로 UpdateCommand가 정상 작동합니다.
     const updateParams = {
-      TableName: 'Orders', // DynamoDB 테이블 이름
+      TableName: ORDER_MANAGEMENT_TABLE_NAME, // DynamoDB 테이블 이름은 ORDER_MANAGEMENT_TABLE_NAME 변수를 사용
       Key: { orderId: orderId },
       UpdateExpression: 'SET paypalOrderId = :poid, paymentMethod = :pm',
       ExpressionAttributeValues: {

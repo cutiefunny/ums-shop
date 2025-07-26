@@ -108,6 +108,8 @@ export default function CheckoutPage() {
                             productId: item.productId,
                             calculatedPriceUsd: item.unitPrice, // 주문 시점의 unitPrice 사용
                             discount: item.discount || 0, // 주문 시점의 discount 사용
+                            adminStatus: item.adminStatus || 'Unknown', // 주문 시점의 adminStatus 사용
+                            adminQuantity: item.adminQuantity || item.quantity, // 주문 시점의 adminQuantity 사용
                         };
                     }
                     const productData = await productResponse.json();
@@ -115,6 +117,8 @@ export default function CheckoutPage() {
                         productId: item.productId,
                         calculatedPriceUsd: productData.calculatedPriceUsd,
                         discount: productData.discount || 0,
+                        adminStatus: productData.adminStatus,
+                        adminQuantity: productData.adminQuantity,
                     };
                 } catch (productFetchError) {
                     console.error(`Error fetching product ${item.productId} details:`, productFetchError);
@@ -123,6 +127,8 @@ export default function CheckoutPage() {
                         productId: item.productId,
                         calculatedPriceUsd: item.unitPrice,
                         discount: item.discount || 0,
+                        adminStatus: item.adminStatus || 'Unknown',
+                        adminQuantity: item.adminQuantity || item.quantity,
                     };
                 }
             });
@@ -192,6 +198,18 @@ export default function CheckoutPage() {
             // 특정 상품의 최신 정보가 없는 경우, 불일치로 간주
             if (!productDetails) {
                 console.warn(`Product details not found in map for item ${item.productId}. Assuming mismatch.`);
+                return false;
+            }
+
+            // 1. 선택된 상품 중에 adminStatus가 Alternative Offer 또는 Out of Stock이 있는 경우
+            if (item.adminStatus === 'Alternative Offer' || item.adminStatus === 'Out of Stock') {
+                console.log(`Mismatch detected: Item ${item.productId} has adminStatus ${productDetails.adminStatus}.`);
+                return false;
+            }
+
+            // 2. 선택된 상품 중에 adminStatus가 Limited이면서 adminQuantity가 quantity보다 작은 경우
+            if (item.adminStatus === 'Limited' && item.adminQuantity < item.quantity) {
+                console.log(`Mismatch detected: Item ${item.productId} has adminStatus Limited and adminQuantity (${productDetails.adminQuantity}) is less than ordered quantity (${item.quantity}).`);
                 return false;
             }
 
@@ -529,7 +547,7 @@ export default function CheckoutPage() {
                 })),
                 deliveryDetails: deliveryDetailsPayload,
                 messages: messagesForStep1, // Include all messages
-                status: 'Order', // Change status to 'Confirmed'
+                status: 'Payment(Request)', // Change status to 'Payment(Request)'
                 date: orderDetail?.date || new Date().toISOString(), // Preserve original order date
                 statusHistory: [
                     ...(orderDetail?.statusHistory || []), // Keep existing history
