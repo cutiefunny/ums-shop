@@ -112,6 +112,8 @@ const NotificationsClientPage = () => {
              router.push(`/orders/payment/${notiItem.orderId}`); // 결제 관련 알림
         } else if (notiItem.category === 'Delivery' && notiItem.orderId) {
              router.push(`/orders/tracking/${notiItem.orderId}`); // 배송 추적 페이지 (예시)
+        } else if (notiItem.category === 'QnA' && notiItem.id) {
+            router.push(`/q-and-a/${notiItem.id}`); // Q&A 상세 페이지
         }
         // 다른 category에 따른 이동 로직 추가 가능
     }, [user?.seq, showModal, router]);

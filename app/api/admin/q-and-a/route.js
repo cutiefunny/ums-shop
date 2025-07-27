@@ -98,7 +98,7 @@ export async function GET(request) {
  */
 export async function POST(request) {
     try {
-        const { category, title, question, imageUrl, name, userEmail, shipName } = await request.json();
+        const { id, category, title, question, imageUrl, name, userEmail, shipName } = await request.json();
 
         // 필수 필드 유효성 검사
         if (!category || !title || !question || !name || !userEmail) {
@@ -106,7 +106,7 @@ export async function POST(request) {
         }
 
         const newQnAItem = {
-            id: uuidv4(), // 고유 ID 생성
+            id: id,
             category: category,
             title: title,
             question: question,

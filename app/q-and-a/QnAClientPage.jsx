@@ -7,6 +7,8 @@ import styles from '../my-questions/my-questions.module.css'; // 기존 CSS 모�
 import commonStyles from '../admin/common.module.css'; // 공통 스타일 재활용
 import { useAuth } from '@/contexts/AuthContext'; // 사용자 정보 (이메일, 이름, 선박명) 가져오기
 import { useModal } from '@/contexts/ModalContext'; // 알림 모달 사용
+import { useNotification } from '@/hooks/useNotification'; // useNotification 훅 임포트
+import { v4 as uuidv4 } from 'uuid'; // uuidv4 추가
 import Link from 'next/link';
 
 // 아이콘 컴포넌트
@@ -24,6 +26,7 @@ export default function QnAClientPage() { // 컴포넌트 이름을 QnAClientPag
   const searchParams = useSearchParams(); // 이 컴포넌트 안에서 useSearchParams를 안전하게 사용합니다.
   const { user, isLoggedIn } = useAuth();
   const { showModal } = useModal();
+  const addNotification = useNotification(); // useNotification 훅 사용
 
   // 탭 상태 관리: 'ask' (질문하기) 또는 'my' (내 질문)
   const [activeTab, setActiveTab] = useState('ask'); // 초기값은 'ask'로 설정하고, useEffect에서 URL 파라미터를 읽습니다.
@@ -63,7 +66,7 @@ export default function QnAClientPage() { // 컴포넌트 이름을 QnAClientPag
     try {
       setMyQuestionsLoading(true);
       setMyQuestionsError(null);
-      const response = await fetch('/api/admin/q-and-a');
+      const response = await fetch('/api/q-and-a'+ `?userEmail=${encodeURIComponent(user.email)}`); // 사용자 이메일을 쿼리 파라미터로 전달
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -166,12 +169,17 @@ export default function QnAClientPage() { // 컴포넌트 이름을 QnAClientPag
         if (!s3Response.ok) {
           throw new Error('Failed to upload image to S3');
         }
-        const s3BaseUrl = `https://${process.env.NEXT_PUBLIC_S3_BUCKET_NAME}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/`;
-        imageUrl = `${s3BaseUrl}${fields.key}`;
+        const S3_BUCKET_NAME_PUBLIC = process.env.NEXT_PUBLIC_S3_BUCKET_NAME || 'ums-shop-storage';
+        const AWS_REGION_PUBLIC = process.env.NEXT_PUBLIC_AWS_REGION || 'ap-southeast-2';
+        const objectKey = fields.key;
+        imageUrl = `https://${S3_BUCKET_NAME_PUBLIC}.s3.${AWS_REGION_PUBLIC}.amazonaws.com/${objectKey}`;
       }
+
+      const id = `qna-${uuidv4()}`; // 고유 ID 생성
 
       showModal('Submitting your question...');
       const qnaData = {
+        id: id,
         category: category,
         title: title.trim(),
         question: message.trim(),
@@ -193,6 +201,16 @@ export default function QnAClientPage() { // 컴포넌트 이름을 QnAClientPag
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to submit question.');
       }
+
+      // Q&A 등록 성공 시 알림 추가
+      await addNotification({
+        code: 'QnA(Requested)',
+        category: 'QnA', // 알림 설정 확인을 위해 QnA 카테고리 사용
+        title: 'New Q&A Registered',
+        en: 'Your inquiry has been successfully registered. We will respond shortly.',
+        kr: '문의가 성공적으로 등록되었습니다. 곧 답변 드리겠습니다.',
+        id: id,
+      });
 
       showModal('Your question has been successfully submitted.', () => {
         setCategory('');

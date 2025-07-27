@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import styles from '../q-and-a.module.css'; // Q&A 목록 페이지의 CSS Modules 재사용
 import { useAdminModal } from '@/contexts/AdminModalContext'; // AdminModalContext 사용
+import { useNotification } from '@/hooks/useNotification'; // useNotification 훅 임포트
 
 export default function QnADetailPage() {
     const router = useRouter();
@@ -18,6 +19,7 @@ export default function QnADetailPage() {
     const [status, setStatus] = useState(''); // Q&A 상태 (Pending, Answered)
 
     const { showAdminNotificationModal } = useAdminModal();
+    const addNotification = useNotification(); // useNotification 훅 사용
 
     // Q&A 상세 정보를 불러오는 함수
     const fetchQnADetail = useCallback(async () => {
@@ -53,9 +55,10 @@ export default function QnADetailPage() {
 
         try {
             setLoading(true);
+            const newStatus = answerText.trim() ? 'Answered' : 'Pending';
             const updatedData = {
                 answer: answerText,
-                status: answerText.trim() ? 'Answered' : 'Pending', // 답변이 있으면 'Answered'로, 없으면 'Pending'
+                status: newStatus, // 답변이 있으면 'Answered'로, 없으면 'Pending'
             };
 
             const res = await fetch(`/api/admin/q-and-a/${id}`, {
@@ -69,6 +72,19 @@ export default function QnADetailPage() {
             if (!res.ok) {
                 const errorData = await res.json();
                 throw new Error(errorData.message || `Error: ${res.status}`);
+            }
+
+            // 답변이 'Answered' 상태로 변경된 경우에만 사용자에게 알림
+            if (newStatus === 'Answered' && qna.userEmail) { // userEmail이 있는지 확인
+                await addNotification({
+                    code: 'QnA(Answered)',
+                    category: 'QnA',
+                    title: 'Your Q&A has been Answered',
+                    en: 'Your inquiry has been answered. Please check the details.',
+                    kr: '문의하신 내용에 답변이 등록되었습니다. 상세 내용을 확인해 주세요.',
+                    id: qna.id, // 사용자가 알림 클릭 시 해당 Q&A로 이동할 수 있도록 ID 전달
+                    userEmail: qna.userEmail // 어떤 사용자에게 알림을 보낼지 userEmail을 useNotification 훅에 전달
+                });
             }
 
             showAdminNotificationModal('답변이 성공적으로 저장되었습니다.');
