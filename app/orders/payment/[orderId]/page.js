@@ -240,6 +240,7 @@ export default function PaymentPage() {
                     title: 'Order Completed',
                     en: 'Cash payment selected. Please prepare for onboard delivery.',
                     kr: '만나서 현금 결제를 선택하셨습니다. 선박 납품에 대해 결제를 준비해 주세요.',
+                    orderId: orderDetail.orderId, // 주문 ID 추가
                 });
 
 

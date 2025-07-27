@@ -26,6 +26,7 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const {
+      orderId,
       userEmail,
       userName,
       customer,
@@ -49,10 +50,10 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Missing required order fields.' }, { status: 400 });
     }
 
-    const newOrderId = `ORD-${uuidv4().substring(0, 8).toUpperCase()}`; // 고유한 주문 ID 생성
+    //const newOrderId = `ORD-${uuidv4().substring(0, 8).toUpperCase()}`; // 고유한 주문 ID 생성
 
     const newOrder = {
-      orderId: newOrderId,
+      orderId: orderId,
         userEmail: userEmail,
         userName: userName,
       customer : customer,

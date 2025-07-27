@@ -11,6 +11,7 @@ import CartItem from '@/components/CartItem'; // CartItem 컴포넌트 재사용
 import moment from 'moment'; // 날짜 형식을 위해 moment 사용
 import BottomNav from '@/app/home/components/BottomNav'; // BottomNav 컴포넌트 임포트 추가
 import GuideModal from '@/components/GuideModal'; // GuideModal 임포트
+import { v4 as uuidv4 } from 'uuid'; // 고유 ID 생성을 위해 uuidv4 사용
 import PaymentMethodSelectionModal from '@/components/PaymentMethodSelectionModal'; // PaymentMethodSelectionModal 임포트 추가
 
 // 아이콘 컴포넌트
@@ -370,7 +371,11 @@ export default function CheckoutPage() {
             const itemsToOrder = cartItems.filter(item => selectedItemsForOrder.has(item.productId));
 
             // 주문 생성 페이로드
+
+            const newOrderId = `ORD-${uuidv4().substring(0, 8).toUpperCase()}`; // 고유한 주문 ID 생성
+
             const orderPayload = {
+                orderId : newOrderId,
                 userEmail: user.email,
                 userName: user.name,
                 customer: {
@@ -427,6 +432,8 @@ export default function CheckoutPage() {
                 throw new Error(errorData.message || '주문 생성 실패');
             }
 
+            console.log("Order created successfully:", response);
+
             // 주문이 성공적으로 생성된 후, useNotification 훅을 사용하여 noti 항목 추가
             await addNotification({
                 code: 'Order(Request)',
@@ -434,6 +441,7 @@ export default function CheckoutPage() {
                 title: 'Order Requested',
                 en: 'Your order list has been submitted. Please wait for confirmation.',
                 kr: '당신의 주문이 제출되었습니다. 주문 확정을 대기하여 주세요.',
+                orderId: newOrderId, // 주문 ID 추가
             });
 
             // 주문 성공 시 장바구니 초기화 (서버에도 반영)

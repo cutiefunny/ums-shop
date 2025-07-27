@@ -317,3 +317,23 @@
     height: 22px;
     color: #495057;
 }
+
+.bellIconContainer {
+    position: relative;
+    display: flex; /* 내부 이미지를 중앙 정렬하기 위해 */
+    align-items: center;
+    justify-content: center;
+    width: 24px; /* 아이콘 크기에 맞춤 */
+    height: 24px;
+}
+
+.notificationBadge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px;
+    height: 8px;
+    background-color: red; /* 빨간 점 */
+    border-radius: 50%;
+    border: 1px solid white; /* 흰색 테두리 (선택 사항) */
+}

@@ -480,6 +480,7 @@ export default function OrderDetailPage() {
                         title: 'Order Confirmed',
                         en: 'Your order has been confirmed. Please proceed with the payment.',
                         kr: '당신의 주문이 확정되었습니다. 결제를 진행하여 주세요.',
+                        orderId: order.orderId, // 주문 ID 추가
                     });
 
                     // 로컬 상태 업데이트
@@ -549,6 +550,7 @@ export default function OrderDetailPage() {
                         title: 'Payment Confirmed',
                         en: 'Your payment has been confirmed. Your order will be shipped soon.',
                         kr: '결제가 확정되었습니다. 주문 상품이 곧 배송될 예정입니다.',
+                        orderId: order.orderId, // 주문 ID 추가
                     });
 
                     // 로컬 상태 업데이트
