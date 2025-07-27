@@ -173,6 +173,15 @@ export async function PUT(request, { params }) {
               console.log('Backend - Successfully sent FCM message:', response);
             } catch (error) {
               console.error('Backend - Error sending FCM message to user:', error);
+              if (error.code === 'messaging/invalid-registration-token' || 
+                  error.code === 'messaging/registration-token-not-registered') {
+                  console.warn(`Backend - Removing invalid FCM token for user ${userId}: ${fcmToken}`);
+                  await docClient.send(new UpdateCommand({
+                    TableName: USER_TABLE_NAME,
+                    Key: { seq: userId },
+                    UpdateExpression: 'REMOVE fcmToken',
+                  }));
+              }
             }
           } else {
             console.warn(`Backend - No FCM token found for customer Seq: ${userId}. Push notification not sent.`);
