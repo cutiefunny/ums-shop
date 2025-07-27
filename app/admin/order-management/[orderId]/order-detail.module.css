@@ -514,3 +514,13 @@
     text-align: right;
     margin-top: 5px;
 }
+
+.deleteMessageButton {
+  background: none;
+  border: none;
+  color: #dc3545; /* Red color for delete button */
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0;
+  margin-left: 10px;
+}

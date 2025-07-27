@@ -287,45 +287,51 @@ export default function OrderDetailPage() {
     };
 
     const handleDeleteMessage = async (messageIdToDelete) => {
-        if (!confirm('Are you sure you want to delete this message?')) {
-            return;
-        }
+        showAdminConfirmationModal(
+            "Are you sure you want to delete this message?",
+            async () => {
+          // Confirmation 처리 로직
+          setLoading(true);
+          setError(null);
 
-        setLoading(true);
-        setError(null);
+          const currentMessages = order.messages || [];
+          const updatedMessages = currentMessages.filter(msg => msg.id !== messageIdToDelete);
 
-        const currentMessages = order.messages || [];
-        const updatedMessages = currentMessages.filter(msg => msg.id !== messageIdToDelete);
+          // 로컬 상태 먼저 업데이트 (낙관적 업데이트)
+          setOrder(prevOrder => ({
+              ...prevOrder,
+              messages: updatedMessages,
+          }));
 
-        // 로컬 상태 먼저 업데이트 (낙관적 업데이트)
-        setOrder(prevOrder => ({
-            ...prevOrder,
-            messages: updatedMessages,
-        }));
+          try {
+              // DynamoDB에 메시지 목록 업데이트 (API Route 호출)
+              const response = await fetch(`/api/orders/${order.orderId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: updatedMessages }), // 업데이트된 messages 배열 전송
+              });
 
-        try {
-            // DynamoDB에 메시지 목록 업데이트 (API Route 호출)
-            const response = await fetch(`/api/orders/${order.orderId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: updatedMessages }), // 업데이트된 messages 배열 전송
-            });
+              if (!response.ok) {
+            const errorData = await response.json();
+            // 오류 발생 시 로컬 상태를 이전으로 되돌릴 수 있음 (선택 사항)
+            // setOrder(prevOrder => ({ ...prevOrder, messages: currentMessages }));
+            throw new Error(errorData.message || 'Failed to delete message.');
+              }
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                // 오류 발생 시 로컬 상태를 이전으로 되돌릴 수 있음 (선택 사항)
-                // setOrder(prevOrder => ({ ...prevOrder, messages: currentMessages }));
-                throw new Error(errorData.message || 'Failed to delete message.');
+              console.log(`Message ${messageIdToDelete} deleted and order updated successfully!`);
+          } catch (err) {
+              console.error("Error deleting message:", err);
+              setError(`Failed to delete message: ${err.message}`);
+              showAdminNotificationModal(`Error deleting message: ${err.message}`);
+          } finally {
+              setLoading(false);
+          }
+            },
+            () => {
+          // Cancel 처리 로직 (선택 사항)
+          console.log('Message deletion cancelled by user.');
             }
-
-            console.log(`Message ${messageIdToDelete} deleted and order updated successfully!`);
-        } catch (err) {
-            console.error("Error deleting message:", err);
-            setError(`Failed to delete message: ${err.message}`);
-            showAdminNotificationModal(`Error deleting message: ${err.message}`);
-        } finally {
-            setLoading(false);
-        }
+        );
     };
 
 
@@ -442,7 +448,7 @@ export default function OrderDetailPage() {
                     // 모든 상품의 packingStatus를 true로 변경하는 로직은 그대로 유지 (요청에 따라)
                     const updatedOrderItems = order.orderItems.map(item => ({
                         ...item,
-                        packingStatus: true 
+                        packingStatus: true
                     }));
 
                     const updatedStatusHistory = [
@@ -513,7 +519,7 @@ export default function OrderDetailPage() {
                     // 모든 상품의 packingStatus를 true로 변경하는 로직은 그대로 유지 (요청에 따라)
                     const updatedOrderItems = order.orderItems.map(item => ({
                         ...item,
-                        packingStatus: true 
+                        packingStatus: true
                     }));
 
                     const updatedStatusHistory = [
@@ -614,7 +620,7 @@ export default function OrderDetailPage() {
 
                     // *** useNotification 훅을 사용하여 noti 항목 추가 (Delivered 알림) ***
                     // shippingDetails.method에 따라 다른 알림 메시지 사용
-                    const notificationMessage = order.shippingDetails?.method === 'onboard' 
+                    const notificationMessage = order.shippingDetails?.method === 'onboard'
                         ? {
                             code: 'Delivered',
                             category: 'Delivery',
@@ -795,18 +801,20 @@ export default function OrderDetailPage() {
                             <div className={styles.messageThread}>
                                 {order.messages?.map(msg => ( // messages가 없을 경우를 대비하여 ?. 추가
                                     <div key={msg.id} className={`${styles.messageItem} ${msg.sender === 'Admin' ? styles.admin : styles.user}`}>
-                                        {/* 삭제 아이콘 (사용자 요청에 따라 제거됨) */}
-                                        {/* <button onClick={() => handleDeleteMessage(msg.id)} className={styles.deleteMessageButton}>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                                            </svg>
-                                        </button> */}
                                         <span className={styles.messageSender}>
                                             {/* 발신자 텍스트 '관리자' 제거 (단순히 sender 표시) */}
                                             {msg.sender} {msg.isNew && <span className={styles.newBadge}>NEW</span>}
                                         </span>
-                                        {msg.text && <div className={styles.messageBubble}>{msg.text}</div>}
+                                        {msg.text && <div className={styles.messageBubble}>{msg.text}
+                                          {msg.sender === 'Admin' && ( // 관리자 메시지에만 삭제 아이콘 표시
+                                            <button onClick={() => handleDeleteMessage(msg.id)} className={styles.deleteMessageButton}>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'red' }}>
+                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                </svg>
+                                            </button>
+                                          )}
+                                          </div>}
                                         {msg.imageUrl && (
                                             <img src={msg.imageUrl} alt="Attached" className={styles.messageImage} />
                                         )}
@@ -846,7 +854,7 @@ export default function OrderDetailPage() {
                             )}
                         </div>
                     </section>
-                    
+
                     {/* Status History 영역 */}
                         <section className={`${styles.section} ${styles.statusHistorySection}`}>
                             <h2 className={styles.sectionTitle}>Status History</h2>
@@ -932,42 +940,42 @@ export default function OrderDetailPage() {
                         </button>
                     </div>
                     <div className={styles.actionButtonsGroup}> {/* Download and Save buttons group */}
-                        <button 
-                            onClick={handleDownload} 
+                        <button
+                            onClick={handleDownload}
                             className={styles.saveButton}
                         >
                             Download
                         </button>
                     {latestStatus === 'Order(Request)' && (
-                                    <button 
-                            onClick={handleOrderConfirmation} 
+                                <button
+                            onClick={handleOrderConfirmation}
                             className={styles.saveButton}
                             disabled={latestStatus !== 'Order(Request)'} // latestStatus가 'Order(Request)'일 때만 활성화
                             title={latestStatus === 'Order(Request)' ? "주문 확정" : "주문 확정은 Order(Request) 상태에서만 가능합니다."} // 툴팁 추가
                         >
                             Order Confirmation
                         </button>
-                      )}
-                      {latestStatus === 'Payment(Request)' && (
-                        <button 
-                            onClick={handlePaymentConfirmation} 
+                    )}
+                    {latestStatus === 'Payment(Request)' && (
+                        <button
+                            onClick={handlePaymentConfirmation}
                             className={styles.saveButton}
                             disabled={latestStatus !== 'Payment(Request)'} // latestStatus가 'Payment(Request)'일 때만 활성화
                             title={latestStatus === 'Payment(Request)' ? "결제 확정" : "결제 확정은 Payment(Request) 상태에서만 가능합니다."} // 툴팁 추가
                         >
                             Payment Confirmation
                         </button>
-                      )}
-                      {(latestStatus === 'Pay in Cash' || latestStatus === 'PayPal') && (
-                        <button 
-                            onClick={handleSend} 
+                    )}
+                    {(latestStatus === 'Pay in Cash' || latestStatus === 'PayPal') && (
+                        <button
+                            onClick={handleSend}
                             className={styles.saveButton}
                             disabled={latestStatus !== 'Pay in Cash' && latestStatus !== 'PayPal'} // latestStatus가 'Pay in Cash' 또는 'PayPal'일 때만 활성화
                             title={(latestStatus === 'Pay in Cash' || latestStatus === 'PayPal') ? "제품 발송" : "제품 발송은 결제 완료 상태에서만 가능합니다."} // 툴팁 추가
                         >
                             Send
                         </button>
-                      )}
+                    )}
                     </div>
                 </div>
             </div>
