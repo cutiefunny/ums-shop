@@ -14,6 +14,7 @@ import moment from 'moment';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useModal } from '@/contexts/ModalContext';
+import { useNotification } from '@/hooks/useNotification'; // useNotification 훅 임포트
 import PaymentMethodSelectionModal from '@/components/PaymentMethodSelectionModal';
 import PayPalPaymentModal from '@/components/PayPalPaymentModal'; // 새로 생성한 모달 임포트
 
@@ -25,6 +26,7 @@ export default function PaymentPage() {
     const router = useRouter();
     const { user, isLoggedIn } = useAuth();
     const { showModal } = useModal();
+    const addNotification = useNotification(); // useNotification 훅 사용
     const params = useParams();
     const { orderId } = params;
     const searchParams = useSearchParams();
@@ -142,6 +144,8 @@ export default function PaymentPage() {
             }
             console.log('Order status updated successfully in DB.');
 
+            // 알림은 PayPalPaymentModal의 onApprove에서 이미 처리됨
+
             showModal("PayPal 결제가 성공적으로 완료되었습니다! 주문 목록 페이지로 이동합니다.", () => {
                 router.push('/orders');
             });
@@ -229,6 +233,16 @@ export default function PaymentPage() {
                 }
                 console.log('Cash payment successful, order status updated.');
 
+                // *** addNotification 훅을 사용하여 noti 항목 추가 (Pay in Cash 알림) ***
+                await addNotification({
+                    code: 'Payment(Pay in Cash)',
+                    category: 'Payment',
+                    title: 'Order Completed',
+                    en: 'Cash payment selected. Please prepare for onboard delivery.',
+                    kr: '만나서 현금 결제를 선택하셨습니다. 선박 납품에 대해 결제를 준비해 주세요.',
+                });
+
+
                 showModal("현금 결제가 성공적으로 완료되었습니다! 주문 목록 페이지로 이동합니다.", () => {
                     router.push('/orders');
                 });
@@ -239,7 +253,7 @@ export default function PaymentPage() {
                 setLoading(false);
             }
         }
-    }, [orderDetail, router, showModal, user]);
+    }, [orderDetail, router, showModal, user, addNotification]); // addNotification 의존성 추가
 
     // "Pay" 버튼 클릭 시 모달 열기
     const handlePayButtonClick = () => {

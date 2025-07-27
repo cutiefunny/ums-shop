@@ -1,3 +1,4 @@
+// app/admin/order-detail/[orderId]/page.js
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -17,6 +18,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 import { useAdminModal } from '@/contexts/AdminModalContext';
+import { useNotification } from '@/hooks/useNotification'; // useNotification 훅 임포트
 
 // DynamoDB 클라이언트 초기화
 const client = new DynamoDBClient({
@@ -48,6 +50,7 @@ export default function OrderDetailPage() {
     const fileInputRef = useRef(null); // 파일 입력 Ref
 
     const { showAdminNotificationModal, showAdminConfirmationModal } = useAdminModal();
+    const addNotification = useNotification(); // useNotification 훅 사용
 
     // API Route를 통해 주문 상세 데이터를 가져오는 함수
     async function fetchOrderDetail() {
@@ -236,8 +239,10 @@ export default function OrderDetailPage() {
             // S3 버킷의 퍼블릭 URL 구성 (또는 S3 Download URL API를 사용)
             // 여기서는 직접 URL을 구성합니다. S3 버킷 정책에 따라 접근 가능해야 합니다.
             // `fields.key`는 S3에 저장될 파일의 전체 경로입니다 (예: `uploads/uniqueFilename.jpg`).
-            const s3BaseUrl = `https://${process.env.NEXT_PUBLIC_S3_BUCKET_NAME}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/`;
-            newMessage.imageUrl = `${s3BaseUrl}${fields.key}`; // S3 URL로 업데이트
+            const S3_BUCKET_NAME_PUBLIC = process.env.NEXT_PUBLIC_S3_BUCKET_NAME || 'ums-shop-storage';
+            const AWS_REGION_PUBLIC = process.env.NEXT_PUBLIC_AWS_REGION || 'ap-southeast-2';
+            const objectKey = fields.key;
+            newMessage.imageUrl = `https://${S3_BUCKET_NAME_PUBLIC}.s3.${AWS_REGION_PUBLIC}.amazonaws.com/${objectKey}`;
         }
 
         // 로컬 상태 먼저 업데이트하여 UI에 즉시 반영 (낙관적 업데이트)
@@ -450,8 +455,10 @@ export default function OrderDetailPage() {
                         }
                     ];
 
+                    // 주문 데이터 업데이트 (orderItems, status, statusHistory)
                     const updatedOrderData = {
                         orderItems: updatedOrderItems,
+                        status: 'Order(Confirmed)', // 주문 전체 상태도 Order(Confirmed)로 변경
                         statusHistory: updatedStatusHistory,
                     };
 
@@ -465,6 +472,15 @@ export default function OrderDetailPage() {
                         const errorData = await response.json();
                         throw new Error(errorData.message || 'Failed to confirm order status.'); // 메시지 수정
                     }
+
+                    // *** useNotification 훅을 사용하여 noti 항목 추가 ***
+                    await addNotification({
+                        code: 'Order(Confirmed)',
+                        category: 'Order',
+                        title: 'Order Confirmed',
+                        en: 'Your order has been confirmed. Please proceed with the payment.',
+                        kr: '당신의 주문이 확정되었습니다. 결제를 진행하여 주세요.',
+                    });
 
                     // 로컬 상태 업데이트
                     setOrder(prevOrder => ({
@@ -511,6 +527,7 @@ export default function OrderDetailPage() {
 
                     const updatedOrderData = {
                         orderItems: updatedOrderItems,
+                        status: 'Payment(Confirmed)', // 주문 전체 상태도 Payment(Confirmed)로 변경
                         statusHistory: updatedStatusHistory,
                     };
 
@@ -524,6 +541,15 @@ export default function OrderDetailPage() {
                         const errorData = await response.json();
                         throw new Error(errorData.message || 'Failed to confirm order status.'); // 메시지 수정
                     }
+
+                    // *** useNotification 훅을 사용하여 noti 항목 추가 (Payment(Confirmed) 알림) ***
+                    await addNotification({
+                        code: 'Payment(Confirmed)',
+                        category: 'Payment',
+                        title: 'Payment Confirmed',
+                        en: 'Your payment has been confirmed. Your order will be shipped soon.',
+                        kr: '결제가 확정되었습니다. 주문 상품이 곧 배송될 예정입니다.',
+                    });
 
                     // 로컬 상태 업데이트
                     setOrder(prevOrder => ({
@@ -583,6 +609,26 @@ export default function OrderDetailPage() {
                         const errorData = await response.json();
                         throw new Error(errorData.message || 'Failed to update delivery status.');
                     }
+
+                    // *** useNotification 훅을 사용하여 noti 항목 추가 (Delivered 알림) ***
+                    // shippingDetails.method에 따라 다른 알림 메시지 사용
+                    const notificationMessage = order.shippingDetails?.method === 'onboard' 
+                        ? {
+                            code: 'Delivered',
+                            category: 'Delivery',
+                            title: 'Order Delivered',
+                            en: 'Your order has been delivered successfully to your vessel.',
+                            kr: '주문 상품이 선박으로 성공적으로 배송되었습니다.',
+                        }
+                        : {
+                            code: 'Payment(EMS)', // 또는 Delivered로 통일하고 메시지만 다르게? 여기서는 요청에 따라 Payment(EMS)로 가정
+                            category: 'Delivery',
+                            title: 'Shipping in progress',
+                            en: 'Your EMS shipment is in transit.',
+                            kr: 'EMS를 통해 배송 중입니다.',
+                        };
+
+                    await addNotification(notificationMessage);
 
                     // 로컬 상태 업데이트
                     setOrder(prevOrder => ({
@@ -890,8 +936,8 @@ export default function OrderDetailPage() {
                         >
                             Download
                         </button>
-                      {latestStatus === 'Order(Request)' && (
-                                              <button 
+                    {latestStatus === 'Order(Request)' && (
+                                    <button 
                             onClick={handleOrderConfirmation} 
                             className={styles.saveButton}
                             disabled={latestStatus !== 'Order(Request)'} // latestStatus가 'Order(Request)'일 때만 활성화

@@ -1,3 +1,4 @@
+// app/checkout/page.js
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -5,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import styles from './checkout.module.css';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModal } from '@/contexts/ModalContext';
+import { useNotification } from '@/hooks/useNotification'; // 새로 생성한 훅 임포트
 import CartItem from '@/components/CartItem'; // CartItem 컴포넌트 재사용
 import moment from 'moment'; // 날짜 형식을 위해 moment 사용
 import BottomNav from '@/app/home/components/BottomNav'; // BottomNav 컴포넌트 임포트 추가
@@ -22,6 +24,7 @@ export default function CheckoutPage() {
     const router = useRouter();
     const { user, isLoggedIn, logout } = useAuth();
     const { showModal, showConfirmationModal } = useModal();
+    const addNotification = useNotification(); // 훅 사용
 
     // Step 1: Order Review & Details State
     const [cartItems, setCartItems] = useState([]); // 현재 장바구니 항목
@@ -325,6 +328,13 @@ export default function CheckoutPage() {
             return;
         }
 
+        if (!user?.seq) {
+            showModal("사용자 정보를 찾을 수 없습니다. 다시 로그인 해주세요.");
+            logout();
+            router.replace('/');
+            return;
+        }
+
         let deliveryDetailsPayload = {};
         if (deliveryOption === 'onboard') {
             if (!portName.trim() || !expectedShippingDate) {
@@ -396,7 +406,7 @@ export default function CheckoutPage() {
                 })),
                 deliveryDetails: deliveryDetailsPayload,
                 messages: messagesForStep1, // Step 1에서 작성된 모든 메시지 포함
-                status: 'Order', // 초기 주문 상태
+                status: 'Order(Request)', // 초기 주문 상태
                 date: new Date().toISOString(),
                 statusHistory: [{
                     timestamp: new Date().toISOString(),
@@ -417,14 +427,23 @@ export default function CheckoutPage() {
                 throw new Error(errorData.message || '주문 생성 실패');
             }
 
+            // 주문이 성공적으로 생성된 후, useNotification 훅을 사용하여 noti 항목 추가
+            await addNotification({
+                code: 'Order(Request)',
+                category: 'Order',
+                title: 'Order Requested',
+                en: 'Your order list has been submitted. Please wait for confirmation.',
+                kr: '당신의 주문이 제출되었습니다. 주문 확정을 대기하여 주세요.',
+            });
+
             // 주문 성공 시 장바구니 초기화 (서버에도 반영)
-            const userUpdateResponse = await fetch(`/api/users/${user.seq}`, {
+            const userUpdateCartResponse = await fetch(`/api/users/${user.seq}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ cart: [] }),
             });
-            if (!userUpdateResponse.ok) {
-                console.error('Failed to clear cart after order:', await userUpdateResponse.text());
+            if (!userUpdateCartResponse.ok) {
+                console.error('Failed to clear cart after order:', await userUpdateCartResponse.text());
             }
             await fetchUserCart(); // 장바구니를 비운 후, 사용자 카트 데이터를 다시 가져옴
 

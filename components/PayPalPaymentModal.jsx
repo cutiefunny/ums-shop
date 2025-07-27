@@ -3,11 +3,13 @@ import React, { useCallback } from 'react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { useRouter } from 'next/navigation';
 import { useModal } from '@/contexts/ModalContext'; // useModal 사용
+import { useNotification } from '@/hooks/useNotification'; // useNotification 훅 임포트
 import styles from './paypalPaymentModal.module.css'; // 새로 분리된 CSS 모듈 임포트
 
 const PayPalPaymentModal = ({ isOpen, onClose, orderDetail, orderId, finalTotalPrice, currency, onPaymentSuccess, onPaymentError, onPaymentCancel }) => {
   const router = useRouter();
   const { showModal } = useModal();
+  const addNotification = useNotification(); // useNotification 훅 사용
   const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
 
   // 모든 훅은 컴포넌트의 최상위 레벨에서 조건부 없이 호출되어야 합니다.
@@ -51,8 +53,19 @@ const PayPalPaymentModal = ({ isOpen, onClose, orderDetail, orderId, finalTotalP
   const onApprove = useCallback(async (data, actions) => {
     console.log('PayPal onApprove callback triggered in modal. Data:', data);
     onClose(); // 모달 닫기
+
     // PaymentPage의 useEffect에서 리다이렉트된 URL을 감지하여 finalizePayPalPayment를 호출합니다.
-  }, [onClose]);
+    // 여기서는 알림을 추가하는 로직만 수행합니다.
+    await addNotification({
+      code: 'Payment(Paypal)',
+      category: 'Payment',
+      title: 'Order Completed',
+      en: 'Your PayPal payment has been completed successfully.',
+      kr: '온라인 결제가 PayPal을 통해 정상 처리되었습니다.',
+    });
+
+    if (onPaymentSuccess) onPaymentSuccess(data); // 기존 성공 콜백 호출
+  }, [onClose, onPaymentSuccess, addNotification]); // addNotification 의존성 추가
 
   // PayPal 오류 발생 시 호출되는 함수
   const onError = useCallback((err) => {
