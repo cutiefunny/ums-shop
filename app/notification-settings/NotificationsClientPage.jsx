@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './notifications.module.css'; // 기존 CSS 모듈 경로 유지
 import { useAuth } from '@/contexts/AuthContext';
 import { useModal } from '@/contexts/ModalContext';
-// FCM 관련 임포트 제거: import { messaging } from '@/utils/firebaseConfig';
-// FCM 관련 임포트 제거: import { getToken, onMessage } from 'firebase/messaging';
+// import { messaging } from '@/utils/firebaseConfig';
+// import { getToken, onMessage } from 'firebase/messaging';
 
 export default function NotificationsClientPage() { // 컴포넌트 이름을 NotificationsClientPage로 변경
   const router = useRouter();
@@ -32,19 +32,19 @@ export default function NotificationsClientPage() { // 컴포넌트 이름을 No
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsError, setSettingsError] = useState(null);
 
-  // FCM 관련 상태 제거:
+  // FCM 관련 상태
   // const [currentFcmToken, setCurrentFcmToken] = useState('');
   // const [permissionGranted, setPermissionGranted] = useState(false);
   // const [errorMessage, setErrorMessage] = useState('');
 
-  // FCM 토큰을 서버에 전송하는 함수 제거:
+  // // FCM 토큰을 서버에 전송하는 함수
   // const sendTokenToServer = useCallback(async (token) => {
   //   if (!user?.seq) {
   //     console.warn('User ID is not available. Cannot send FCM token to server.');
   //     setErrorMessage('사용자 정보가 없어 FCM 토큰을 저장할 수 없습니다. 로그인 후 다시 시도해주세요.');
   //     return;
   //   }
-  //
+  
   //   try {
   //     const response = await fetch(`/api/users/${user.seq}`, {
   //       method: 'PUT',
@@ -53,7 +53,7 @@ export default function NotificationsClientPage() { // 컴포넌트 이름을 No
   //       },
   //       body: JSON.stringify({ fcmToken: token }),
   //     });
-  //
+  
   //     if (response.ok) {
   //       console.log('FCM token successfully sent to server for user:', user.seq);
   //     } else {
@@ -67,7 +67,7 @@ export default function NotificationsClientPage() { // 컴포넌트 이름을 No
   //   }
   // }, [user?.seq]);
 
-  // FCM 관련 useEffect 훅 제거:
+  // // FCM 관련 useEffect 훅
   // useEffect(() => {
   //   if (typeof window !== 'undefined' && messaging && isLoggedIn && user?.seq) {
   //     if (!('Notification' in window)) {
@@ -78,24 +78,24 @@ export default function NotificationsClientPage() { // 컴포넌트 이름을 No
   //       setErrorMessage('이 브라우저는 서비스 워커를 지원하지 않습니다. PWA 푸시 알림을 사용할 수 없습니다.');
   //       return;
   //     }
-  //
+  
   //     const setupNotifications = async () => {
   //       try {
   //         const registration = await navigator.serviceWorker.register('/sw.js');
   //         console.log('Service Worker registered:', registration);
-  //
+  
   //         const permission = await Notification.requestPermission();
   //         if (permission === 'granted') {
   //           setPermissionGranted(true);
   //           console.log('Notification permission granted.');
-  //
+  
   //           const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
   //           if (!vapidKey) {
   //               setErrorMessage('VAPID 키가 설정되지 않았습니다. Firebase 콘솔에서 VAPID 키를 가져와 환경 변수에 설정해주세요.');
   //               console.error('VAPID key is not set. Please set NEXT_PUBLIC_FIREBASE_VAPID_KEY in your .env.local file.');
   //               return;
   //           }
-  //
+  
   //           const currentToken = await getToken(messaging, { vapidKey: vapidKey });
   //           if (currentToken) {
   //             console.log('FCM Registration Token:', currentToken);
@@ -105,7 +105,7 @@ export default function NotificationsClientPage() { // 컴포넌트 이름을 No
   //             console.log('No FCM registration token available. Request permission to generate one.');
   //             setErrorMessage('FCM 등록 토큰을 가져올 수 없습니다. 알림 권한을 허용해주세요.');
   //           }
-  //
+  
   //           onMessage(messaging, (payload) => {
   //             console.log('Message received in foreground. ', payload);
   //             const { title, body } = payload.notification || { title: '새 알림', body: '새로운 메시지가 도착했습니다.' };
@@ -126,7 +126,7 @@ export default function NotificationsClientPage() { // 컴포넌트 이름을 No
   //         setErrorMessage(`알림 설정 중 오류가 발생했습니다: ${error.message}`);
   //       }
   //     };
-  //
+  
   //     setupNotifications();
   //   } else if (!isLoggedIn) {
   //       setErrorMessage('로그인 후 푸시 알림 기능을 사용할 수 있습니다.');
