@@ -11,7 +11,7 @@ import { useAdminModal } from '@/contexts/AdminModalContext'; // AdminModalConte
 // AWS SDK import는 클라이언트 컴포넌트에서 직접 사용하는 대신 API Routes를 통해 사용해야 합니다.
 // 여기서는 API Route를 호출하는 것으로 가정합니다.
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 // 배너 추가/수정 모달 컴포넌트
 function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }) {

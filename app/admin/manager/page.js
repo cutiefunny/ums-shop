@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import styles from '../common.module.css'; // 새로 생성한 CSS Modules
 import { useAdminModal } from '@/contexts/AdminModalContext'; // AdminModalContext 사용
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 // 체크 아이콘 (권한 활성화 시 사용)
 const CheckIcon = () => (

@@ -7,7 +7,7 @@ import ApprovalStatusModal from './components/ApprovalStatusModal'; // 새 모�
 import styles from '../common.module.css';
 import { useSearchParams } from 'next/navigation'; // useSearchParams 임포트
 
-const ITEMS_PER_PAGE = 5; // 페이지당 항목 수
+const ITEMS_PER_PAGE = 10; // 페이지당 항목 수
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState([]); // API에서 불러올 사용자 데이터

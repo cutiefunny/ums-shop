@@ -30,7 +30,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 const ORDER_MANAGEMENT_TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_ORDERS || 'order-management';
 
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 const ORDER_STATUS_OPTIONS = ['All', 'Order', 'Paypal', 'PayInCash', 'EMS', 'Delivered'];
 
 export default function OrderManagementPage() {

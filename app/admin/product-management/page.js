@@ -47,7 +47,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 const PRODUCT_MANAGEMENT_TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_PRODUCTS || 'product-management';
 
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 const MAIN_CATEGORIES = ['All', 'Category A', 'Category B', 'Category C']; // 실제 데이터에 맞게 조정
 const SUB1_CATEGORIES = ['All', 'Sub1 A1', 'Sub1 B1', 'Sub1 C1']; // 실제 데이터에 맞게 조정
 const SUB2_CATEGORIES = ['All', 'Sub2 A2', 'Sub2 B2', 'Sub2 C2']; // 실제 데이터에 맞게 조정

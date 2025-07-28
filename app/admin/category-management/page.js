@@ -17,7 +17,7 @@ import AddSurve1CategoryModal from './modals/AddSurve1CategoryModal';
 import AddSurve2CategoryModal from './modals/AddSurve2CategoryModal';
 
 
-const ITEMS_PER_PAGE = 5; // 페이지당 항목 수
+const ITEMS_PER_PAGE = 10; // 페이지당 항목 수
 
 export default function CategoryManagementPage() {
   const [categories, setCategories] = useState([]);
@@ -783,9 +783,9 @@ const handleReorder = useCallback(async (categoryId, direction) => {
         ))}
       </div>
 
-      <div className={styles.footer}>
+      {/* <div className={styles.footer}>
         <button onClick={handleSaveAllChanges} className={styles.saveAllButton}>Save</button>
-      </div>
+      </div> */}
 
       {/* 모달 렌더링 */}
       {showTypeSelectionModal && (

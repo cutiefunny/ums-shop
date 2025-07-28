@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import styles from '../common.module.css'; // 새로 생성한 CSS Modules
 import { useAdminModal } from '@/contexts/AdminModalContext'; // AdminModalContext 사용
 
-const ITEMS_PER_PAGE = 5; // 한 페이지에 보여줄 항목 수
+const ITEMS_PER_PAGE = 10; // 한 페이지에 보여줄 항목 수
 
 export default function AdminHistoryPage() {
     const [historyList, setHistoryList] = useState([]);

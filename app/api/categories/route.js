@@ -95,12 +95,29 @@ export async function GET(request) {
   const level = searchParams.get('level');
   const parentId = searchParams.get('parentId');
 
+  // Check if the request is from /admin/category-management
+  const referer = request.headers.get('referer');
+  const isAdminCategoryManagement = referer && referer.includes('/admin/category-management');
+
   try {
     let items;
+    let filterExpression = '';
+    let expressionAttributeNames = {};
+    let expressionAttributeValues = {};
+
+    if (!isAdminCategoryManagement) {
+      filterExpression = '#s = :activeStatus';
+      expressionAttributeNames['#s'] = 'status';
+      expressionAttributeValues[':activeStatus'] = 'Active';
+    }
+
 
     if (level === 'main') {
       const command = new ScanCommand({
         TableName: TABLE_MAIN_CATEGORIES,
+        FilterExpression: filterExpression || undefined, // Apply filter if not admin page
+        ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
+        ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
       });
       const { Items } = await docClient.send(command);
 
@@ -116,13 +133,21 @@ export async function GET(request) {
 
     } else if (level === 'surve1') {
       if (parentId) {
+        const queryExpressionAttributeNames = { ...expressionAttributeNames };
+        const queryExpressionAttributeValues = { ...expressionAttributeValues, ':mainCatId': parentId };
+        let queryFilterExpression = 'mainCategoryId = :mainCatId';
+
+        if (!isAdminCategoryManagement) {
+          queryFilterExpression += ' AND #s = :activeStatus';
+        }
+
         const command = new QueryCommand({
           TableName: TABLE_SUB1_CATEGORIES,
           IndexName: 'mainCategory-order-index',
           KeyConditionExpression: 'mainCategoryId = :mainCatId',
-          ExpressionAttributeValues: {
-            ':mainCatId': parentId,
-          },
+          FilterExpression: queryFilterExpression,
+          ExpressionAttributeNames: queryExpressionAttributeNames,
+          ExpressionAttributeValues: queryExpressionAttributeValues,
           ScanIndexForward: true,
         });
         const { Items } = await docClient.send(command);
@@ -137,7 +162,12 @@ export async function GET(request) {
         }));
 
       } else {
-        const command = new ScanCommand({ TableName: TABLE_SUB1_CATEGORIES });
+        const command = new ScanCommand({ 
+          TableName: TABLE_SUB1_CATEGORIES,
+          FilterExpression: filterExpression || undefined,
+          ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
+          ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
+        });
         const { Items } = await docClient.send(command);
         items = Items.map(item => ({
           categoryId: item.subCategory1Id,
@@ -151,13 +181,21 @@ export async function GET(request) {
 
     } else if (level === 'surve2') {
       if (parentId) {
+        const queryExpressionAttributeNames = { ...expressionAttributeNames };
+        const queryExpressionAttributeValues = { ...expressionAttributeValues, ':sub1CatId': parentId };
+        let queryFilterExpression = 'subCategory1Id = :sub1CatId';
+
+        if (!isAdminCategoryManagement) {
+          queryFilterExpression += ' AND #s = :activeStatus';
+        }
+
         const command = new QueryCommand({
           TableName: TABLE_SUB2_CATEGORIES,
           IndexName: 'subCategory1-order-index',
           KeyConditionExpression: 'subCategory1Id = :sub1CatId',
-          ExpressionAttributeValues: {
-            ':sub1CatId': parentId,
-          },
+          FilterExpression: queryFilterExpression,
+          ExpressionAttributeNames: queryExpressionAttributeNames,
+          ExpressionAttributeValues: queryExpressionAttributeValues,
           ScanIndexForward: true,
         });
         const { Items } = await docClient.send(command);
@@ -171,7 +209,12 @@ export async function GET(request) {
         }));
 
       } else {
-        const command = new ScanCommand({ TableName: TABLE_SUB2_CATEGORIES });
+        const command = new ScanCommand({ 
+          TableName: TABLE_SUB2_CATEGORIES,
+          FilterExpression: filterExpression || undefined,
+          ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
+          ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
+        });
         const { Items } = await docClient.send(command);
         items = Items.map(item => ({
           categoryId: item.subCategory2Id,
