@@ -111,12 +111,15 @@ export async function GET(request) {
     }
 
     if (level === 'main') {
-      const command = new ScanCommand({
+      const scanParams = {
         TableName: TABLE_MAIN_CATEGORIES,
-        FilterExpression: filterExpression || undefined, // Apply filter if not admin page
-        ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
-        ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
-      });
+      };
+      if (filterExpression) {
+        scanParams.FilterExpression = filterExpression;
+        scanParams.ExpressionAttributeNames = expressionAttributeNames;
+        scanParams.ExpressionAttributeValues = expressionAttributeValues;
+      }
+      const command = new ScanCommand(scanParams);
       const { Items } = await docClient.send(command);
 
       items = Items.map(item => ({
@@ -132,22 +135,21 @@ export async function GET(request) {
 
     } else if (level === 'surve1') {
       if (parentId) {
-        const queryExpressionAttributeNames = { ...expressionAttributeNames };
-        const queryExpressionAttributeValues = { ...expressionAttributeValues, ':mainCatId': parentId };
-        
-        // FilterExpression should only contain non-key attributes.
-        // The mainCategoryId is already used in KeyConditionExpression.
-        let queryFilterExpression = filterExpression; 
-
-        const command = new QueryCommand({
+        const queryParams = {
           TableName: TABLE_SUB1_CATEGORIES,
           IndexName: 'mainCategory-order-index', // Assuming this GSI exists with mainCategoryId as PK
           KeyConditionExpression: 'mainCategoryId = :mainCatId',
-          FilterExpression: queryFilterExpression || undefined, // Only non-key attributes here
-          ExpressionAttributeNames: queryExpressionAttributeNames,
-          ExpressionAttributeValues: queryExpressionAttributeValues,
+          ExpressionAttributeValues: { ...expressionAttributeValues, ':mainCatId': parentId },
           ScanIndexForward: true,
-        });
+        };
+        
+        // Only add FilterExpression and ExpressionAttributeNames if filterExpression is not empty
+        if (filterExpression) {
+          queryParams.FilterExpression = filterExpression;
+          queryParams.ExpressionAttributeNames = { ...expressionAttributeNames };
+        }
+
+        const command = new QueryCommand(queryParams);
         const { Items } = await docClient.send(command);
 
         items = Items.map(item => ({
@@ -161,12 +163,15 @@ export async function GET(request) {
 
       } else {
         // If parentId is not provided for surve1, scan the entire table (can be inefficient)
-        const command = new ScanCommand({ 
+        const scanParams = {
           TableName: TABLE_SUB1_CATEGORIES,
-          FilterExpression: filterExpression || undefined,
-          ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
-          ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
-        });
+        };
+        if (filterExpression) {
+          scanParams.FilterExpression = filterExpression;
+          scanParams.ExpressionAttributeNames = expressionAttributeNames;
+          scanParams.ExpressionAttributeValues = expressionAttributeValues;
+        }
+        const command = new ScanCommand(scanParams);
         const { Items } = await docClient.send(command);
         items = Items.map(item => ({
           categoryId: item.subCategory1Id,
@@ -180,22 +185,21 @@ export async function GET(request) {
 
     } else if (level === 'surve2') {
       if (parentId) {
-        const queryExpressionAttributeNames = { ...expressionAttributeNames };
-        const queryExpressionAttributeValues = { ...expressionAttributeValues, ':sub1CatId': parentId };
-        
-        // FilterExpression should only contain non-key attributes.
-        // The subCategory1Id is already used in KeyConditionExpression.
-        let queryFilterExpression = filterExpression; 
-
-        const command = new QueryCommand({
+        const queryParams = {
           TableName: TABLE_SUB2_CATEGORIES,
           IndexName: 'subCategory1-order-index', // Assuming this GSI exists with subCategory1Id as PK
           KeyConditionExpression: 'subCategory1Id = :sub1CatId',
-          FilterExpression: queryFilterExpression || undefined, // Only non-key attributes here
-          ExpressionAttributeNames: queryExpressionAttributeNames,
-          ExpressionAttributeValues: queryExpressionAttributeValues,
+          ExpressionAttributeValues: { ...expressionAttributeValues, ':sub1CatId': parentId },
           ScanIndexForward: true,
-        });
+        };
+        
+        // Only add FilterExpression and ExpressionAttributeNames if filterExpression is not empty
+        if (filterExpression) {
+          queryParams.FilterExpression = filterExpression;
+          queryParams.ExpressionAttributeNames = { ...expressionAttributeNames };
+        }
+
+        const command = new QueryCommand(queryParams);
         const { Items } = await docClient.send(command);
 
         items = Items.map(item => ({
@@ -208,12 +212,15 @@ export async function GET(request) {
 
       } else {
         // If parentId is not provided for surve2, scan the entire table (can be inefficient)
-        const command = new ScanCommand({ 
+        const scanParams = {
           TableName: TABLE_SUB2_CATEGORIES,
-          FilterExpression: filterExpression || undefined,
-          ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
-          ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
-        });
+        };
+        if (filterExpression) {
+          scanParams.FilterExpression = filterExpression;
+          scanParams.ExpressionAttributeNames = expressionAttributeNames;
+          scanParams.ExpressionAttributeValues = expressionAttributeValues;
+        }
+        const command = new ScanCommand(scanParams);
         const { Items } = await docClient.send(command);
         items = Items.map(item => ({
           categoryId: item.subCategory2Id,

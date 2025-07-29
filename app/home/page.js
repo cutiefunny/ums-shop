@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'; // useCallback, useMemo 추가
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import styles from './home.module.css';
 import HomeHeader from './components/HomeHeader';
 import SearchComponent from './components/SearchComponent';
@@ -8,8 +8,7 @@ import MainBanner from './components/MainBanner';
 import TrendingSection from './components/TrendingSection';
 import BottomNav from './components/BottomNav';
 import PopupModal from './components/PopupModal';
-// import { categoryData } from '@/data/mockData'; // 더 이상 mockData에서 categoryData를 가져오지 않습니다.
-import { useModal } from '@/contexts/ModalContext'; // useModal 훅 임포트
+import { useModal } from '@/contexts/ModalContext';
 
 export default function HomePage() {
   const [showPopup, setShowPopup] = useState(false);
@@ -17,13 +16,13 @@ export default function HomePage() {
 
   // 카테고리 데이터 상태
   const [mainCategories, setMainCategories] = useState([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-  const [errorCategories, setErrorCategories] = useState(null);
+  const [loadingCategories, setLoadingCategories] = useState(true); // 개별 로딩 상태 유지
+  const [errorCategories, setErrorCategories] = useState(null); // 개별 에러 상태 유지
 
   // 배너 제품 데이터 상태
   const [bannerProducts, setBannerProducts] = useState([]);
-  const [loadingBannerProducts, setLoadingBannerProducts] = useState(true);
-  const [errorBannerProducts, setErrorBannerProducts] = useState(null);
+  const [loadingBannerProducts, setLoadingBannerProducts] = useState(true); // 개별 로딩 상태 유지
+  const [errorBannerProducts, setErrorBannerProducts] = useState(null); // 개별 에러 상태 유지
 
   const { showModal } = useModal(); // 알림 모달 훅
 
@@ -36,80 +35,70 @@ export default function HomePage() {
     }
   }, []);
 
-  // API를 통해 메인 카테고리 데이터를 가져오는 함수
-  const fetchMainCategories = useCallback(async () => {
+  // 두 API 호출을 통합한 단일 데이터 페칭 함수
+  const fetchHomeData = useCallback(async () => {
     setLoadingCategories(true);
-    setErrorCategories(null);
-    try {
-      const response = await fetch('/api/categories?level=main');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setMainCategories(data || []); // 데이터가 없을 경우 빈 배열로 초기화
-    } catch (err) {
-      console.error("Error fetching main categories for Home Page:", err);
-      setErrorCategories(`메인 카테고리 목록을 불러오는 데 실패했습니다: ${err.message}`);
-      showModal(`메인 카테고리 목록을 불러오는 데 실패했습니다: ${err.message}`);
-    } finally {
-      setLoadingCategories(false);
-    }
-  }, [showModal]);
-
-  // API를 통해 랜덤 제품 이미지를 가져오는 함수 (배너용)
-  const fetchBannerProducts = useCallback(async () => {
     setLoadingBannerProducts(true);
+    setErrorCategories(null);
     setErrorBannerProducts(null);
-    try {
-      // DynamoDB에서 최대 10개의 상품만 가져오도록 limit 파라미터 추가
-      const response = await fetch('/api/products?limit=20'); // 수정된 부분
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const allProducts = await response.json();
 
-      // 이미지가 있고, Next.js Image 컴포넌트가 허용하는 URL 패턴을 가진 상품만 필터링
-      // (next.config.mjs에 설정된 remotePatterns를 따름)
+    try {
+      // 1. 메인 카테고리 데이터 가져오기
+      const categoriesResponse = await fetch('/api/categories?level=main');
+      if (!categoriesResponse.ok) {
+        throw new Error(`HTTP error! status: ${categoriesResponse.status} fetching categories`);
+      }
+      const categoriesData = await categoriesResponse.json();
+      // categoryId를 id로 복사하여 TrendingSection에서 사용 가능하도록 함
+      const processedCategories = (categoriesData || []).map(category => ({
+        ...category,
+        id: category.categoryId,
+      }));
+      setMainCategories(processedCategories);
+      setLoadingCategories(false); // 카테고리 로딩 완료
+
+      // 배너 제품 필터링을 위한 카테고리 ID 목록 추출
+      const fetchedMainCategoryIds = processedCategories.map(cat => cat.name);
+
+      // 2. 배너 제품 데이터 가져오기 (메인 카테고리 ID에 따라 필터링)
+      const productsResponse = await fetch('/api/products?limit=50'); // 충분한 제품을 가져오기 위해 limit 증가
+      if (!productsResponse.ok) {
+        throw new Error(`HTTP error! status: ${productsResponse.status} fetching products`);
+      }
+      const allProducts = await productsResponse.json();
+
+      // 이미지가 있고, 유효한 URL 패턴을 가지며, 메인 카테고리 ID에 포함된 상품만 필터링
       const validImageProducts = allProducts.filter(p =>
-        p.mainImage && (p.mainImage.startsWith('http://') || p.mainImage.startsWith('https://'))
+        p.mainImage && (p.mainImage.startsWith('http://') || p.mainImage.startsWith('https://')) &&
+        fetchedMainCategoryIds.includes(p.mainCategory) // 제품의 categoryId가 메인 카테고리 ID 목록에 있는지 확인
       );
 
-      // console.log("Valid image products:", validImageProducts);
-      // console.log("Main categories:", mainCategories);
-
-      // // mainCategory가 mainCategories에 포함된 제품만 필터링
-      // const filteredProducts = validImageProducts.filter(product =>
-      //   mainCategories.some(category => category.name === product.mainCategory)
-      // );
-
-      // 필터링된 유효한 이미지 제품 중 무작위로 5개 선택
-      // (ScanLimit이 10개이므로, 10개 미만일 수도 있어 .slice(0, 5)는 그대로 유지)
+      // 필터링된 제품 중 무작위로 5개 선택
       const shuffledProducts = validImageProducts.sort(() => 0.5 - Math.random());
-      const selectedProducts = shuffledProducts.slice(0, 5); // 5개만 최종 선택
+      const selectedProducts = shuffledProducts.slice(0, 5);
 
       const mappedBannerItems = selectedProducts.map((product, index) => ({
-        id: product.productId, // 또는 고유한 다른 ID
-        // 색상은 임의로 지정하거나, 백엔드에서 받아올 수 있습니다.
+        id: product.productId,
         color: index % 2 === 0 ? 'gray' : 'lightgray',
         imageUrl: product.mainImage,
       }));
-
       setBannerProducts(mappedBannerItems);
+      setLoadingBannerProducts(false); // 배너 제품 로딩 완료
+
     } catch (err) {
-      console.error("Error fetching banner products:", err);
-      setErrorBannerProducts(`배너 이미지를 불러오는 데 실패했습니다: ${err.message}`);
-      showModal(`배너 이미지를 불러오는 데 실패했습니다: ${err.message}`);
-    } finally {
-      setLoadingBannerProducts(false);
+      console.error("Error fetching home data:", err);
+      setErrorCategories(`홈 데이터 로드 실패: ${err.message}`);
+      setErrorBannerProducts(`홈 데이터 로드 실패: ${err.message}`);
+      setLoadingCategories(false); // 에러 발생 시 로딩 상태 해제
+      setLoadingBannerProducts(false); // 에러 발생 시 로딩 상태 해제
+      showModal(`홈 데이터 로드 중 오류가 발생했습니다: ${err.message}`);
     }
-  }, [showModal]);
+  }, [showModal]); // showModal만 의존성으로 가짐
 
-
-  // 컴포넌트 마운트 시 데이터 로드
+  // 컴포넌트 마운트 시 통합된 데이터 로드 함수 호출
   useEffect(() => {
-    fetchMainCategories();
-    fetchBannerProducts(); // 배너 제품도 함께 가져옴
-  }, [fetchMainCategories, fetchBannerProducts]);
+    fetchHomeData();
+  }, [fetchHomeData]);
 
   // MainBanner에 전달할 아이템 (Swiper loop를 위해 3배로 늘림)
   const triplicatedBannerItems = useMemo(() => {
@@ -121,7 +110,7 @@ export default function HomePage() {
     ];
   }, [bannerProducts]);
 
-
+  // 전체 로딩 및 에러 상태
   const isLoading = loadingCategories || loadingBannerProducts;
   const hasError = errorCategories || errorBannerProducts;
 

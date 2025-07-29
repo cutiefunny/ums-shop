@@ -214,17 +214,6 @@ export default function LoginPage() {
             Register
           </Link>
         </div>
-        
-        {/* {errorMessage && (
-          <p style={{ color: 'red', marginTop: '10px', textAlign: 'center' }}>
-            {errorMessage}
-          </p>
-        )}
-        {currentFcmToken && (
-          <p style={{ color: 'blue', marginTop: '5px', textAlign: 'center', wordBreak: 'break-all', fontSize: '0.8em' }}>
-            FCM Token: {currentFcmToken}
-          </p>
-        )} */}
       </div>
     </div>
   );
