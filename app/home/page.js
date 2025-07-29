@@ -62,7 +62,7 @@ export default function HomePage() {
     setErrorBannerProducts(null);
     try {
       // DynamoDB에서 최대 10개의 상품만 가져오도록 limit 파라미터 추가
-      const response = await fetch('/api/products?limit=10'); // 수정된 부분
+      const response = await fetch('/api/products?limit=20'); // 수정된 부분
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -74,9 +74,17 @@ export default function HomePage() {
         p.mainImage && (p.mainImage.startsWith('http://') || p.mainImage.startsWith('https://'))
       );
 
+      console.log("Valid image products:", validImageProducts);
+      console.log("Main categories:", mainCategories);
+
+      // mainCategory가 mainCategories에 포함된 제품만 필터링
+      const filteredProducts = validImageProducts.filter(product =>
+        mainCategories.some(category => category.name === product.mainCategory)
+      );
+
       // 필터링된 유효한 이미지 제품 중 무작위로 5개 선택
       // (ScanLimit이 10개이므로, 10개 미만일 수도 있어 .slice(0, 5)는 그대로 유지)
-      const shuffledProducts = validImageProducts.sort(() => 0.5 - Math.random());
+      const shuffledProducts = filteredProducts.sort(() => 0.5 - Math.random());
       const selectedProducts = shuffledProducts.slice(0, 5); // 5개만 최종 선택
 
       const mappedBannerItems = selectedProducts.map((product, index) => ({

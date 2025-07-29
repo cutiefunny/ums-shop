@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand, ScanCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-// import { getSignedUrl } from '@aws-sdk/s3-request-presigner'; // 사용되지 않으므로 제거
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -88,7 +87,6 @@ async function isCategoryNameDuplicate(tableName, categoryName, pkName) {
 
 /**
  * GET handler to retrieve categories based on level (main, surve1, surve2).
- * ... (GET 함수는 이전과 동일)
  */
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -105,12 +103,12 @@ export async function GET(request) {
     let expressionAttributeNames = {};
     let expressionAttributeValues = {};
 
+    // Only apply 'Active' status filter if not from admin category management page
     if (!isAdminCategoryManagement) {
       filterExpression = '#s = :activeStatus';
       expressionAttributeNames['#s'] = 'status';
       expressionAttributeValues[':activeStatus'] = 'Active';
     }
-
 
     if (level === 'main') {
       const command = new ScanCommand({
@@ -127,25 +125,25 @@ export async function GET(request) {
         code: item.code,
         status: item.status,
         order: item.order,
-        subCategory1Count: 0,
-        subCategory2Count: 0,
+        imageUrl: item.imageUrl, // Add imageUrl for main categories
+        subCategory1Count: 0, // These counts would typically be calculated or stored separately
+        subCategory2Count: 0, // if needed, as they require additional queries.
       }));
 
     } else if (level === 'surve1') {
       if (parentId) {
         const queryExpressionAttributeNames = { ...expressionAttributeNames };
         const queryExpressionAttributeValues = { ...expressionAttributeValues, ':mainCatId': parentId };
-        let queryFilterExpression = 'mainCategoryId = :mainCatId';
-
-        if (!isAdminCategoryManagement) {
-          queryFilterExpression += ' AND #s = :activeStatus';
-        }
+        
+        // FilterExpression should only contain non-key attributes.
+        // The mainCategoryId is already used in KeyConditionExpression.
+        let queryFilterExpression = filterExpression; 
 
         const command = new QueryCommand({
           TableName: TABLE_SUB1_CATEGORIES,
-          IndexName: 'mainCategory-order-index',
+          IndexName: 'mainCategory-order-index', // Assuming this GSI exists with mainCategoryId as PK
           KeyConditionExpression: 'mainCategoryId = :mainCatId',
-          FilterExpression: queryFilterExpression,
+          FilterExpression: queryFilterExpression || undefined, // Only non-key attributes here
           ExpressionAttributeNames: queryExpressionAttributeNames,
           ExpressionAttributeValues: queryExpressionAttributeValues,
           ScanIndexForward: true,
@@ -162,6 +160,7 @@ export async function GET(request) {
         }));
 
       } else {
+        // If parentId is not provided for surve1, scan the entire table (can be inefficient)
         const command = new ScanCommand({ 
           TableName: TABLE_SUB1_CATEGORIES,
           FilterExpression: filterExpression || undefined,
@@ -183,17 +182,16 @@ export async function GET(request) {
       if (parentId) {
         const queryExpressionAttributeNames = { ...expressionAttributeNames };
         const queryExpressionAttributeValues = { ...expressionAttributeValues, ':sub1CatId': parentId };
-        let queryFilterExpression = 'subCategory1Id = :sub1CatId';
-
-        if (!isAdminCategoryManagement) {
-          queryFilterExpression += ' AND #s = :activeStatus';
-        }
+        
+        // FilterExpression should only contain non-key attributes.
+        // The subCategory1Id is already used in KeyConditionExpression.
+        let queryFilterExpression = filterExpression; 
 
         const command = new QueryCommand({
           TableName: TABLE_SUB2_CATEGORIES,
-          IndexName: 'subCategory1-order-index',
+          IndexName: 'subCategory1-order-index', // Assuming this GSI exists with subCategory1Id as PK
           KeyConditionExpression: 'subCategory1Id = :sub1CatId',
-          FilterExpression: queryFilterExpression,
+          FilterExpression: queryFilterExpression || undefined, // Only non-key attributes here
           ExpressionAttributeNames: queryExpressionAttributeNames,
           ExpressionAttributeValues: queryExpressionAttributeValues,
           ScanIndexForward: true,
@@ -209,6 +207,7 @@ export async function GET(request) {
         }));
 
       } else {
+        // If parentId is not provided for surve2, scan the entire table (can be inefficient)
         const command = new ScanCommand({ 
           TableName: TABLE_SUB2_CATEGORIES,
           FilterExpression: filterExpression || undefined,
@@ -329,7 +328,7 @@ export async function POST(request) {
 
       // Surve2 카테고리는 이름 중복 검사를 하지 않습니다.
       // 필요하다면, subCategory1Id + name 조합으로 중복 검사를 할 수 있습니다.
- 
+   
       newItem = {
         subCategory2Id: `${surve1CategoryId}-sub2-${uuidv4().substring(0, 8)}`,
         name: name,
