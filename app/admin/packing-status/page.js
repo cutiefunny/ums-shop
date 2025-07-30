@@ -158,7 +158,7 @@ export default function PackingStatusPage() {
   // 포장상태 체크박스 변경 핸들러
   const handlePackingStatusChange = async (orderId, productId, currentPackingStatus) => {
     // packing_status는 boolean이라고 가정 (true: 포장 완료, false: 포장 미완료)
-    const newPackingStatus = currentPackingStatus === "true" ? false : true; // 현재 상태 반전
+    const newPackingStatus = currentPackingStatus === "true" || currentPackingStatus === true ? false : true; // 현재 상태 반전
     console.log(`Order ${orderId}, Product ${productId} packing status changed to: ${newPackingStatus}`);
 
     try {
