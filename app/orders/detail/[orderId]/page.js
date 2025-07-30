@@ -333,23 +333,23 @@ export default function CheckoutPage() {
 
     const handleDeleteSelected = useCallback(() => {
         if (selectedItemsForOrder.size === 0) {
-            showModal("삭제할 상품을 선택해주세요.");
+            showModal("Please select items to delete.");
             return;
         }
         showConfirmationModal(
-            "상품 삭제",
-            "선택된 상품들을 장바구니에서 삭제하시겠습니까?",
+            "Delete Items",
+            "Are you sure you want to delete the selected items from your cart?",
             () => {
-                const updatedCart = cartItems.filter(item => !selectedItemsForOrder.has(item.productId));
-                setSelectedItemsForOrder(new Set()); // 선택 초기화
+            const updatedCart = cartItems.filter(item => !selectedItemsForOrder.has(item.productId));
+            setSelectedItemsForOrder(new Set()); // Reset selection
 
-                if (updatedCart.length === 0) {
-                    setCartItems(updatedCart); // 로컬 상태 먼저 업데이트
-                    deleteEntireOrder(); // 전체 주문 삭제 트리거
-                } else {
-                    setCartItems(updatedCart);
-                    showModal("선택된 상품이 삭제되었습니다.");
-                }
+            if (updatedCart.length === 0) {
+                setCartItems(updatedCart); // Update local state first
+                deleteEntireOrder(); // Trigger entire order deletion
+            } else {
+                setCartItems(updatedCart);
+                showModal("Selected items have been deleted.");
+            }
             }
         );
     }, [cartItems, selectedItemsForOrder, showModal, showConfirmationModal, deleteEntireOrder]); // deleteEntireOrder 의존성 추가
@@ -357,7 +357,7 @@ export default function CheckoutPage() {
     // Step 1에서 메시지를 추가하는 함수
     const handleAddMessageForStep1 = async () => {
         if (!userMessage.trim() && !attachedFileForStep1) {
-            showModal('메시지 내용 또는 첨부 파일을 입력해주세요.');
+            showModal('Please enter a message or attach a file.');
             return;
         }
 
@@ -403,7 +403,7 @@ export default function CheckoutPage() {
 
             } catch (uploadError) {
                 console.error("S3 upload error:", uploadError);
-                showModal(`파일 업로드 실패: ${uploadError.message}`);
+                showModal(`S3 upload error: ${uploadError.message}`);
                 setLoading(false); // Stop loading on error
                 return;
             }
@@ -448,7 +448,7 @@ export default function CheckoutPage() {
         } catch (err) {
             console.error("Error saving message:", err);
             setError(`Failed to send message: ${err.message}`);
-            showModal(`메시지 전송 중 오류가 발생했습니다: ${err.message}`);
+            showModal(`An error occurred while sending the message: ${err.message}`);
             // Optionally, revert local state if save fails:
             // setMessagesForStep1(messagesForStep1); // Revert to previous state
         } finally {
@@ -473,7 +473,7 @@ export default function CheckoutPage() {
 
     const handleSubmitOrderReview = async () => {
         if (selectedItemsForOrder.size === 0) {
-            showModal("주문할 상품을 1개 이상 선택해주세요.");
+            showModal("Please select at least one item to order.");
             return;
         }
 
@@ -486,7 +486,7 @@ export default function CheckoutPage() {
         let deliveryDetailsPayload = {};
         if (deliveryOption === 'onboard') {
             if (!portName.trim() || !expectedShippingDate) {
-                showModal("Port Name과 Expected Shipping Date를 입력해주세요.");
+                showModal("Please enter Port Name and Expected Shipping Date.");
                 return;
             }
             deliveryDetailsPayload = {
@@ -496,7 +496,7 @@ export default function CheckoutPage() {
             };
         } else { // alternative
             if (!deliveryAddress.trim() || !postalCode.trim()) {
-                showModal("배송 주소와 우편번호를 입력해주세요.");
+                showModal("Please enter delivery address and postal code.");
                 return;
             }
             deliveryDetailsPayload = {
@@ -569,7 +569,7 @@ export default function CheckoutPage() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || '주문 정보 업데이트 실패');
+                throw new Error(errorData.message || 'Failed to update order information');
             }
 
             // After successful update, clear cart (if applicable)
@@ -584,13 +584,13 @@ export default function CheckoutPage() {
             }
 
             // Redirect to the new payment page
-            showModal("결제 요청이 제출되었습니다. 결제 페이지로 이동합니다.", () => {
+            showModal("Payment request has been submitted. Redirecting to the payment page.", () => {
                 router.push(`/orders/payment/${orderId}`); // Redirect to the new payment page
             });
 
         } catch (err) {
             console.error("Order confirmation error:", err);
-            showModal(`주문 확정에 실패했습니다: ${err.message}`);
+            showModal(`Failed to confirm order: ${err.message}`);
         } finally {
             setLoading(false);
         }
@@ -598,8 +598,8 @@ export default function CheckoutPage() {
 
     const handleCancelOrder = () => {
         showConfirmationModal(
-            "주문 취소",
-            "정말로 주문을 취소하시겠습니까? (장바구니 페이지로 돌아갑니다)",
+            "Cancel Order",
+            "Are you sure you want to cancel the order? (You will be redirected to the cart page)",
             () => {
                 router.push('/cart'); // 장바구니 페이지로 돌아가기
             },
@@ -626,7 +626,7 @@ export default function CheckoutPage() {
                     <div style={{ width: '24px' }}></div>
                 </header>
                 <main className={styles.mainContent}>
-                    <div className={`${styles.emptyMessage} ${styles.errorText}`}>오류: {error}</div>
+                    <div className={`${styles.emptyMessage} ${styles.errorText}`}>Error: {error}</div>
                 </main>
             </div>
         );
@@ -648,7 +648,7 @@ export default function CheckoutPage() {
                 </header>
                 <main className={styles.mainContent}>
                     <div className={styles.emptyMessage}>
-                        <p>장바구니에 담긴 상품이 없습니다.</p>
+                        <p>No items in the cart.</p>
                         <button onClick={() => router.push('/home')} className={styles.shopNowButton}>
                             Shop Now
                         </button>

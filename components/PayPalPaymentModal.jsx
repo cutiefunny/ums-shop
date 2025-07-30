@@ -109,7 +109,7 @@ const PayPalPaymentModal = ({ isOpen, onClose, orderDetail, orderId, finalTotalP
               </div>
             </PayPalScriptProvider>
           ) : (
-            <p>PayPal SDK를 로드하는 중입니다. 잠시만 기다려 주세요...</p>
+            <p>Loading PayPal SDK. Please wait...</p>
           )}
         </div>
       </div>

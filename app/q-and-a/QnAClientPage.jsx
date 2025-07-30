@@ -77,8 +77,8 @@ export default function QnAClientPage() { // 컴포넌트 이름을 QnAClientPag
 
     } catch (err) {
       console.error("Error fetching Q&A:", err);
-      setMyQuestionsError(`질문 내역을 불러오는 데 실패했습니다: ${err.message}`);
-      showModal(`질문 내역을 불러오는 데 실패했습니다: ${err.message}`);
+      setMyQuestionsError(`Failed to load question history: ${err.message}`);
+      showModal(`Failed to load question history: ${err.message}`);
     } finally {
       setMyQuestionsLoading(false);
     }
@@ -249,16 +249,18 @@ export default function QnAClientPage() { // 컴포넌트 이름을 QnAClientPag
   if (!isLoggedIn) {
     return (
       <div className={styles.pageContainer}>
-        <div className={styles.emptyMessage}>
-          <p>로그인 후 이용 가능한 페이지입니다.</p>
-          <button onClick={() => router.push('/')} className={commonStyles.button} style={{marginTop: '20px'}}>로그인</button>
-        </div>
+      <div className={styles.emptyMessage}>
+        <p>This page is available after logging in.</p>
+        <button onClick={() => router.push('/')} className={commonStyles.button} style={{marginTop: '20px'}}>Sign in</button>
+      </div>
       </div>
     );
   }
 
   if (commonLoading || myQuestionsLoading) {
-    return <div className={styles.pageContainer}><div className={styles.emptyMessage}>데이터를 불러오는 중...</div></div>;
+    return <div className={styles.pageContainer}><div className={styles.emptyMessage}>
+      <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
+    </div></div>;
   }
 
   return (
@@ -403,7 +405,7 @@ export default function QnAClientPage() { // 컴포넌트 이름을 QnAClientPag
             </div>
 
             {myQuestionsError ? (
-              <div className={`${styles.emptyMessage} ${commonStyles.errorText}`}>오류: {myQuestionsError}</div>
+              <div className={`${styles.emptyMessage} ${commonStyles.errorText}`}>error: {myQuestionsError}</div>
             ) : filteredMyQnAs.length > 0 ? (
               <div className={styles.qaList}>
                 {filteredMyQnAs.map(qna => (

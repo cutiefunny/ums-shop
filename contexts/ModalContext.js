@@ -20,7 +20,7 @@ export const ModalProvider = ({ children }) => {
     isOpen: false,
     title: '',
     message: '',
-    buttonText: '확인', // 기본 버튼 텍스트
+    buttonText: 'Confirm', // 기본 버튼 텍스트
     onConfirm: null,
     onCancel: null,
   });

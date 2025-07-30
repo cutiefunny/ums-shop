@@ -59,7 +59,7 @@ export default function CategoriesPage() {
     return (
       <div className={styles.pageContainer}>
         <div className={styles.mainContent} style={{ textAlign: 'center', padding: '50px', color: 'red' }}>
-          <p>오류: {error}</p>
+          <p>error: {error}</p>
         </div>
       </div>
     );
@@ -83,7 +83,7 @@ export default function CategoriesPage() {
             ))
           ) : (
             <div className={styles.emptyMessage}>
-              <p>카테고리가 없습니다.</p>
+              <p>no categories.</p>
             </div>
           )}
         </div>

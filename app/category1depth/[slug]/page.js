@@ -104,8 +104,8 @@ export default function Category1DepthPage() {
 
     } catch (err) {
       console.error("Error fetching category data:", err);
-      setError(`데이터를 불러오는 데 실패했습니다: ${err.message}`);
-      showModal(`데이터를 불러오는 데 실패했습니다: ${err.message}`);
+      setError(`Error fetching category data: ${err.message}`);
+      showModal(`Failed to fetch category data: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -128,8 +128,8 @@ export default function Category1DepthPage() {
 
   const handleConfirmAddToCart = async (productName, quantity) => {
     if (!isLoggedIn || !user?.seq) {
-        showModal("장바구니에 상품을 추가하려면 로그인해야 합니다.");
-        router.push('/'); // 로그인 페이지 또는 홈으로 리다이렉트
+        showModal("You must be logged in to add items to the cart.");
+        router.push('/'); // Redirect to login page or home
         return;
     }
 
@@ -179,25 +179,25 @@ export default function Category1DepthPage() {
             throw new Error('Failed to add item to cart in DB.');
         }
 
-        console.log(`장바구니에 추가된 상품 정보:`, itemToAdd);
-        console.log(`사용자 (ID: ${user.seq})의 장바구니가 업데이트되었습니다.`);
+        console.log(`Added to cart:`, itemToAdd);
+        console.log(`User's cart (ID: ${user.seq}) has been updated.`);
 
-        // 성공 모달을 ConfirmationModal로 변경
+        // Show confirmation modal instead of success modal
         showConfirmationModal(
-            "장바구니 추가 완료", // 모달 제목
-            `${productName} 제품이 장바구니에 추가되었습니다. 장바구니로 가시겠습니까?`, // 모달 메시지
-            () => { // 확인 버튼 클릭 시 (onConfirm)
-                router.push('/cart'); // 장바구니 페이지로 이동
+            "Added to Cart", // Modal title
+            `${productName} has been added to your cart. Go to cart?`, // Modal message
+            () => { // onConfirm (OK button click)
+          router.push('/cart'); // Go to cart page
             },
-            () => { // 취소 버튼 클릭 시 (onCancel)
-                // 모달만 닫고 아무것도 하지 않음
+            () => { // onCancel (Cancel button click)
+          // Close modal and do nothing
             }
         );
-        setIsCartModalOpen(false); // 모달 닫기
+        setIsCartModalOpen(false); // Close the modal
         
-    } catch (error) {
-        console.error("장바구니에 상품 추가 실패:", error);
-        showModal(`장바구니에 상품을 추가하지 못했습니다: ${error.message}`);
+          } catch (error) {
+        console.error("Failed to add item to cart:", error);
+        showModal(`Failed to add item to cart: ${error.message}`);
     }
 };
 
@@ -297,7 +297,7 @@ export default function Category1DepthPage() {
                 })
             ) : (
                 <div className={styles.emptyMessage}>
-                    <p>해당하는 카테고리 또는 상품이 없습니다.</p>
+                    <p>No matching categories or products found.</p>
                 </div>
             )}
         </main>

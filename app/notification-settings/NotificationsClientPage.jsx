@@ -183,7 +183,7 @@ export default function NotificationsClientPage() { // 컴포넌트 이름을 No
   // 알림 설정을 DynamoDB에 저장하는 함수
   const saveNotificationPreferences = useCallback(async (updatedSettings) => {
     if (!isLoggedIn || !user?.seq) {
-      showModal("로그인 후 이용 가능한 서비스입니다.");
+      showModal("This service is available after logging in.");
       router.replace('/');
       return;
     }
@@ -273,9 +273,11 @@ export default function NotificationsClientPage() { // 컴포넌트 이름을 No
   return (
       <main className={styles.mainContent}>
         {settingsLoading ? (
-          <div className={styles.notificationList}><div className={styles.emptyMessage}>설정을 불러오는 중...</div></div>
+          <div className={styles.notificationList}><div className={styles.emptyMessage}>
+            <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
+            </div></div>
         ) : settingsError ? (
-          <div className={`${styles.notificationList} ${styles.emptyMessage} ${styles.errorText}`}>오류: {settingsError}</div>
+          <div className={`${styles.notificationList} ${styles.emptyMessage} ${styles.errorText}`}>error: {settingsError}</div>
         ) : (
           <ul className={styles.notificationList}>
             {/* FCM 토큰 및 권한 상태 표시 (관련 코드 제거) */}

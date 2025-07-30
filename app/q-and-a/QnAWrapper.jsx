@@ -14,7 +14,7 @@ const QnAClientPage = dynamic(
     ssr: false, // QnAClientPage는 서버에서 렌더링되지 않습니다. (이 위치에서는 허용됨)
     loading: () => (
       <div className={styles.emptyMessage} style={{ height: 'calc(100vh - 200px)' }}>
-        질문/답변 페이지를 불러오는 중...
+        <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
       </div>
     )
   }
@@ -45,7 +45,7 @@ export default function QnAWrapper() {
       {/* 그러나 명시적인 Suspense는 코드 분할과 로딩 상태 관리에 유용합니다. */}
       <Suspense fallback={
         <div className={styles.emptyMessage} style={{ height: 'calc(100vh - 200px)' }}>
-          콘텐츠를 불러오는 중...
+          <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
         </div>
       }>
         <QnAClientPage />

@@ -39,74 +39,74 @@ export default function WishlistPage() {
       setAllProductsFromDb(data || []);
     } catch (err) {
       console.error("Error fetching all products for wishlist:", err);
-      setErrorProducts(`상품 목록을 불러오는 데 실패했습니다: ${err.message}`);
-      showModal(`상품 목록을 불러오는 데 실패했습니다: ${err.message}`);
-    } finally {
+      setErrorProducts(`Failed to fetch product list: ${err.message}`);
+      showModal(`Failed to fetch product list: ${err.message}`);
+        } finally {
       setLoadingProducts(false);
-    }
-  }, [showModal]);
+        }
+      }, [showModal]);
 
-  useEffect(() => {
-    fetchAllProducts();
-  }, [fetchAllProducts]);
+      useEffect(() => {
+        fetchAllProducts();
+      }, [fetchAllProducts]);
 
-  const wishlistedProducts = useMemo(() => {
-    if (loadingProducts || !allProductsFromDb.length || !wishlistItems) return [];
-    
-    const wishlistedIds = new Set(wishlistItems);
-    return allProductsFromDb.filter(product => wishlistedIds.has(product.productId));
-  }, [wishlistItems, allProductsFromDb, loadingProducts]);
+      const wishlistedProducts = useMemo(() => {
+        if (loadingProducts || !allProductsFromDb.length || !wishlistItems) return [];
+        
+        const wishlistedIds = new Set(wishlistItems);
+        return allProductsFromDb.filter(product => wishlistedIds.has(product.productId));
+      }, [wishlistItems, allProductsFromDb, loadingProducts]);
 
-  const handleOpenCartModal = (product) => {
-    setSelectedProduct(product);
-    console.log("Selected Product for Cart Modal:", product);
-    setIsCartModalOpen(true);
-  };
+      const handleOpenCartModal = (product) => {
+        setSelectedProduct(product);
+        console.log("Selected Product for Cart Modal:", product);
+        setIsCartModalOpen(true);
+      };
 
-  const handleConfirmAddToCart = async (productName, quantity) => {
-    if (!isLoggedIn || !user?.seq) {
-      showModal("장바구니에 상품을 추가하려면 로그인해야 합니다.");
+      const handleConfirmAddToCart = async (productName, quantity) => {
+        if (!isLoggedIn || !user?.seq) {
+      showModal("You must log in to add items to the cart.");
       router.push('/');
       return;
-    }
+        }
 
-    const itemToAdd = {
+        const itemToAdd = {
       productId: selectedProduct.id,
       name: selectedProduct.name,
       quantity: quantity,
       unitPrice: selectedProduct.price,
       mainImage: selectedProduct.image,
-    };
+        };
 
-    try {
-      const userResponse = await fetch(`/api/users/${user.seq}`);
-      if (!userResponse.ok) {
+        try {
+            const userResponse = await fetch(`/api/users/${user.seq}`);
+            if (!userResponse.ok) {
         throw new Error('Failed to fetch user cart data.');
-      }
-      const userData = await userResponse.json();
-      const currentCart = userData.cart || [];
+            }
+            const userData = await userResponse.json();
+            const currentCart = userData.cart || [];
 
-      const updatedCart = [...currentCart, itemToAdd];
+            const updatedCart = [...currentCart, itemToAdd];
 
-      const response = await fetch(`/api/users/${user.seq}`, {
+            const response = await fetch(`/api/users/${user.seq}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cart: updatedCart }),
-      });
+            });
 
-      if (!response.ok) {
+            if (!response.ok) {
         throw new Error('Failed to add item to cart in DB.');
-      }
+            }
 
-      console.log(`장바구니에 추가될 상품 정보:`, itemToAdd);
-      console.log(`사용자 (ID: ${user.seq})의 장바구니가 업데이트되었습니다.`);
+            console.log(`Product information to be added to the cart:`, itemToAdd);
+            console.log(`User (ID: ${user.seq})'s cart has been updated.`);
 
-      showModal(`${productName} 상품 ${quantity}개가 장바구니에 추가되었습니다!`);
-      
-    } catch (error) {
-      console.error("장바구니에 상품 추가 실패:", error);
-      showModal(`장바구니에 상품을 추가하지 못했습니다: ${error.message}`);
-    }
+            showModal(`${productName} 상품 ${quantity}개가 장바구니에 추가되었습니다!`);
+            
+        } catch (error) {
+            console.error("Failed to add product to cart:", error);
+            showModal(`Failed to add product to cart: ${error.message}`);
+          }
   };
 
   // 'Shop Now' 버튼 클릭 핸들러
@@ -125,7 +125,7 @@ export default function WishlistPage() {
   if (errorProducts) {
     return (
       <div className={styles.pageContainer}>
-        <div className={`${styles.emptyMessage} ${styles.errorText}`}>오류: {errorProducts}</div>
+        <div className={`${styles.emptyMessage} ${styles.errorText}`}>error: {errorProducts}</div>
       </div>
     );
   }

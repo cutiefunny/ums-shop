@@ -61,7 +61,7 @@ export default function CategoryItem({ category, isOpen, onToggle }) {
             <img src="/images/loading2.gif" alt="Loading..." style={{ height: '48px' }} />
           ) : subError ? (
             <li className={styles.subCategoryItem} style={{ textAlign: 'center', color: 'red' }}>
-              오류: {subError}
+              error: {subError}
             </li>
           ) : subCategories.length > 0 ? (
             subCategories.map(subCat => ( // subCat은 이제 객체 {categoryId, name, code, ...}
@@ -73,7 +73,7 @@ export default function CategoryItem({ category, isOpen, onToggle }) {
             ))
           ) : (
             <li className={styles.subCategoryItem} style={{ textAlign: 'center', color: '#868e96' }}>
-              서브 카테고리가 없습니다.
+              no subcategories
             </li>
           )}
         </ul>

@@ -199,15 +199,15 @@ export default function ProductListPage() {
             throw new Error('Failed to add item to cart in DB.');
         }
 
-        console.log(`장바구니에 추가된 상품 정보:`, itemToAdd);
-        console.log(`사용자 (ID: ${user.seq})의 장바구니가 업데이트되었습니다.`);
+        console.log(`Product added to cart:`, itemToAdd);
+        console.log(`User (ID: ${user.seq})'s cart has been updated.`);
 
-        showModal(`${productName} 상품 ${quantity}개가 장바구니에 추가되었습니다!`); // 성공 모달
-        setIsCartModalOpen(false); // 모달 닫기
+        showModal(`${productName} ${quantity} items have been added to your cart!`); // Success modal
+        setIsCartModalOpen(false); // Close the modal
         
-    } catch (error) {
-        console.error("장바구니에 상품 추가 실패:", error);
-        showModal(`장바구니에 상품을 추가하지 못했습니다: ${error.message}`);
+          } catch (error) {
+        console.error("Failed to add item to cart:", error);
+        showModal(`Failed to add item to cart: ${error.message}`);
     }
 };
 
@@ -218,7 +218,7 @@ export default function ProductListPage() {
   if (error) {
     return (
       <div className={styles.pageContainer}>
-        <div className={`${styles.emptyMessage} ${styles.errorText}`}>오류: {error}</div>
+        <div className={`${styles.emptyMessage} ${styles.errorText}`}>error: {error}</div>
       </div>
     );
   }
@@ -261,7 +261,7 @@ export default function ProductListPage() {
               </Link>
             ))
           ) : (
-            <div className={styles.emptyMessage}>해당 카테고리에 상품이 없습니다.</div>
+            <div className={styles.emptyMessage}>No products found in this category.</div>
           )}
         </div>
       </main>

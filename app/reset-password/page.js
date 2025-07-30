@@ -151,8 +151,8 @@ export default function ResetPasswordPage() {
     e.preventDefault();
 
     if (!isStep1Valid) {
-        setModalTitle("입력 오류");
-        setModalMessage("모든 필수 필드를 입력해주세요.");
+        setModalTitle("Input Error");
+        setModalMessage("Please fill in all required fields.");
         setIsModalOpen(true);
         return;
     }
@@ -178,8 +178,8 @@ export default function ResetPasswordPage() {
         setStep(2); // 인증 성공 시 2단계로 이동
     } catch (err) {
         console.error("User verification error:", err);
-        setModalTitle("인증 실패");
-        setModalMessage(err.message || "사용자 인증에 실패했습니다. 정보를 다시 확인해주세요.");
+        setModalTitle("Authentication Failed");
+        setModalMessage(err.message || "User authentication failed. Please check your information again.");
         setIsModalOpen(true);
     }
   };
@@ -189,8 +189,8 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     // "필드 미입력 시" 에러 처리를 위해 조건 추가
     if (!formData.password || !formData.confirmPassword) {
-      setModalTitle("입력 오류");
-      setModalMessage("새 비밀번호를 입력해주세요.");
+      setModalTitle("Input Error");
+      setModalMessage("Please enter a new password.");
       setIsModalOpen(true);
       return;
     }
@@ -227,8 +227,8 @@ export default function ResetPasswordPage() {
     } else {
         // isStep2Valid가 false일 경우, alert으로 유효성 검사 실패 알림
         // (실시간 에러 메시지가 이미 표시되지만, 버튼 클릭 시 추가 피드백 제공)
-        setModalTitle("비밀번호 유효성 오류");
-        setModalMessage("비밀번호 요구 사항을 확인해주세요.");
+        setModalTitle("Password Validation Error");
+        setModalMessage("Please check the password requirements.");
         setIsModalOpen(true);
     }
   };

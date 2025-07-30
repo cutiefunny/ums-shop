@@ -155,8 +155,8 @@ export default function CheckoutPage() {
             // MODIFICATION END
         } catch (err) {
             console.error("Error fetching user cart:", err);
-            setError(`장바구니 목록을 불러오는 데 실패했습니다: ${err.message}`);
-            showModal(`장바구니 목록을 불러오는 데 실패했습니다: ${err.message}`);
+            setError(`Failed to load cart: ${err.message}`);
+            showModal(`Failed to load cart: ${err.message}`);
             logout(); // 보안상 장바구니 데이터 로드 실패 시 로그아웃
             router.replace('/');
         } finally {
@@ -211,25 +211,23 @@ export default function CheckoutPage() {
 
     const handleDeleteSelected = useCallback(() => {
         if (selectedItemsForOrder.size === 0) {
-            showModal("삭제할 상품을 선택해주세요.");
+            showModal("Please select at least one item to order.");
             return;
         }
         showConfirmationModal(
-            "상품 삭제",
-            "선택된 상품들을 장바구니에서 삭제하시겠습니까?",
+            "Cancel Order",
+            "Are you sure you want to cancel the order? (You will be redirected to the cart page)",
             () => {
-                const updatedCart = cartItems.filter(item => !selectedItemsForOrder.has(item.productId));
-                setCartItems(updatedCart);
-                setSelectedItemsForOrder(new Set()); // 선택 초기화
-                showModal("선택된 상품이 삭제되었습니다.");
-            }
+                router.push('/cart'); // 장바구니 페이지로 돌아가기
+            },
+            () => { /* do nothing on cancel */ }
         );
-    }, [cartItems, selectedItemsForOrder, showModal, showConfirmationModal]);
+    }, [cartItems, selectedItemsForOrder, showModal, showConfirmationModal, router]);
 
     // Step 1에서 메시지를 추가하는 함수
     const handleAddMessageForStep1 = async () => {
         if (!userMessage.trim() && !attachedFileForStep1) {
-            showModal('메시지 내용 또는 첨부 파일을 입력해주세요.');
+            showModal('Please enter a message or attach a file.');
             return;
         }
 
@@ -283,7 +281,7 @@ export default function CheckoutPage() {
 
             } catch (uploadError) {
                 console.error("S3 upload error:", uploadError);
-                showModal(`파일 업로드 실패: ${uploadError.message}`);
+                showModal(`Failed to upload file: ${uploadError.message}`);
                 setLoading(false); // 로딩 해제
                 return; // 업로드 실패 시 메시지 전송 중단
             } finally {
@@ -325,12 +323,12 @@ export default function CheckoutPage() {
 
     const handleSubmitOrderReview = async () => {
         if (selectedItemsForOrder.size === 0) {
-            showModal("주문할 상품을 1개 이상 선택해주세요.");
+            showModal("Please select at least one item to order.");
             return;
         }
 
         if (!user?.seq) {
-            showModal("사용자 정보를 찾을 수 없습니다. 다시 로그인 해주세요.");
+            showModal("User information not found. Please log in again.");
             logout();
             router.replace('/');
             return;
@@ -339,7 +337,7 @@ export default function CheckoutPage() {
         let deliveryDetailsPayload = {};
         if (deliveryOption === 'onboard') {
             if (!portName.trim() || !expectedShippingDate) {
-                showModal("Port Name과 Expected Shipping Date를 입력해주세요.");
+                showModal("Please enter Port Name and Expected Shipping Date.");
                 return;
             }
             deliveryDetailsPayload = {
@@ -349,7 +347,7 @@ export default function CheckoutPage() {
             };
         } else { // alternative
             if (!deliveryAddress.trim() || !postalCode.trim()) {
-                showModal("배송 주소와 우편번호를 입력해주세요.");
+                showModal("Please enter delivery address and postal code.");
                 return;
             }
             deliveryDetailsPayload = {
@@ -429,7 +427,7 @@ export default function CheckoutPage() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || '주문 생성 실패');
+                throw new Error(errorData.message || 'Failed to create order');
             }
 
             console.log("Order created successfully:", response);
@@ -440,7 +438,7 @@ export default function CheckoutPage() {
                 category: 'Order',
                 title: 'Order Requested',
                 en: 'Your order list has been submitted. Please wait for confirmation.',
-                kr: '당신의 주문이 제출되었습니다. 주문 확정을 대기하여 주세요.',
+                kr: 'Your order has been submitted successfully. Redirecting to order list page.',
                 orderId: newOrderId, // 주문 ID 추가
             });
 
@@ -460,13 +458,13 @@ export default function CheckoutPage() {
                 setShowGuideModal(true);
                 setCurrentGuideStep(0);
             } else {
-                showModal("주문이 성공적으로 접수되었습니다. 주문 목록 페이지로 이동합니다.", () => {
+                showModal("Your order has been submitted successfully. Redirecting to order list page.", () => {
                     router.push('/orders');
                 });
             }
         } catch (err) {
             console.error("Order submission error:", err);
-            showModal(`주문 접수에 실패했습니다: ${err.message}`);
+            showModal(`Failed to submit order: ${err.message}`);
         } finally {
             setLoading(false);
         }
@@ -474,8 +472,8 @@ export default function CheckoutPage() {
 
     const handleCancelOrder = () => {
         showConfirmationModal(
-            "주문 취소",
-            "정말로 주문을 취소하시겠습니까? (장바구니 페이지로 돌아갑니다)",
+            "Cancel Order",
+            "Are you sure you want to cancel the order? (You will be redirected to the cart page)",
             () => {
                 router.push('/cart'); // 장바구니 페이지로 돌아가기
             },
@@ -502,7 +500,7 @@ export default function CheckoutPage() {
                     <div style={{ width: '24px' }}></div>
                 </header>
                 <main className={styles.mainContent}>
-                    <div className={`${styles.emptyMessage} ${styles.errorText}`}>오류: {error}</div>
+                    <div className={`${styles.emptyMessage} ${styles.errorText}`}>Error: {error}</div>
                 </main>
             </div>
         );
@@ -540,7 +538,7 @@ export default function CheckoutPage() {
                 </header>
                 <main className={styles.mainContent}>
                     <div className={styles.emptyMessage}>
-                        <p>장바구니에 담긴 상품이 없습니다.</p>
+                        <p>No items in your cart.</p>
                         <button onClick={() => router.push('/home')} className={styles.shopNowButton}>
                             Shop Now
                         </button>

@@ -31,11 +31,11 @@ export default function LoginPage() {
     // user 객체가 존재하고 user.seq가 유효한지 확인
     if (!user?.seq) {
       console.warn('User ID is not available. Cannot send FCM token to server.');
-      setErrorMessage('사용자 정보가 없어 FCM 토큰을 저장할 수 없습니다. 로그인 후 다시 시도해주세요.');
+      setErrorMessage('User information is not available, cannot save FCM token. Please try again after logging in.');
       return;
-    }
+        }
 
-    try {
+        try {
       const response = await fetch(`/api/users/${user.seq}`, {
         method: 'PUT',
         headers: {
@@ -49,11 +49,11 @@ export default function LoginPage() {
       } else {
         const errorData = await response.json();
         console.error('Failed to send FCM token to server:', errorData.message);
-        setErrorMessage(`토큰 저장 실패: ${errorData.message}`);
+        setErrorMessage(`Failed to save token: ${errorData.message}`);
       }
-    } catch (error) {
+        } catch (error) {
       console.error('Error sending FCM token to server:', error);
-      setErrorMessage(`토큰 전송 중 네트워크 오류: ${error.message}`);
+      setErrorMessage(`Network error while sending token: ${error.message}`);
     }
   }, [user?.seq]); // user.seq가 변경될 때마다 함수 재생성
 
@@ -62,11 +62,11 @@ export default function LoginPage() {
     // 클라이언트 환경에서만 실행되도록 조건 추가
     if (typeof window !== 'undefined' && messaging && isLoggedIn && user?.seq) {
       if (!('Notification' in window)) {
-        setErrorMessage('이 브라우저는 알림을 지원하지 않습니다.');
+        setErrorMessage('This browser does not support notifications.');
         return;
       }
       if (!('serviceWorker' in navigator)) {
-        setErrorMessage('이 브라우저는 서비스 워커를 지원하지 않습니다. PWA 푸시 알림을 사용할 수 없습니다.');
+        setErrorMessage('This browser does not support service workers. PWA push notifications are not available.');
         return;
       }
 
@@ -85,7 +85,7 @@ export default function LoginPage() {
 
             const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
             if (!vapidKey) {
-              setErrorMessage('VAPID 키가 설정되지 않았습니다. Firebase 콘솔에서 VAPID 키를 가져와 환경 변수에 설정해주세요.');
+                setErrorMessage('VAPID key is not set. Please set NEXT_PUBLIC_FIREBASE_VAPID_KEY in your .env.local file.');
               console.error('VAPID key is not set. Please set NEXT_PUBLIC_FIREBASE_VAPID_KEY in your .env.local file.');
               return;
             }
@@ -97,38 +97,38 @@ export default function LoginPage() {
               sendTokenToServer(currentToken); // 토큰을 서버에 전송
             } else {
               console.log('No FCM registration token available. Request permission to generate one.');
-              setErrorMessage('FCM 등록 토큰을 가져올 수 없습니다. 알림 권한을 허용해주세요.');
+                setErrorMessage('Failed to retrieve FCM registration token. Please allow notification permissions.');
             }
 
             // 포그라운드 메시지 수신 처리
             onMessage(messaging, (payload) => {
               console.log('Message received in foreground. ', payload);
-              const { title, body } = payload.notification || { title: '새 알림', body: '새로운 메시지가 도착했습니다.' };
+                const { title, body } = payload.notification || { title: 'New Notification', body: 'A new message has arrived.' };
               const notificationBody = payload.data?.body || body;
               showModal(`${title}: ${notificationBody}`); // 모달로 알림 표시
             });
           } else if (permission === 'denied') {
             setPermissionGranted(false);
-            setErrorMessage('알림 권한이 거부되었습니다. 알림을 받으려면 브라우저 설정에서 권한을 허용해주세요.');
+            setErrorMessage('Notification permission denied. Please allow permission in your browser settings to receive notifications.');
             console.log('Notification permission denied.');
-          } else {
+            } else {
             setPermissionGranted(false);
-            setErrorMessage('알림 권한 상태가 불확실합니다.');
+            setErrorMessage('Notification permission status is uncertain.');
             console.log('Notification permission unknown.');
+            }
+          } catch (error) {
+            console.error('Error during notification setup:', error);
+            setErrorMessage(`An error occurred while setting up notifications: ${error.message}`);
           }
-        } catch (error) {
-          console.error('Error during notification setup:', error);
-          setErrorMessage(`알림 설정 중 오류가 발생했습니다: ${error.message}`);
-        }
-      };
+          };
 
-      setupNotifications();
-    } else if (!isLoggedIn) {
-      setErrorMessage('로그인 후 푸시 알림 기능을 사용할 수 있습니다.');
-      setCurrentFcmToken('');
-      setPermissionGranted(false);
-    } else if (!user?.seq) {
-      setErrorMessage('사용자 정보를 불러오는 중입니다...');
+          setupNotifications();
+        } else if (!isLoggedIn) {
+          setErrorMessage('You can use push notifications after logging in.');
+          setCurrentFcmToken('');
+          setPermissionGranted(false);
+        } else if (!user?.seq) {
+          setErrorMessage('Loading user information...');
     }
   }, [messaging, isLoggedIn, user?.seq, sendTokenToServer, showModal]); // 의존성 배열에 필요한 모든 값 포함
 
@@ -157,7 +157,7 @@ export default function LoginPage() {
     } catch (err) {
       console.error('Login error:', err);
       setError(err.message || 'An unexpected error occurred during login.');
-      showModal(err.message || '로그인 중 오류가 발생했습니다.');
+      showModal(err.message || 'An error occurred during login.');
     } finally {
       setLoading(false);
     }

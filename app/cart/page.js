@@ -47,7 +47,7 @@ export default function CartPage() { // 컴포넌트 이름 변경
       console.log("Cart updated successfully in DB.");
     } catch (error) {
       console.error("Error updating cart in DB:", error);
-      showModal("장바구니 업데이트에 실패했습니다: " + error.message);
+      showModal("Failed to update cart: " + error.message);
     }
   }, [isLoggedIn, user?.seq, showModal]);
 
@@ -90,8 +90,8 @@ export default function CartPage() { // 컴포넌트 이름 변경
       setUserCartItems(enrichedCartItems);
     } catch (err) {
       console.error("Error fetching user cart:", err);
-      setErrorCart(`장바구니 목록을 불러오는 데 실패했습니다: ${err.message}`);
-      showModal(`장바구니 목록을 불러오는 데 실패했습니다: ${err.message}`);
+      setErrorCart(`Failed to load cart: ${err.message}`);
+      showModal(`Failed to load cart: ${err.message}`);
     } finally {
       setLoadingCart(false);
     }
@@ -112,7 +112,7 @@ export default function CartPage() { // 컴포넌트 이름 변경
   const handleConfirmAddToCart = async (productName, quantity) => {
     // AddToCartModal에서 'Add to Cart' 버튼 클릭 시 호출됩니다.
     // 장바구니 페이지에서는 주로 수량 변경에 사용될 수 있습니다.
-    showModal(`${productName} 상품 ${quantity}개로 수량이 업데이트되었습니다.`);
+    showModal(`Quantity updated to ${quantity} for ${productName}.`);
     setIsCartModalOpen(false); // 모달 닫기
     // 실제 수량 변경 로직은 handleUpdateQuantity에서 처리됩니다.
   };
@@ -135,7 +135,7 @@ export default function CartPage() { // 컴포넌트 이름 변경
     setUserCartItems(updatedCart); // UI 먼저 업데이트
 
     await updateCartInDb(updatedCart); // DB에 변경 사항 반영
-    showModal(`상품이 장바구니에서 제거되었습니다.`);
+    showModal(`Item removed from cart.`);
   }, [userCartItems, updateCartInDb, showModal]);
 
 
@@ -165,7 +165,7 @@ export default function CartPage() { // 컴포넌트 이름 변경
   if (errorCart) {
     return (
       <div className={styles.pageContainer}>
-        <div className={`${styles.emptyMessage} ${styles.errorText}`}>오류: {errorCart}</div>
+        <div className={`${styles.emptyMessage} ${styles.errorText}`}>Error: {errorCart}</div>
       </div>
     );
   }
@@ -195,7 +195,7 @@ export default function CartPage() { // 컴포넌트 이름 변경
           </div>
         ) : (
           <div className={styles.emptyMessage}>
-            {/* <p>장바구니가 비어 있습니다.</p> */}
+            <p>Your cart is empty.</p>
           </div>
         )}
 

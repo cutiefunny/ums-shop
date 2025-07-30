@@ -20,8 +20,8 @@ export default function PopupModal({ imageUrl, onClose }) {
     <div className={styles.popupOverlay} onClick={handleClose}>
       <div className={styles.popupContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.popupImageContainer}>
-          {/* TODO: 실제 배너 이미지 경로로 교체해주세요. */}
-          <Image src={imageUrl} alt="이벤트 배너" width={300} height={450} style={{ width: '100%', height: 'auto' }} />
+          {/* TODO: Replace with the actual banner image path. */}
+          <Image src={imageUrl} alt="Event Banner" width={300} height={450} style={{ width: '100%', height: 'auto' }} />
         </div>
         <div className={styles.popupFooter}>
           <label className={styles.popupCheckboxLabel}>
@@ -30,10 +30,10 @@ export default function PopupModal({ imageUrl, onClose }) {
               checked={dontShowToday}
               onChange={(e) => setDontShowToday(e.target.checked)}
             />
-            오늘 하루 그만보기
+            Don't show again today
           </label>
           <button onClick={handleClose} className={styles.popupCloseButton}>
-            닫기
+            Close
           </button>
         </div>
       </div>

@@ -145,7 +145,7 @@ export default function ProfilePage() {
       router.replace('/'); // 로그인 페이지로 이동
     } catch (err) {
       console.error("Logout failed:", err);
-      showModal("로그아웃 중 오류가 발생했습니다.");
+      showModal("An error occurred during logout.");
     } finally {
       setLoading(false);
     }
@@ -352,7 +352,7 @@ export default function ProfilePage() {
         isOpen={showWillMissYouModal}
         title="We'll Miss You"
         message="Thanks for being with UMS SHOP.\nCome back anytime for fresh new deals."
-        buttonText="Submit" // 여기서는 "Submit"이지만, 실제로는 "OK"나 "확인"이 적절할 수 있음
+        buttonText="OK" // 여기서는 "Submit"이지만, 실제로는 "OK"나 "확인"이 적절할 수 있음
         onConfirm={() => { setShowWillMissYouModal(false); router.replace('/'); }} // 로그인 화면으로 이동
         onCancel={() => setShowWillMissYouModal(false)}
       />

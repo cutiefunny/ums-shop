@@ -49,8 +49,8 @@ const NotificationsClientPage = () => {
             setNotifications(sortedNotifications);
         } catch (err) {
             console.error('Failed to fetch notifications:', err);
-            setError(`알림을 불러오는 데 실패했습니다: ${err.message}`);
-            showModal(`알림을 불러오는 데 실패했습니다: ${err.message}`);
+            setError(`Failed to fetch notifications: ${err.message}`);
+            showModal(`Failed to fetch notifications: ${err.message}`);
         } finally {
             setLoading(false);
         }
@@ -101,7 +101,7 @@ const NotificationsClientPage = () => {
                         n.timestamp === notiItem.timestamp ? { ...n, read: false } : n
                     )
                 );
-                showModal(`알림 상태 업데이트 실패: ${err.message}`);
+                showModal(`Failed to update notification status: ${err.message}`);
             }
         }
 
@@ -149,7 +149,7 @@ const NotificationsClientPage = () => {
             console.error("Error marking all notifications as read:", err);
             // 오류 발생 시 UI를 원래 상태로 되돌릴 수 있습니다.
             fetchNotifications(); // 다시 데이터를 불러와 상태를 동기화
-            showModal(`모든 알림 읽음 처리 실패: ${err.message}`);
+            showModal(`Failed to mark all notifications as read: ${err.message}`);
         }
 
     }, [user?.seq, showModal, fetchNotifications]);
@@ -168,8 +168,8 @@ const NotificationsClientPage = () => {
     if (!isLoggedIn) {
         return (
             <div className={styles.container}>
-                <p className={styles.infoMessage}>로그인 후 알림을 확인하실 수 있습니다.</p>
-                <button onClick={() => router.push('/login')} className={styles.loginButton}>로그인</button>
+                <p className={styles.infoMessage}>You must be logged in to view notifications.</p>
+                <button onClick={() => router.push('/login')} className={styles.loginButton}>Log In</button>
             </div>
         );
     }
@@ -183,7 +183,7 @@ const NotificationsClientPage = () => {
                 <h1 className={styles.headerTitle}>Notifications</h1> {/* 제목을 Notifications로 변경 */}
                 {unreadNotificationsCount > 0 && (
                     <button onClick={markAllAsRead} className={styles.markAllReadButton}>
-                        모두 읽음
+                        Mark all as read
                     </button>
                 )}
             </header>
@@ -229,11 +229,11 @@ const NotificationsClientPage = () => {
                 </div>
             )}
 
-            {loading && <p className={styles.infoMessage}>알림을 불러오는 중...</p>}
+            {loading && <p className={styles.infoMessage}>Loading notifications...</p>}
             {error && <p className={styles.errorMessage}>{error}</p>}
 
             {!loading && !error && filteredNotifications.length === 0 && (
-                <p className={styles.noNotifications}>표시할 알림이 없습니다.</p>
+                <p className={styles.noNotifications}>No notifications to display.</p>
             )}
 
             {!loading && !error && filteredNotifications.length > 0 && (

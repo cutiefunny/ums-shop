@@ -56,9 +56,9 @@ export default function PaymentPage() {
             console.log('Order detail fetched successfully:', data);
             setOrderDetail(data);
         } catch (err) {
-            console.error("결제 주문 상세 정보를 불러오는 중 오류:", err);
-            setError(`주문 상세 정보를 불러오는 데 실패했습니다: ${err.message}`);
-            showModal(`주문 상세 정보를 불러오는 데 실패했습니다: ${err.message}`);
+            console.error("Error fetching payment order details:", err);
+            setError(`Failed to load order details: ${err.message}`);
+            showModal(`Failed to load order details: ${err.message}`);
         } finally {
             setLoading(false);
         }
@@ -82,7 +82,7 @@ export default function PaymentPage() {
     const productSummary = useMemo(() => {
         return orderDetail && orderDetail.orderItems.length > 0
             ? `${orderDetail.orderItems[0].name} x ${orderDetail.orderItems.reduce((sum, item) => sum + item.quantity, 0)}`
-            : '상품 없음';
+            : 'No items';
     }, [orderDetail]);
 
     // PayPal 결제 성공 후 최종 캡처 및 DB 업데이트
@@ -102,7 +102,7 @@ export default function PaymentPage() {
             if (!captureResponse.ok) {
                 const errorData = await captureResponse.json();
                 console.error('PayPal capture API failed:', errorData);
-                throw new Error(errorData.message || 'PayPal 결제 캡처 실패.');
+                throw new Error(errorData.message || 'PayPal payment capture failed.');
             }
             console.log('PayPal capture API successful.');
 
@@ -110,7 +110,7 @@ export default function PaymentPage() {
             const getOrderResponse = await fetch(`/api/orders/${currentOrderId}`);
             if (!getOrderResponse.ok) {
                 console.error('Failed to fetch order details for status history update.');
-                throw new Error(`주문 정보를 가져오는 데 실패했습니다: ${getOrderResponse.status}`);
+                throw new Error(`Failed to fetch order details: ${getOrderResponse.status}`);
             }
             const updatedOrderDetailAfterCapture = await getOrderResponse.json();
             console.log('Fetched order detail for status update:', updatedOrderDetailAfterCapture);
@@ -140,19 +140,19 @@ export default function PaymentPage() {
             if (!updateResponse.ok) {
                 const errorData = await updateResponse.json();
                 console.error('Order status update failed:', errorData);
-                throw new Error(errorData.message || '결제 후 주문 상태 업데이트 실패.');
+                throw new Error(errorData.message || 'Failed to update order status after payment.');
             }
             console.log('Order status updated successfully in DB.');
 
-            // 알림은 PayPalPaymentModal의 onApprove에서 이미 처리됨
+            // Notifications are already handled in the onApprove function of PayPalPaymentModal
 
-            showModal("PayPal 결제가 성공적으로 완료되었습니다! 주문 목록 페이지로 이동합니다.", () => {
+            showModal("PayPal payment was successful! Redirecting to the order list page.", () => {
                 router.push('/orders');
             });
 
         } catch (err) {
-            console.error("PayPal 결제 완료 처리 오류:", err);
-            showModal(`PayPal 결제 처리 중 오류가 발생했습니다: ${err.message}`, () => { /* 다시 시도 */ }, true, "다시 시도", () => { router.push('/orders'); }, "내 주문으로 이동");
+            console.error("Error processing PayPal payment completion:", err);
+            showModal(`An error occurred while processing the PayPal payment: ${err.message}`, () => { /* Retry */ }, true, "Retry", () => { router.push('/orders'); }, "Go to My Orders");
         } finally {
             setLoading(false);
         }
@@ -174,7 +174,7 @@ export default function PaymentPage() {
                 // PayPal Order ID와 현재 주문 ID를 함께 전달하여 최종 결제 처리
                 finalizePayPalPayment(paypalToken, orderId); 
             } else if (paymentStatus === 'cancel') {
-                showModal("PayPal 결제가 취소되었습니다.", () => { /* 다시 시도 */ }, true, "다시 시도", () => { router.push('/orders'); }, "내 주문으로 이동");
+                showModal("PayPal payment was cancelled.", () => { /* Retry */ }, true, "Retry", () => { router.push('/orders'); }, "Go to My Orders");
             }
         }
     }, [searchParams, orderId, router, showModal, finalizePayPalPayment]);
@@ -229,7 +229,7 @@ export default function PaymentPage() {
                 if (!updateResponse.ok) {
                     const errorData = await updateResponse.json();
                     console.error('Cash payment status update failed:', errorData);
-                    throw new Error(errorData.message || '결제 후 주문 상태 업데이트 실패.');
+                    throw new Error(errorData.message || 'Failed to update order status after payment.');
                 }
                 console.log('Cash payment successful, order status updated.');
 
@@ -244,12 +244,12 @@ export default function PaymentPage() {
                 });
 
 
-                showModal("현금 결제가 성공적으로 완료되었습니다! 주문 목록 페이지로 이동합니다.", () => {
+                showModal("Cash payment was successfully completed! Redirecting to the order list page.", () => {
                     router.push('/orders');
                 });
             } catch (err) {
-                console.error("현금 결제 처리 중 오류 발생:", err);
-                showModal(`현금 결제 처리 중 오류가 발생했습니다: ${err.message}`, () => { /* '다시 시도' 버튼 클릭 시 현재 페이지에 머무름 */ }, true, "다시 시도", () => { router.push('/orders'); }, "내 주문으로 이동");
+                console.error("Error processing cash payment:", err);
+                showModal(`An error occurred while processing the cash payment: ${err.message}`, () => { /* Stay on the current page when the 'Retry' button is clicked */ }, true, "다시 시도", () => { router.push('/orders'); }, "내 주문으로 이동");
             } finally {
                 setLoading(false);
             }
@@ -290,16 +290,16 @@ export default function PaymentPage() {
     if (!orderDetail) {
         return (
             <div className={styles.pageContainer}>
-                <header className={styles.header}>
-                    <button onClick={() => router.back()} className={styles.iconButton}>
-                        <BackIcon />
-                    </button>
-                    <h1 className={styles.title}>Final Payment</h1>
-                    <div style={{ width: '24px' }}></div>
-                </header>
-                <main className={styles.mainContent}>
-                    <div className={styles.emptyMessage}>주문 정보를 찾을 수 없거나 접근할 수 없습니다.</div>
-                </main>
+            <header className={styles.header}>
+                <button onClick={() => router.back()} className={styles.iconButton}>
+                <BackIcon />
+                </button>
+                <h1 className={styles.title}>Final Payment</h1>
+                <div style={{ width: '24px' }}></div>
+            </header>
+            <main className={styles.mainContent}>
+                <div className={styles.emptyMessage}>Order information not found or inaccessible.</div>
+            </main>
             </div>
         );
     }

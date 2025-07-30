@@ -12,7 +12,7 @@ const NotificationsWrapper = dynamic(
     // 로딩 중 보여줄 UI (NotificationsWrapper가 로드되기 전)
     loading: () => (
       <div style={{ padding: '20px', textAlign: 'center' }}>
-        페이지를 불러오는 중입니다...
+        <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
       </div>
     )
   }
@@ -24,7 +24,7 @@ export default function NotificationsPage() {
     // 클라이언트에서 완전히 로드될 때까지 서버가 기다리지 않도록 합니다.
     <Suspense fallback={
       <div style={{ padding: '20px', textAlign: 'center' }}>
-        페이지 콘텐츠를 준비 중...
+        <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
       </div>
     }>
       <NotificationsWrapper />

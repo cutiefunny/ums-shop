@@ -68,8 +68,8 @@ export default function OrdersPage() {
       setAllOrders(filteredRecentOrders || []);
     } catch (err) {
       console.error("Error fetching orders:", err);
-      setError(`주문 내역을 불러오는 데 실패했습니다: ${err.message}`);
-      showModal(`주문 내역을 불러오는 데 실패했습니다: ${err.message}`);
+      setError(`Failed to load orders: ${err.message}`);
+      showModal(`Failed to load orders: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -177,19 +177,19 @@ export default function OrdersPage() {
       // }
     } else if (type === 'Delivered') {
       // 완료 화면 (임시로 알림 모달 사용)
-      showModal(`주문 ${orderId} 배송 완료된 주문입니다.`);
+      showModal(`Order ${orderId} has been delivered.`);
     }
   };
 
   // ProductCard에서 onAddToCart가 호출될 때 사용될 더미 함수
   const handleDummyAddToCart = (product) => {
     console.log(`Product ${product.name} would be added to cart, but this is the orders page.`);
-    showModal("주문 내역에서는 제품을 장바구니에 추가할 수 없습니다.");
+    showModal("You cannot add products to cart from order history.");
   };
 
   // PaymentInfoModal에서 'Save' 버튼 클릭 시 호출될 함수 (현재는 더미)
   const handlePaymentInfoSave = () => {
-    showModal("결제 정보 저장 기능은 현재 미구현입니다.");
+    showModal("Saving payment info is not implemented yet.");
     setShowPaymentDetailModal(false);
   };
 
@@ -209,7 +209,7 @@ export default function OrdersPage() {
   if (error) {
     return (
       <div className={styles.pageContainer}>
-        <div className={`${styles.emptyMessage} ${styles.errorText}`}>오류: {error}</div>
+        <div className={`${styles.emptyMessage} ${styles.errorText}`}>Error: {error}</div>
       </div>
     );
   }

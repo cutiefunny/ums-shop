@@ -18,7 +18,7 @@ export const useNotification = () => {
     const addNotification = useCallback(async (notificationData) => {
         if (!user?.seq) {
             console.error("No user sequence found for adding notification.");
-            showModal("알림을 추가할 사용자 정보를 찾을 수 없습니다.");
+            showModal("Could not find user information to add the notification.");
             return;
         }
 
@@ -67,7 +67,7 @@ export const useNotification = () => {
 
         } catch (error) {
             console.error("Error adding notification:", error);
-            showModal(`알림 추가에 실패했습니다: ${error.message}`);
+            showModal(`Error adding notification: ${error.message}`);
         }
     }, [user, showModal]);
 

@@ -87,11 +87,11 @@ export default function HomePage() {
 
     } catch (err) {
       console.error("Error fetching home data:", err);
-      setErrorCategories(`홈 데이터 로드 실패: ${err.message}`);
-      setErrorBannerProducts(`홈 데이터 로드 실패: ${err.message}`);
+      setErrorCategories(`Failed to load home data: ${err.message}`);
+      setErrorBannerProducts(`Failed to load home data: ${err.message}`);
       setLoadingCategories(false); // 에러 발생 시 로딩 상태 해제
       setLoadingBannerProducts(false); // 에러 발생 시 로딩 상태 해제
-      showModal(`홈 데이터 로드 중 오류가 발생했습니다: ${err.message}`);
+      showModal(`An error occurred while loading home data: ${err.message}`);
     }
   }, [showModal]); // showModal만 의존성으로 가짐
 
@@ -138,7 +138,7 @@ export default function HomePage() {
         <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
       ) : hasError ? (
         <div className={styles.mainContent} style={{ textAlign: 'center', padding: '50px', color: 'red' }}>
-          <p>오류: {hasError}</p>
+          <p>Error: {hasError}</p>
         </div>
       ) : (
         <main className={styles.mainContent}>

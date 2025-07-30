@@ -14,7 +14,7 @@ const NotificationsClientPage = dynamic(
     ssr: false, // 이 위치에서는 ssr: false가 허용됩니다.
     loading: () => (
       <div className={styles.emptyMessage} style={{ height: 'calc(100vh - 200px)' }}>
-        알림 내용을 불러오는 중...
+        <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
       </div>
     )
   }
@@ -42,7 +42,7 @@ export default function NotificationsWrapper() {
           명시적인 Suspense는 코드 분할과 로딩 상태 관리에 유용합니다. */}
       <Suspense fallback={
         <div className={styles.emptyMessage} style={{ height: 'calc(100vh - 200px)' }}>
-          콘텐츠를 불러오는 중...
+          <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
         </div>
       }>
         <NotificationsClientPage />

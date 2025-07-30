@@ -31,8 +31,8 @@ export default function CartItem({ item, onUpdateQuantity, onRemoveItem }) {
       setProductDetails(data);
     } catch (err) {
       console.error(`Error fetching product details for ${item.productId}:`, err);
-      setErrorProduct(`상품 정보를 불러오는 데 실패했습니다: ${err.message}`);
-      showModal(`장바구니 상품 정보를 불러오는 데 실패했습니다: ${err.message}`);
+      setErrorProduct(`Failed to load product information: ${err.message}`);
+      showModal(`Failed to load cart item information: ${err.message}`);
     } finally {
       setLoadingProduct(false);
     }
