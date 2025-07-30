@@ -19,6 +19,8 @@ import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-
 
 import { useAdminModal } from '@/contexts/AdminModalContext';
 import { useNotification } from '@/hooks/useNotification'; // useNotification 훅 임포트
+import DeliveryDateModal from '../components/DeliveryDateModal'; // 새로 추가된 DeliveryDateModal 임포트
+
 
 // DynamoDB 클라이언트 초기화
 const client = new DynamoDBClient({
@@ -48,6 +50,9 @@ export default function OrderDetailPage() {
     const [attachedImage, setAttachedImage] = useState(null); // 첨부 이미지 파일 객체
     const messagesEndRef = useRef(null); // 메시지 스크롤을 위한 Ref
     const fileInputRef = useRef(null); // 파일 입력 Ref
+
+    const [isDeliveryDateModalOpen, setIsDeliveryDateModalOpen] = useState(false); // 배송 예정일 모달 상태
+    const [deliveryDateToUpdate, setDeliveryDateToUpdate] = useState(''); // 업데이트할 배송 예정일
 
     const { showAdminNotificationModal, showAdminConfirmationModal } = useAdminModal();
     const addNotification = useNotification(); // useNotification 훅 사용
@@ -580,83 +585,98 @@ export default function OrderDetailPage() {
         );
     };
 
-    const handleSend = async () => {
+    // Send 버튼 클릭 시 모달 열기
+    const handleSendClick = () => {
+        setIsDeliveryDateModalOpen(true);
+        // 모달에 초기 날짜로 현재 estimatedDelivery 값을 전달
+        setDeliveryDateToUpdate(order.shippingDetails?.estimatedDelivery || moment().format('YYYY-MM-DD'));
+    };
+
+    // 모달에서 날짜 확정 시 호출될 함수
+    const handleDeliveryDateConfirm = async (date) => {
+        setIsDeliveryDateModalOpen(false); // 모달 닫기
+
         showAdminConfirmationModal(
-            "배송 완료를 확정하시겠습니까? 주문 상태가 'Delivered'로 변경되고 실제 배송일이 기록됩니다.",
+            `Are you sure you want to set the estimated delivery date to ${date} and change the delivery status to 'Delivered'?`,
             async () => {
-                setLoading(true);
-                try {
-                    const updatedShippingDetails = {
-                        ...order.shippingDetails,
-                        actualDelivery: moment().format('YYYY-MM-DD'), // 오늘 날짜로 실제 배송일 기록
-                    };
+            setLoading(true);
+            try {
+                const updatedShippingDetails = {
+                ...order.shippingDetails,
+                estimatedDelivery: date, // Update estimatedDelivery with the date from the modal
+                actualDelivery: moment().format('YYYY-MM-DD'), // Record actual delivery date as today
+                };
 
-                    const updatedStatusHistory = [
-                        ...(order.statusHistory || []),
-                        {
-                            timestamp: new Date().toISOString(),
-                            oldStatus: order.status,
-                            newStatus: 'Delivered', // 새로운 상태: Delivered
-                            changedBy: 'Admin',
-                        }
-                    ];
-
-                    const updatedOrderData = {
-                        shippingDetails: updatedShippingDetails,
-                        status: 'Delivered', // 주문 전체 상태도 Delivered로 변경
-                        statusHistory: updatedStatusHistory,
-                    };
-
-                    const response = await fetch(`/api/orders/${order.orderId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updatedOrderData),
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || 'Failed to update delivery status.');
-                    }
-
-                    // *** useNotification 훅을 사용하여 noti 항목 추가 (Delivered 알림) ***
-                    // shippingDetails.method에 따라 다른 알림 메시지 사용
-                    const notificationMessage = order.shippingDetails?.method === 'onboard'
-                        ? {
-                            code: 'Delivered',
-                            category: 'Delivery',
-                            title: 'Order Delivered',
-                            en: 'Your order has been delivered successfully to your vessel.',
-                            kr: '주문 상품이 선박으로 성공적으로 배송되었습니다.',
-                        }
-                        : {
-                            code: 'Payment(EMS)', // 또는 Delivered로 통일하고 메시지만 다르게? 여기서는 요청에 따라 Payment(EMS)로 가정
-                            category: 'Delivery',
-                            title: 'Shipping in progress',
-                            en: 'Your EMS shipment is in transit.',
-                            kr: 'EMS를 통해 배송 중입니다.',
-                        };
-
-                    await addNotification(notificationMessage);
-
-                    // 로컬 상태 업데이트
-                    setOrder(prevOrder => ({
-                        ...prevOrder,
-                        shippingDetails: updatedShippingDetails,
-                        status: 'Delivered',
-                        statusHistory: updatedStatusHistory,
-                    }));
-                    showAdminNotificationModal('Delivery status updated to "Delivered" successfully!');
-                } catch (err) {
-                    console.error("Error updating delivery status:", err);
-                    showAdminNotificationModal(`Failed to update delivery status: ${err.message}`);
-                } finally {
-                    setLoading(false);
+                const updatedStatusHistory = [
+                ...(order.statusHistory || []),
+                {
+                    timestamp: new Date().toISOString(),
+                    oldStatus: order.status,
+                    newStatus: 'Delivered', // New status: Delivered
+                    changedBy: 'Admin',
                 }
+                ];
+
+                const updatedOrderData = {
+                shippingDetails: updatedShippingDetails,
+                status: 'Delivered', // Change overall order status to Delivered
+                statusHistory: updatedStatusHistory,
+                };
+
+                const response = await fetch(`/api/orders/${order.orderId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedOrderData),
+                });
+
+                if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to update delivery status.');
+                }
+
+                // *** Use the useNotification hook to add a notification item (Delivered notification) ***
+                // Use different notification messages depending on shippingDetails.method
+                const notificationMessage = order.shippingDetails?.method === 'onboard'
+                ? {
+                    code: 'Delivered',
+                    category: 'Delivery',
+                    title: 'Order Delivered',
+                    en: 'Your order has been delivered successfully to your vessel.',
+                    kr: '주문 상품이 선박으로 성공적으로 배송되었습니다.',
+                }
+                : {
+                    code: 'Payment(EMS)', // Or unify to Delivered and only change the message? Here, assume Payment(EMS) according to the request
+                    category: 'Delivery',
+                    title: 'Shipping in progress',
+                    en: 'Your EMS shipment is in transit.',
+                    kr: 'EMS를 통해 배송 중입니다.',
+                };
+
+                await addNotification(notificationMessage);
+
+                // Update local state
+                setOrder(prevOrder => ({
+                ...prevOrder,
+                shippingDetails: updatedShippingDetails,
+                status: 'Delivered',
+                statusHistory: updatedStatusHistory,
+                }));
+                showAdminNotificationModal('Delivery status updated to "Delivered" successfully!');
+            } catch (err) {
+                console.error("Error updating delivery status:", err);
+                showAdminNotificationModal(`Failed to update delivery status: ${err.message}`);
+            } finally {
+                setLoading(false);
+            }
             },
             () => {
-                console.log('Delivery confirmation cancelled by user.'); // 취소 시 로깅
+            console.log('Delivery confirmation cancelled by user.'); // Log if cancelled
             }
         );
+    };
+
+    const handleDeliveryDateModalClose = () => {
+        setIsDeliveryDateModalOpen(false);
     };
 
 
@@ -806,18 +826,18 @@ export default function OrderDetailPage() {
                                             {msg.sender} {msg.isNew && <span className={styles.newBadge}>NEW</span>}
                                         </span>
                                         {msg.text && <div className={styles.messageBubble}>{msg.text}
-                                          {msg.sender === 'Admin' && ( // 관리자 메시지에만 삭제 아이콘 표시
-                                            <button onClick={() => handleDeleteMessage(msg.id)} className={styles.deleteMessageButton}>
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'red' }}>
-                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                                </svg>
-                                            </button>
-                                          )}
-                                          </div>}
-                                        {msg.imageUrl && (
-                                            <img src={msg.imageUrl} alt="Attached" className={styles.messageImage} />
-                                        )}
+                                            {msg.sender === 'Admin' && ( // 관리자 메시지에만 삭제 아이콘 표시
+                                                <button onClick={() => handleDeleteMessage(msg.id)} className={styles.deleteMessageButton}>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'red' }}>
+                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                    </svg>
+                                                </button>
+                                            )}
+                                            </div>}
+                                            {msg.imageUrl && (
+                                                <img src={msg.imageUrl} alt="Attached" className={styles.messageImage} />
+                                            )}
                                     </div>
                                 ))}
                                 <div ref={messagesEndRef} /> {/* 메시지 하단으로 자동 스크롤을 위한 엘리먼트 */}
@@ -935,7 +955,12 @@ export default function OrderDetailPage() {
                         <button onClick={handleSave} className={styles.saveButton}>
                             Save
                         </button>
-                        <button onClick={handleSend} className={styles.saveButton}>
+                        <button
+                            onClick={handleSendClick} // Send 버튼 클릭 시 모달 열기
+                            className={styles.saveButton}
+                            disabled={latestStatus !== 'Pay in Cash' && latestStatus !== 'PayPal' && latestStatus !== 'Order(Confirmed)' && latestStatus !== 'Payment(Confirmed)'}
+                            title={(latestStatus === 'Pay in Cash' || latestStatus === 'PayPal' || latestStatus === 'Order(Confirmed)' || latestStatus === 'Payment(Confirmed)') ? "제품 발송" : "제품 발송은 결제 또는 주문 확정 상태에서만 가능합니다."}
+                        >
                             Send
                         </button>
                     </div>
@@ -966,19 +991,16 @@ export default function OrderDetailPage() {
                             Payment Confirmation
                         </button>
                     )}
-                    {(latestStatus === 'Pay in Cash' || latestStatus === 'PayPal') && (
-                        <button
-                            onClick={handleSend}
-                            className={styles.saveButton}
-                            disabled={latestStatus !== 'Pay in Cash' && latestStatus !== 'PayPal'} // latestStatus가 'Pay in Cash' 또는 'PayPal'일 때만 활성화
-                            title={(latestStatus === 'Pay in Cash' || latestStatus === 'PayPal') ? "제품 발송" : "제품 발송은 결제 완료 상태에서만 가능합니다."} // 툴팁 추가
-                        >
-                            Send
-                        </button>
-                    )}
                     </div>
                 </div>
             </div>
+
+            <DeliveryDateModal
+                isOpen={isDeliveryDateModalOpen}
+                onClose={handleDeliveryDateModalClose}
+                onConfirm={handleDeliveryDateConfirm}
+                initialDate={deliveryDateToUpdate}
+            />
         </div>
     );
 }

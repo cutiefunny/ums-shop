@@ -70,7 +70,15 @@ export default function OrderManagementPage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setOrders(data || []);
+
+      // createdAt 필드를 기준으로 내림차순 정렬
+      const sortedData = (data || []).sort((a, b) => {
+        // createdAt이 없는 경우를 대비하여 기본값을 제공하거나, 적절히 처리
+        const dateA = new Date(a.createdAt || 0); // createdAt이 없으면 UNIX Epoch로 간주
+        const dateB = new Date(b.createdAt || 0);
+        return dateB.getTime() - dateA.getTime(); // 내림차순 정렬 (최신 날짜가 위로)
+      });
+      setOrders(sortedData);
       
     } catch (err) {
       console.error("Error fetching orders:", err);
