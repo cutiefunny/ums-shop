@@ -294,7 +294,7 @@
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  margin-top: 20px; /* Space from form elements */
+  
 }
 
 .submitButton:disabled {
@@ -424,4 +424,16 @@
   .answerTitle {
     font-size: 1rem;
   }
+}
+
+.submitButtonContainer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.submitButtonWrapper {
+  width: 95%;
+  display: flex;
+  justify-content: center;
 }

@@ -85,9 +85,9 @@ export default function QnAClientPage() { // 컴포넌트 이름을 QnAClientPag
   }, [isLoggedIn, user, showModal]);
 
   useEffect(() => {
-    if (activeTab === 'my') {
+    // if (activeTab === 'my') {
       fetchMyQuestions();
-    }
+    // }
   }, [activeTab, fetchMyQuestions]);
 
   // Ask Question 폼 유효성 검사
@@ -434,14 +434,16 @@ export default function QnAClientPage() { // 컴포넌트 이름을 QnAClientPag
 
       {activeTab === 'ask' && (
         <div className={styles.submitButtonContainer}>
-          <button 
-            type="submit" 
-            onClick={activeTab === 'ask' ? handleAskSubmit : null}
-            className={styles.submitButton} 
-            disabled={activeTab === 'ask' ? (!isAskFormValid || commonLoading) : true}
-          >
-            {commonLoading ? 'Submitting...' : 'Submit'}
-          </button>
+          <div className={styles.submitButtonWrapper}>
+            <button 
+              type="submit" 
+              onClick={activeTab === 'ask' ? handleAskSubmit : null}
+              className={styles.submitButton} 
+              disabled={activeTab === 'ask' ? (!isAskFormValid || commonLoading) : true}
+            >
+              {commonLoading ? 'Submitting...' : 'Submit'}
+            </button>
+          </div>
         </div>
       )}
     </>
