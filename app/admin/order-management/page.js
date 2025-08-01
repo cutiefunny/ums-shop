@@ -40,6 +40,8 @@ export default function OrderManagementPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
+  const [filterDate, setFilterDate] = useState('All'); // Date 필터 상태 유지
+  const [filterShipName, setFilterShipName] = useState('All'); // Ship Name 필터 상태 추가
   const [currentPage, setCurrentPage] = useState(1);
 
   // 주문 상태 모달 관련 상태
@@ -64,7 +66,7 @@ export default function OrderManagementPage() {
       setLoading(true);
       setError(null);
       
-      // Next.js API Route를 호출합니다. 이 API Route는 서버에서 DynamoDB와 통신합니다.
+      // Next.js API Route를 호출합니다. This API Route communicates with DynamoDB on the server.
       const response = await fetch('/api/orders'); // GET /api/orders 호출
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -78,7 +80,13 @@ export default function OrderManagementPage() {
         const dateB = new Date(b.createdAt || 0);
         return dateB.getTime() - dateA.getTime(); // 내림차순 정렬 (최신 날짜가 위로)
       });
-      setOrders(sortedData);
+
+      // 날짜를 YYYY-MM-DD 형식으로 변환
+      const formattedData = sortedData.map(item => ({
+        ...item,
+        date: item.date ? item.date.substring(0, 10).replace(/\./g, '-') : 'N/A' // date가 없으면 'N/A'로 설정
+      }));
+      setOrders(formattedData);
       
     } catch (err) {
       console.error("Error fetching orders:", err);
@@ -94,6 +102,13 @@ export default function OrderManagementPage() {
     fetchOrders();
   }, []);
 
+  // 필터 옵션을 위한 동적 데이터 생성
+  const shipNameOptions = useMemo(() => {
+    if (!orders) return ['All'];
+    const uniqueShipNames = [...new Set(orders.map(order => order.shipName).filter(Boolean))];
+    return ['All', ...uniqueShipNames];
+  }, [orders]);
+
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
     return orders.filter(order => {
@@ -101,11 +116,19 @@ export default function OrderManagementPage() {
         order.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.shipName?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesFilter =
+      
+      const matchesStatus =
         filterStatus === 'All' || order.status?.toLowerCase() === filterStatus.toLowerCase();
-      return matchesSearch && matchesFilter;
+      
+      const matchesDate =
+        filterDate === 'All' || order.date === filterDate;
+
+      const matchesShipName =
+        filterShipName === 'All' || order.shipName === filterShipName;
+
+      return matchesSearch && matchesStatus && matchesDate && matchesShipName;
     });
-  }, [orders, searchTerm, filterStatus]);
+  }, [orders, searchTerm, filterStatus, filterDate, filterShipName]);
 
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
   const currentOrders = useMemo(() => {
@@ -121,6 +144,28 @@ export default function OrderManagementPage() {
 
   const handleFilterChange = (e) => {
     setFilterStatus(e.target.value);
+    setCurrentPage(1);
+  };
+
+  // Date 필터 핸들러 (달력 입력용)
+  const handleDateFilterChange = (e) => {
+    const newDate = e.target.value;
+    if (newDate) {
+      setFilterDate(newDate); // 날짜 형식: "YYYY-MM-DD"
+    } else {
+      setFilterDate('All'); // 입력이 비워지면 필터 리셋
+    }
+    setCurrentPage(1);
+  };
+
+  // Ship Name 필터 핸들러 추가
+  const handleShipNameFilterChange = (e) => {
+    setFilterShipName(e.target.value);
+    setCurrentPage(1);
+  };
+  
+  const handleResetDateFilter = () => {
+    setFilterDate('All');
     setCurrentPage(1);
   };
 
@@ -260,17 +305,38 @@ export default function OrderManagementPage() {
           />
           <button className={styles.searchButton}>Search</button>
         </div>
-      <div className={styles.filterGroup}>
-        <select
-          value={filterStatus}
-          onChange={handleFilterChange}
-          className={styles.filterSelect}
-        >
-          {ORDER_STATUS_OPTIONS.map(option => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
-      </div>
+        <div className={styles.filterGroup}>
+          {/* Status Filter */}
+          <select
+            value={filterStatus}
+            onChange={handleFilterChange}
+            className={styles.filterSelect}
+          >
+            {ORDER_STATUS_OPTIONS.map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+          
+          {/* Date Filter (Calendar) */}
+          <input
+            type="date"
+            value={filterDate === 'All' ? '' : filterDate}
+            onChange={handleDateFilterChange}
+            className={styles.filterSelect}
+          />
+          <button onClick={handleResetDateFilter} className={styles.resetButton}>Reset</button>
+
+          {/* Ship Name Filter */}
+          <select
+            value={filterShipName}
+            onChange={handleShipNameFilterChange}
+            className={styles.filterSelect}
+          >
+            {shipNameOptions.map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        </div>
       </header>
 
       <table className={styles.table}>

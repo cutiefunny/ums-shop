@@ -41,7 +41,7 @@ const TermsStep = ({ onNext, agreements, setAgreements, onBack }) => {
           <hr className={styles.divider} />
           <div className={styles.termItem}>
             <label className={styles.checkboxLabel}>
-              <input type="checkbox" name="termsOfUse" checked={agreements.termsOfUse} onChange={handleSingleAgreeChange} />
+              <input type="checkbox" name="termsOfUse" className='checkbox' checked={agreements.termsOfUse} onChange={handleSingleAgreeChange} />
               <div>
                 <span>[Required] </span>
                 <span>Terms of Use</span>
@@ -51,10 +51,10 @@ const TermsStep = ({ onNext, agreements, setAgreements, onBack }) => {
           </div>
           <div className={styles.termItem}>
             <label className={styles.checkboxLabel}>
-              <input type="checkbox" name="privacyPolicy" checked={agreements.privacyPolicy} onChange={handleSingleAgreeChange} />
+              <input type="checkbox" name="privacyPolicy" className='checkbox' checked={agreements.privacyPolicy} onChange={handleSingleAgreeChange} />
               <div>
                 <span className={styles.requiredText}>[Required] </span>
-                <span>Consent to Collection and Use of Personal Information</span>
+                <span>Consent to Collection and Use of <br />Personal Information</span>
               </div>
             </label>
             <a href="/terms/privacy" target="_blank" className={styles.viewLink}>view</a>
@@ -68,6 +68,14 @@ const TermsStep = ({ onNext, agreements, setAgreements, onBack }) => {
 
 // 정보 입력 컴포넌트에 에러 메시지 표시 로직 추가
 const InfoStep = ({ onBack, formData, handleChange, errors }) => {
+  const [otherRank, setOtherRank] = useState('');
+  const [rankSelected, setRankSelected] = useState(formData.rank);
+
+  const handleRankChange = (e) => {
+    handleChange(e);
+    setRankSelected(e.target.value);
+  };
+
   return (
     <>
       <AuthHeader onBack={onBack} />
@@ -89,11 +97,39 @@ const InfoStep = ({ onBack, formData, handleChange, errors }) => {
           <input name="company" type="text" value={formData.company} placeholder="Company name" onChange={handleChange} className={styles.input} />
 
           <label className={styles.inputLabel}>Rank</label>
-          <select name="rank" value={formData.rank} onChange={handleChange} className={styles.input} required>
+          <select name="rank" value={formData.rank} onChange={handleRankChange} className={styles.input} required>
             <option value="">Select Rank</option>
             <option value="captain">Captain</option>
-            <option value="engineer">Engineer</option>
+            <option value="chiefOfficer">Chief Officer / First Mate</option>
+            <option value="secondOfficer">Second Officer</option>
+            <option value="thirdOfficer">Third Officer</option>
+            <option value="chiefEngineer">Chief Engineer</option>
+            <option value="secondEngineer">Second Engineer</option>
+            <option value="thirdEngineer">Third Engineer</option>
+            <option value="deckhand">Deckhand / Able Seaman</option>
+            <option value="boatswain">Boatswain (Bosun)</option>
+            <option value="cook">Cook</option>
+            <option value="radioOperator">Radio Operator</option>
+            <option value="other">Other</option>
           </select>
+
+          {rankSelected === 'other' && (
+            <>
+              <label className={styles.inputLabel}>Other Rank</label>
+              <input
+                type="text"
+                name="otherRank"
+                value={otherRank}
+                onChange={(e) => {
+                  setOtherRank(e.target.value);
+                  setFormData(prev => ({ ...prev, otherRank: e.target.value }));
+                }}
+                placeholder="Please specify your rank"
+                className={styles.input}
+                required
+              />
+            </>
+          )}
 
           <label className={styles.inputLabel}>Phone Number</label>
           <input name="phoneNumber" type="tel" value={formData.phoneNumber} placeholder="+10 1 4561 4567" onChange={handleChange} className={styles.input} required />
@@ -180,8 +216,8 @@ export default function RegisterPage() {
     setErrors({}); // 에러 초기화
 
     if (!isStep2FormValid()) {
-      setModalTitle("입력 오류");
-      setModalMessage("모든 필수 필드를 입력하거나 비밀번호 요구 사항을 확인해주세요.");
+      setModalTitle("Input Error");
+      setModalMessage("Please fill in all required fields or check the password requirements.");
       setIsModalOpen(true);
       setLoading(false);
       return;
@@ -206,8 +242,8 @@ export default function RegisterPage() {
       setIsModalOpen(true);
     } catch (err) {
       console.error("Registration error:", err);
-      setModalTitle("등록 실패");
-      setModalMessage(err.message || "회원가입 중 오류가 발생했습니다.");
+      setModalTitle("Registration Failed");
+      setModalMessage(err.message || "An error occurred during registration.");
       setIsModalOpen(true);
     } finally {
       setLoading(false); // 로딩 종료

@@ -103,6 +103,7 @@ a {
   display: flex;
   flex-direction: column;
   background-color: #f0f2f5;
+  min-width: 0;
 }
 
 .mainHeader {

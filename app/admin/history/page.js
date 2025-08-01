@@ -139,14 +139,14 @@ export default function AdminHistoryPage() {
             </header>
 
             <div className={styles.tableContainer}>
-                <table className={styles.table}>
+                <table className={styles.table} style={{ width: '100%' }}>
                     <thead>
                         <tr>
                             <th>Date & Time</th>
                             <th>Manager</th>
                             <th>Device Info</th>
                             <th>Action Type</th>
-                            <th>Details</th>
+                            <th style={{ maxWidth: '500px', overflow: 'auto' }}>Details</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -157,7 +157,7 @@ export default function AdminHistoryPage() {
                                     <td>{entry.manager}</td>
                                     <td>{entry.deviceInfo}</td>
                                     <td>{entry.actionType}</td>
-                                    <td>{entry.details}</td>
+                                    <td style={{ maxWidth: '500px', overflow: 'auto' }}>{entry.details}</td>
                                 </tr>
                             ))
                         ) : (

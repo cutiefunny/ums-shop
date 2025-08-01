@@ -6,6 +6,15 @@
   min-height: 100vh;
 }
 
+.containerProductManagement {
+  display: flex;
+  flex-direction: column; /* 자식 요소들을 세로로 쌓도록 설정 */
+  width: 100%;
+  height: 100%; /* 전체 높이를 차지하도록 설정 (선택 사항) */
+  padding: 20px;
+  background-color: #fff;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -139,6 +148,15 @@
   min-width: 150px;
 }
 
+.resetButton {
+  padding: 8px 15px;
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -150,7 +168,9 @@
   padding: 12px 8px;
   text-align: left;
   border-bottom: 1px solid #eee;
-  white-space: nowrap; /* Prevent text wrapping in table headers */
+  white-space: nowrap;
+  overflow: auto;
+  /* text-overflow: ellipsis; */
 }
 
 .table thead tr {

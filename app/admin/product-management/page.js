@@ -755,15 +755,15 @@ export default function ProductManagementPage() {
 
 
   if (loading) {
-    return <div className={styles.container}>Loading products...</div>;
+    return <div className={styles.containerProductManagement}>Loading products...</div>;
   }
 
   if (error) {
-    return <div className={`${styles.container} ${styles.errorText}`}>Error: {error}</div>;
+    return <div className={`${styles.containerProductManagement} ${styles.errorText}`}>Error: {error}</div>;
   }
 
   return (
-    <div className={styles.container}>
+    <div className={styles.containerProductManagement}>
       <header className={styles.header}>
         <div className={styles.searchGroup}>
           <input
@@ -807,95 +807,98 @@ export default function ProductManagementPage() {
         </div>
       </div>
 
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>
-              <input
-                type="checkbox"
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedProductIds(filteredProducts.map(p => p.productId));
-                  } else {
-                    setSelectedProductIds([]);
-                  }
-                }}
-                checked={selectedProductIds.length === filteredProducts.length && filteredProducts.length > 0}
-              />
-            </th>
-            <th>Product Name</th>
-            <th>SKU</th>
-            <th>Main-Category</th>
-            <th>유통기한</th>
-            <th>납기일</th>
-            <th>Price(won)</th>
-            <th>Exchange Rate</th>
-            <th>Exchange Rate Offset</th>
-            <th>USD Price Override</th>
-            <th>Discount</th>
-            <th>Calculated</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentProducts.length > 0 ? (
-            currentProducts.map(product => (
-              <tr key={product.productId}>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={selectedProductIds.includes(product.productId)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedProductIds(prev => [...prev, product.productId]);
-                      } else {
-                        setSelectedProductIds(prev => prev.filter(id => id !== product.productId));
-                      }
-                    }}
-                  />
-                </td>
-                <td>{product.productName}</td>
-                <td>{product.sku}</td>
-                <td>{product.mainCategory}</td>
-                <td>{product.유통기한}</td>
-                <td>{product.납기일}</td>
-                <td>{product.priceWon?.toLocaleString()}</td>
-                <td>{product.exchangeRate}</td>
-                <td>{product.exchangeRateOffset}</td>
-                <td>{product.usdPriceOverride}</td>
-                <td>{product.discount}%</td>
-                <td>${product.calculatedPriceUsd?.toFixed(2)}</td>
-                <td>
-                  <button onClick={() => handleStatusToggle(product.productId, product.status)} className={styles.statusToggle}>
-                    {product.status === 'Active' ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye-off"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a1.8 1.8 0 0 1 0-2.66m3.18-3.18A8.82 8.82 0 0 1 12 5c7 0 10 7 10 7a1.8 1.8 0 0 1 0 2.66"/><path d="M10 10l4 4"/><circle cx="12" cy="12" r="3"/></svg>
-                    )}
-                  </button>
-                </td>
-                <td>
-                  <div className={styles.actionButtons}>
-                    <button onClick={() => handleEditClick(product.productId)} className={styles.actionButton}>
-                      <img src="/images/write.png" alt="Edit" />
+      {/* <<< 여기가 핵심 수정 부분입니다 >>> */}
+      <div style={{ overflowX: 'auto', width: '100%' }}>
+        <table className={styles.table} style={{ minWidth: '1800px', tableLayout: 'fixed' }}>
+          <thead>
+            <tr>
+              <th style={{ width: '50px' }}>
+                <input
+                  type="checkbox"
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedProductIds(filteredProducts.map(p => p.productId));
+                    } else {
+                      setSelectedProductIds([]);
+                    }
+                  }}
+                  checked={selectedProductIds.length === filteredProducts.length && filteredProducts.length > 0}
+                />
+              </th>
+              <th style={{ width: '200px' }}>Product Name</th>
+              <th style={{ width: '150px' }}>SKU</th>
+              <th style={{ width: '150px' }}>Main-Category</th>
+              <th style={{ width: '120px' }}>유통기한</th>
+              <th style={{ width: '100px' }}>납기일</th>
+              <th style={{ width: '120px' }}>Price(won)</th>
+              <th style={{ width: '130px' }}>Exchange Rate</th>
+              <th style={{ width: '180px' }}>Exchange Rate Offset</th>
+              <th style={{ width: '180px' }}>USD Price Override</th>
+              <th style={{ width: '100px' }}>Discount</th>
+              <th style={{ width: '120px' }}>Calculated</th>
+              <th style={{ width: '80px' }}>Status</th>
+              <th style={{ width: '100px' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentProducts.length > 0 ? (
+              currentProducts.map(product => (
+                <tr key={product.productId}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedProductIds.includes(product.productId)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedProductIds(prev => [...prev, product.productId]);
+                        } else {
+                          setSelectedProductIds(prev => prev.filter(id => id !== product.productId));
+                        }
+                      }}
+                    />
+                  </td>
+                  <td style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.productName}</td>
+                  <td>{product.sku}</td>
+                  <td>{product.mainCategory}</td>
+                  <td>{product.유통기한}</td>
+                  <td>{product.납기일}</td>
+                  <td>{product.priceWon?.toLocaleString()}</td>
+                  <td>{product.exchangeRate}</td>
+                  <td>{product.exchangeRateOffset}</td>
+                  <td>{product.usdPriceOverride}</td>
+                  <td>{product.discount}%</td>
+                  <td>${product.calculatedPriceUsd?.toFixed(2)}</td>
+                  <td>
+                    <button onClick={() => handleStatusToggle(product.productId, product.status)} className={styles.statusToggle}>
+                      {product.status === 'Active' ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye-off"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a1.8 1.8 0 0 1 0-2.66m3.18-3.18A8.82 8.82 0 0 1 12 5c7 0 10 7 10 7a1.8 1.8 0 0 1 0 2.66"/><path d="M10 10l4 4"/><circle cx="12" cy="12" r="3"/></svg>
+                      )}
                     </button>
-                    <button onClick={() => handleDeleteClick(product.productId)} className={styles.actionButton}>
-                      <img src="/images/delete.png" alt="Delete" />
-                    </button>
-                  </div>
+                  </td>
+                  <td>
+                    <div className={styles.actionButtons}>
+                      <button onClick={() => handleEditClick(product.productId)} className={styles.actionButton}>
+                        <img src="/images/write.png" alt="Edit" />
+                      </button>
+                      <button onClick={() => handleDeleteClick(product.productId)} className={styles.actionButton}>
+                        <img src="/images/delete.png" alt="Delete" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="14" style={{ textAlign: 'center', padding: '20px', color: '#6c757d' }}>
+                  No products found.
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="14" style={{ textAlign: 'center', padding: '20px', color: '#6c757d' }}>
-                No products found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <div className={styles.pagination}>
         {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
