@@ -15,21 +15,18 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 // 주문 데이터를 가져올 테이블 (order-management)
 const TABLE_ORDERS = process.env.DYNAMODB_TABLE_ORDERS || 'order-management';
-// 배송 상태 데이터를 가져올 테이블 (delivery-status) - 새로 생성해야 합니다.
-const TABLE_DELIVERY_STATUS = process.env.DYNAMODB_TABLE_DELIVERY_STATUS || 'delivery-status';
 
 /**
  * GET handler for /api/admin/delivery-status
- * DynamoDB의 order-management와 delivery-status 테이블에서 데이터를 가져와 조인합니다.
- * 양쪽에 모두 데이터가 있는 경우에만 리스트에 포함됩니다.
+ * DynamoDB의 order-management 테이블에서 'Delivered' 상태인 주문 데이터만 가져옵니다.
+ * status는 statusHistory 배열의 마지막 항목에서 가져옵니다.
  *
  * @param {Request} request
  * @returns {NextResponse} - JSON 응답
  */
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const searchTerm = searchParams.get('searchTerm')?.toLowerCase() || ''; // 검색어 (이름, 선박명)
-  const statusFilter = searchParams.get('status') || 'All'; // 배송 상태 필터 (In Delivery, Delivered)
+  const searchTerm = searchParams.get('searchTerm')?.toLowerCase() || ''; // 검색어 (이름, 주문 ID, 운송장 번호)
 
   try {
     // 1. 주문 데이터 (order-management) 스캔
@@ -38,56 +35,42 @@ export async function GET(request) {
     });
     const { Items: orderItems } = await docClient.send(ordersCommand);
 
-    // 2. 배송 상태 데이터 (delivery-status) 스캔
-    const deliveryStatusCommand = new ScanCommand({
-      TableName: TABLE_DELIVERY_STATUS,
-    });
-    const { Items: deliveryStatusItems } = await docClient.send(deliveryStatusCommand);
-
     // Warning: ScanCommand는 테이블이 클 경우 매우 비효율적입니다.
     // 실제 운영 환경에서는 GSI를 활용한 QueryCommand를 사용하는 것이 좋습니다.
 
-    // 3. 배송 상태 데이터를 orderId를 키로 하는 Map으로 변환하여 빠른 조회 가능하게 함
-    const deliveryStatusMap = new Map();
-    deliveryStatusItems.forEach(delivery => {
-      if (delivery.orderId) {
-        deliveryStatusMap.set(delivery.orderId, delivery);
-      }
+    // 2. 필요한 데이터 형식으로 가공
+    let processedData = orderItems.map(order => {
+      const customerName = order.customer?.name || order.userName || 'N/A';
+
+      // statusHistory 배열이 존재하고 비어있지 않으면 마지막 항목의 newStatus를 사용
+      const latestStatus =
+        order.statusHistory && Array.isArray(order.statusHistory) && order.statusHistory.length > 0
+          ? order.statusHistory[order.statusHistory.length - 1].newStatus
+          : 'N/A'; // 기본값
+
+      return {
+        orderId: order.orderId,
+        name: customerName,
+        date: order.date?.split('T')[0] || 'N/A',
+        status: latestStatus, // statusHistory에서 가져온 최신 상태
+        trackingNumber: order.trackingNumber || '-',
+      };
     });
 
-    // 4. 주문 데이터와 배송 상태 데이터를 조인 (양쪽에 모두 데이터가 있는 경우만 포함)
-    let combinedData = [];
-    orderItems.forEach(order => {
-      const deliveryInfo = deliveryStatusMap.get(order.orderId);
-      if (deliveryInfo) { // deliveryInfo가 존재하는 경우에만 조인
-        // customer.name이 중첩된 객체일 수 있으므로 안전하게 접근
-        const customerName = order.customer && order.customer.name ? order.customer.name : order.userName || 'N/A';
+    // 3. 'Delivered' 또는 'In Delivery' 상태인 데이터만 필터링
+    let filteredData = processedData.filter(item => item.status === 'Delivered' || item.status === 'In Delivery');
 
-        combinedData.push({
-          orderId: order.orderId,
-          name: customerName, // 프론트엔드 이미지에 'Name'으로 표시됨
-          date: order.date?.split('T')[0] || 'N/A', // 날짜만 표시 (YYYY-MM-DD)
-          status: deliveryInfo.status, // delivery-status의 status
-          trackingNumber: deliveryInfo.trackingNumber || '-', // delivery-status의 trackingNumber
-        });
-      }
-    });
-
-    // 5. 필터링 로직 적용 (조인된 데이터에 대해)
+    // 4. 검색어 필터링 적용
     if (searchTerm) {
-      combinedData = combinedData.filter(item =>
+      filteredData = filteredData.filter(item =>
         item.name.toLowerCase().includes(searchTerm) ||
-        item.orderId.toLowerCase().includes(searchTerm) || // 주문 ID로도 검색 가능하도록 추가
-        (item.trackingNumber && item.trackingNumber.toLowerCase().includes(searchTerm)) // 운송장 번호로도 검색 가능하도록 추가
+        item.orderId.toLowerCase().includes(searchTerm) ||
+        (item.trackingNumber && item.trackingNumber.toLowerCase().includes(searchTerm))
       );
     }
 
-    if (statusFilter !== 'All') {
-      combinedData = combinedData.filter(item => item.status === statusFilter);
-    }
-
-    // 6. 날짜 필드를 기준으로 최신 주문부터 정렬 (프론트엔드에서 이미 정렬하므로 여기서는 생략 가능하지만, 일관성을 위해 유지)
-    const sortedData = combinedData.sort((a, b) => {
+    // 5. 날짜를 기준으로 최신순으로 정렬
+    const sortedData = filteredData.sort((a, b) => {
       if (a.date && b.date) {
         return new Date(b.date).getTime() - new Date(a.date).getTime();
       }
@@ -97,9 +80,9 @@ export async function GET(request) {
     return NextResponse.json(sortedData, { status: 200 });
 
   } catch (error) {
-    console.error("Error fetching delivery status data from DynamoDB:", error);
+    console.error("Error fetching order data from DynamoDB:", error);
     return NextResponse.json(
-      { message: 'Failed to fetch delivery status data', error: error.message },
+      { message: 'Failed to fetch order data', error: error.message },
       { status: 500 }
     );
   }
@@ -107,7 +90,7 @@ export async function GET(request) {
 
 /**
  * PATCH handler for /api/admin/delivery-status/update
- * 특정 주문의 배송 상태를 업데이트합니다.
+ * 특정 주문의 statusHistory 목록에 새로운 상태를 추가합니다.
  *
  * @param {Request} request
  * @returns {NextResponse} - JSON 응답
@@ -120,17 +103,26 @@ export async function PATCH(request) {
       return NextResponse.json({ message: 'Order ID and status are required' }, { status: 400 });
     }
 
+    // statusHistory에 추가할 새로운 상태 객체
+    const newStatusEntry = {
+      newStatus: status,
+      timestamp: new Date().toISOString(),
+    };
+
     const updateParams = {
-      TableName: TABLE_DELIVERY_STATUS,
+      TableName: TABLE_ORDERS,
       Key: {
-        orderId: orderId, // delivery-status 테이블의 Primary Key가 orderId라고 가정
+        orderId: orderId,
       },
-      UpdateExpression: 'SET #status = :statusVal',
+      // statusHistory 배열에 newStatusEntry를 추가합니다.
+      // 만약 statusHistory 필드가 없다면 새로 생성합니다.
+      UpdateExpression: 'SET #history = list_append(if_not_exists(#history, :empty_list), :new_entry)',
       ExpressionAttributeNames: {
-        '#status': 'status',
+        '#history': 'statusHistory',
       },
       ExpressionAttributeValues: {
-        ':statusVal': status,
+        ':new_entry': [newStatusEntry], // list_append는 리스트를 인자로 받습니다.
+        ':empty_list': [], // statusHistory가 없을 경우 사용할 빈 리스트
       },
       ReturnValues: 'ALL_NEW', // 업데이트된 항목의 모든 속성 반환
     };

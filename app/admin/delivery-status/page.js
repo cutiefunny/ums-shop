@@ -253,9 +253,9 @@ export default function DeliveryStatusPage() {
                 <td>
                   <button 
                     onClick={() => handleUpdateDeliveryStatus(item.orderId, item.status, item.trackingNumber)} 
-                    className={`${styles.actionButton} ${item.status === 'Delivered' ? styles.markDelivered : styles.markInDelivery}`}
+                    className={`${styles.actionButton} ${item.status !== 'Delivered' ? styles.markDelivered : styles.markInDelivery}`}
                   >
-                    {item.status === 'Delivered' ? 'Mark as Delivered' : 'Mark as In Delivery'}
+                    {item.status !== 'Delivered' ? 'Mark as Delivered' : 'Mark as In Delivery'}
                   </button>
                 </td>
               </tr>
