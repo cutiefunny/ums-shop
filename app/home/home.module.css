@@ -50,26 +50,14 @@
   font-weight: 500;
 }
 
-/* Banner */
-.bannerContainer {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  padding: 10px 0;
-  /* 스크롤바 숨기기 */
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-}
-.bannerContainer::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, and Opera */
-}
 
-.bannerItem {
-  flex: 0 0 80%; /* 배너 너비 */
+
+/* .bannerItem {
+  flex: 0 0 80%;
   max-width: 300px;
-  height: 200px; /* 배너 높이 */
+  height: 200px;
   border-radius: 16px;
-}
+} */
 
 /* Trending Section */
 .trendingSection {
@@ -230,6 +218,24 @@
   overflow: hidden;
   /* [추가] z-index와 transform 변경이 부드럽게 적용되도록 transition 추가 */
   transition: transform 0.3s ease-out, z-index 0.3s ease-out;
+}
+
+/* 화면 크기에 따라 배너 아이템 크기 조정(웹) */
+@media (min-width: 600px) {
+  .bannerContainer {
+    padding: 10px 5%;
+    width: 100%;
+  }
+  .bannerItem {
+    flex: 0 0 50%;
+    max-width: 60%;
+    height: 500px;
+    /* border-radius: 30px; */
+    scroll-snap-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease-out, z-index 0.3s ease-out; /* 부드러운 애니메이션 추가 */
+  }
 }
 
 /* [신규] 중앙에 위치한 아이템을 위한 active 클래스 */
