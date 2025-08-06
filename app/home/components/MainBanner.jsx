@@ -10,19 +10,14 @@ export default function MainBanner({ items }) {
   const containerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const isJumpingRef = useRef(false);
+  const intervalRef = useRef(null); // [신규] 자동 스크롤 인터벌을 위한 ref
   const router = useRouter();
-
-  // --- 드래그-스크롤 기능을 위한 Ref ---
-  const isDraggingRef = useRef(false); // 마우스 버튼이 눌렸는지 여부
-  const wasDraggedRef = useRef(false);  // 클릭과 드래그를 구분하기 위한 플래그
-  const startXRef = useRef(0);          // 드래그 시작 시점의 마우스 X 좌표
-  const startScrollLeftRef = useRef(0); // 드래그 시작 시점의 스크롤 위치
-  // ------------------------------------
 
   const updateScale = useCallback(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
     const viewportCenter = container.offsetWidth / 2;
+
     let minDistance = Infinity;
     let activeItem = null;
 
@@ -32,8 +27,11 @@ export default function MainBanner({ items }) {
       const itemCenter = itemRect.left - containerRect.left + itemRect.width / 2;
       const distance = Math.abs(viewportCenter - itemCenter);
       const maxDistance = container.offsetWidth / 2;
+      
       const scale = 1 + 0.1 * (1 - Math.min(distance / maxDistance, 1));
+      
       item.style.transform = `scale(${scale})`;
+      
       if (distance < minDistance) {
         minDistance = distance;
         activeItem = item;
@@ -62,6 +60,7 @@ export default function MainBanner({ items }) {
       const container = containerRef.current;
       const initialItemIndex = 1;
       const item = container.children[initialItemIndex];
+      
       if (item) {
         const containerWidth = container.offsetWidth;
         const itemWidth = item.offsetWidth;
@@ -75,11 +74,15 @@ export default function MainBanner({ items }) {
 
   const handleJump = useCallback(() => {
     if (!containerRef.current || !items || items.length === 0) return;
+
     const container = containerRef.current;
     const firstItem = container.children[0];
     const secondItem = container.children[1];
     const itemWidthWithGap = secondItem ? (secondItem.offsetLeft - firstItem.offsetLeft) : firstItem.offsetWidth;
-    const currentIndex = Math.round(container.scrollLeft / itemWidthWithGap);
+
+    // A more reliable way to calculate currentIndex
+    const currentIndex = Math.round((container.scrollLeft + container.offsetWidth / 2 - firstItem.offsetWidth / 2) / itemWidthWithGap);
+    
     const atEndClone = currentIndex >= displayItems.length - 1;
     const atStartClone = currentIndex <= 0;
 
@@ -87,93 +90,102 @@ export default function MainBanner({ items }) {
       isJumpingRef.current = true;
       const targetIndex = atEndClone ? 1 : items.length;
       const targetItem = container.children[targetIndex];
-      if (targetItem) {
+      if(targetItem) {
         const scrollLeft = targetItem.offsetLeft - (container.offsetWidth / 2) + (targetItem.offsetWidth / 2);
         container.scrollTo({ left: scrollLeft, behavior: 'auto' });
+        
         requestAnimationFrame(updateScale);
       }
       setTimeout(() => { isJumpingRef.current = false; }, 50);
     }
   }, [items, displayItems, updateScale]);
 
-  const handleScroll = () => {
+  // [신규] 다음 배너로 스크롤하는 함수
+  const autoScroll = useCallback(() => {
+    if (!containerRef.current) return;
+    const container = containerRef.current;
+    const firstItem = container.children[1];
+    if (!firstItem) return;
+
+    const itemWidthWithGap = container.children[2] ? (container.children[2].offsetLeft - container.children[1].offsetLeft) : firstItem.offsetWidth;
+
+    const newScrollLeft = container.scrollLeft + itemWidthWithGap;
+
+    container.scrollTo({
+      left: newScrollLeft,
+      behavior: 'smooth'
+    });
+  }, []);
+  
+  // [수정] 스크롤 핸들러: 자동 스크롤 제어 로직 추가
+  const handleScroll = useCallback(() => {
+    // 사용자가 스크롤하면 자동 스크롤 중지
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  
     if (isJumpingRef.current) return;
     window.requestAnimationFrame(updateScale);
+  
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
-    scrollTimeoutRef.current = setTimeout(handleJump, 150);
-  };
+  
+    // 스크롤이 멈춘 후 handleJump 실행 및 자동 스크롤 재시작
+    scrollTimeoutRef.current = setTimeout(() => {
+      handleJump();
+      if (!intervalRef.current) { // 다른 곳에서 인터벌이 재시작되지 않았다면
+        intervalRef.current = setInterval(autoScroll, 3000);
+      }
+    }, 150); // 150ms 동안 스크롤 없으면 멈춘 것으로 간주
+  }, [updateScale, handleJump, autoScroll]);
+
+  // [신규] 자동 스크롤 시작 및 정리를 위한 useEffect
+  useEffect(() => {
+    // 컴포넌트가 마운트되고 아이템이 준비되면 자동 스크롤 시작
+    if (displayItems.length > 2) { // 아이템과 클론이 모두 준비되었는지 확인
+        intervalRef.current = setInterval(autoScroll, 3000);
+    }
+
+    // 컴포넌트 언마운트 시 인터벌 정리
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [displayItems, autoScroll]);
+
 
   const handleBannerClick = (item) => {
-    // 마우스를 드래그했다면, 클릭 이벤트를 무시
-    if (wasDraggedRef.current) {
-      return;
-    }
     if (item.id.startsWith('clone-')) {
       return;
     }
     router.push(`/products/detail/${item.id}`);
   };
 
-  // --- 드래그-스크롤 이벤트 핸들러 함수들 ---
-  const handleMouseDown = (e) => {
-    isDraggingRef.current = true;
-    wasDraggedRef.current = false; // 새로운 클릭이 시작될 때 드래그 상태 초기화
-    startXRef.current = e.pageX - containerRef.current.offsetLeft;
-    startScrollLeftRef.current = containerRef.current.scrollLeft;
-    containerRef.current.style.cursor = 'grabbing'; // 커서를 '잡는 중' 모양으로 변경
-    containerRef.current.style.userSelect = 'none'; // 드래그 중 텍스트 선택 방지
-  };
-
-  const handleMouseLeaveOrUp = () => {
-    isDraggingRef.current = false;
-    containerRef.current.style.cursor = 'grab'; // 커서를 '잡을 수 있는' 모양으로 복원
-    containerRef.current.style.userSelect = 'auto';
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDraggingRef.current) return;
-    e.preventDefault();
-    wasDraggedRef.current = true; // 마우스를 누른 채 움직이면 드래그로 간주
-    const x = e.pageX - containerRef.current.offsetLeft;
-    const walk = (x - startXRef.current) * 2; // 드래그 속도를 빠르게 하기 위한 배수 (2배)
-    containerRef.current.scrollLeft = startScrollLeftRef.current - walk;
-  };
-  // ---------------------------------------------
-
   return (
-    <div
-      ref={containerRef}
+    <div 
+      ref={containerRef} 
       className={styles.bannerContainer}
       onScroll={handleScroll}
-      // 마우스 이벤트 핸들러 추가
-      onMouseDown={handleMouseDown}
-      onMouseLeave={handleMouseLeaveOrUp}
-      onMouseUp={handleMouseLeaveOrUp}
-      onMouseMove={handleMouseMove}
-      style={{ cursor: 'grab' }} // 초기 커서 모양 설정
     >
       {displayItems.map(item => (
-        <div
-          key={item.id}
+        <div 
+          key={item.id} 
           className={styles.bannerItem}
           style={{ backgroundColor: item.color }}
-          onClick={() => handleBannerClick(item)} // 클릭 핸들러가 드래그 여부를 확인
+          onClick={() => handleBannerClick(item)}
         >
-          {/* 이미지 자체의 드래그 관련 기본 동작 방지 */}
-          <div style={{ pointerEvents: 'none' }}>
-            {item.imageUrl && (
-              <Image
-                src={item.imageUrl}
-                alt={item.id.startsWith('clone-') ? `Banner item ${item.id.replace('clone-', '')}` : `Product banner for ${item.id}`}
-                fill={true}
-                style={{ objectFit: 'cover' }}
-                priority={item.id === 2}
-                draggable="false" // 이미지 드래그 시 고스트 이미지 생성 방지
-              />
-            )}
-          </div>
+          {item.imageUrl && (
+            <Image
+              src={item.imageUrl}
+              alt={item.id.startsWith('clone-') ? `Banner item ${item.id.replace('clone-', '')}` : `Product banner for ${item.id}`}
+              fill={true}
+              style={{ objectFit: 'cover' }}
+              priority={item.id === 2}
+            />
+          )}
         </div>
       ))}
     </div>
