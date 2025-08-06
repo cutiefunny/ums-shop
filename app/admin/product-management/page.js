@@ -871,9 +871,9 @@ export default function ProductManagementPage() {
                   <td>
                     <button onClick={() => handleStatusToggle(product.productId, product.status)} className={styles.statusToggle}>
                       {product.status === 'Active' ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <img src="/images/status2.png" alt="Active" width={24} height={24} />
                       ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye-off"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a1.8 1.8 0 0 1 0-2.66m3.18-3.18A8.82 8.82 0 0 1 12 5c7 0 10 7 10 7a1.8 1.8 0 0 1 0 2.66"/><path d="M10 10l4 4"/><circle cx="12" cy="12" r="3"/></svg>
+                        <img src="/images/status1.png" alt="Inactive" width={24} height={24} />
                       )}
                     </button>
                   </td>

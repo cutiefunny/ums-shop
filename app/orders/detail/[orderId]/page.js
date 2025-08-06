@@ -697,12 +697,15 @@ export default function CheckoutPage() {
                                 value={portName}
                                 onChange={(e) => setPortName(e.target.value)}
                             />
-                            {/* [수정됨] Date Input을 Modal을 여는 버튼으로 변경 */}
+                            <p className={styles.expectedShippingDateLabel}>Expected Shipping Date</p>
                             <div
                                 className={styles.dateInputDisplay}
                                 onClick={() => setIsDatePickerModalOpen(true)}
                             >
-                                {expectedShippingDate ? moment(expectedShippingDate).format('YYYY-MM-DD') : 'Expected Shipping Date'}
+                                <span className={!expectedShippingDate ? styles.placeholder : ''}>
+                                    {expectedShippingDate ? moment(expectedShippingDate).format('YYYY-MM-DD') : 'Expected Shipping Date'}
+                                </span>
+                                <img src="/images/Calendar3.png" alt="Calendar" className={styles.calendarIcon} />
                             </div>
                         </>
                     ) : (

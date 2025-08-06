@@ -1,154 +1,98 @@
 // app/api/products/route.js
 import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
-import { v4 as uuidv4 } from 'uuid'; // uuidv4 추가
+import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { v4 as uuidv4 } from 'uuid';
 
-// AWS SDK 클라이언트 초기화
 const client = new DynamoDBClient({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
+    region: process.env.NEXT_PUBLIC_AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY,
+    },
 });
+
 const docClient = DynamoDBDocumentClient.from(client);
+const PRODUCTS_TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_PRODUCTS || 'product-management';
+const HISTORY_TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_PRODUCT_HISTORY || 'product-history';
 
-const PRODUCTS_TABLE_NAME = process.env.DYNAMODB_TABLE_PRODUCTS;
-const HISTORY_TABLE_NAME = process.env.DYNAMODB_TABLE_HISTORY || 'history'; // History 테이블 이름 추가
-
-// GET: 모든 상품 조회 (limit 파라미터 추가)
+// GET all products
 export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '0', 10); // limit 파라미터 가져오기, 기본값 0
-    const searchTerm = searchParams.get('searchTerm'); // 검색어 파라미터 추가
-
-    const params = {
-      TableName: PRODUCTS_TABLE_NAME,
-    };
-
-    const filterExpressions = [];
-    const expressionAttributeValues = {};
-    const expressionAttributeNames = {};
-
-    if (searchTerm) {
-      // 상품명 또는 SKU에 검색어가 포함된 경우 (대소문자 구분 없이)
-      // DynamoDB의 `contains`는 대소문자를 구분하므로, 정확한 대소문자 무시 검색을 위해서는
-      // DynamoDB에 소문자 필드를 추가하거나 Elasticsearch와 같은 외부 검색 솔루션을 고려해야 합니다.
-      // 현재는 제공된 필드에서 'contains'를 사용합니다.
-      filterExpressions.push(`contains(productName, :searchTerm) OR contains(sku, :searchTerm)`);
-      expressionAttributeValues[':searchTerm'] = searchTerm;
+    try {
+        const command = new ScanCommand({
+            TableName: PRODUCTS_TABLE_NAME,
+        });
+        const response = await docClient.send(command);
+        return NextResponse.json(response.Items);
+    } catch (error) {
+        console.error("Error fetching products from DynamoDB:", error);
+        return NextResponse.json({ message: "Error fetching products", error: error.message }, { status: 500 });
     }
-
-    if (filterExpressions.length > 0) {
-      params.FilterExpression = filterExpressions.join(' AND ');
-      params.ExpressionAttributeValues = expressionAttributeValues;
-    }
-
-
-    if (limit > 0) {
-      params.Limit = limit; // limit이 있으면 ScanCommand에 적용
-    }
-
-    const command = new ScanCommand(params);
-    const { Items } = await docClient.send(command);
-    return NextResponse.json(Items, { status: 200 });
-  } catch (error) {
-    console.error("Error fetching products from DynamoDB:", error);
-    return NextResponse.json({ message: 'Failed to fetch products', error: error.message }, { status: 500 });
-  }
 }
 
-// POST: 새 상품 생성
+// POST a new product
 export async function POST(request) {
-  try {
-    const body = await request.json();
-    const {
-      id,
-      name,
-      price, // 이 price는 priceWon과 다를 수 있으나, 기존 코드 흐름에 따라 그대로 둠
-      mainCategory,
-      subCategory1,
-      subCategory2,
-      sku,
-      description,
-      mainImage,
-      subImages,
-      stockQuantity,
-      유통기한,
-      납기일,
-      purchas,
-      autoExchangeRate,
-      priceWon,
-      exchangeRate,
-      exchangeRateOffset,
-      usdPriceOverride,
-      calculatedPriceUsd,
-      status
-    } = body;
+    try {
+        const body = await request.json();
 
-    // 필수 필드 유효성 검사 (클라이언트에서 이미 수행되지만, 서버에서도 다시 확인)
-    if (!id || !name || price === undefined) {
-      return NextResponse.json({ message: 'Missing required fields: id, name, price' }, { status: 400 });
-    }
+        // 필수 필드 확인
+        const { id, name, price } = body;
+        if (!id || !name || !price) {
+            return NextResponse.json({ message: "Missing required fields: id, name, price" }, { status: 400 });
+        }
 
-    // Convert and handle potential NaN values for numeric fields
-    const parsedStockQuantity = parseFloat(stockQuantity) || 0;
-    const parsed납기일 = parseInt(납기일) || 0;
-    const parsedPriceWon = parseFloat(priceWon) || 0;
-    const parsedExchangeRate = parseFloat(exchangeRate) || 0;
-    const parsedExchangeRateOffset = parseFloat(exchangeRateOffset) || 0;
-    const parsedUsdPriceOverride = parseFloat(usdPriceOverride) || 0;
-    const parsedCalculatedPriceUsd = parseFloat(calculatedPriceUsd) || 0;
+        const timestamp = new Date().toISOString();
+        
+        // productId가 제공되지 않은 경우, id(SKU)를 사용
+        const productId = body.productId || id;
 
-    const command = new PutCommand({
-      TableName: PRODUCTS_TABLE_NAME,
-      Item: {
-        productId: id,
-        productName: name,
-        mainCategory,
-        subCategory1,
-        subCategory2,
-        sku,
-        description,
-        mainImage,
-        subImages,
-        stockQuantity: parsedStockQuantity,
-        유통기한,
-        납기일: parsed납기일,
-        purchas,
-        autoExchangeRate,
-        priceWon: parsedPriceWon,
-        exchangeRate: parsedExchangeRate,
-        exchangeRateOffset: parsedExchangeRateOffset,
-        usdPriceOverride: parsedUsdPriceOverride,
-        calculatedPriceUsd: parsedCalculatedPriceUsd,
-        status,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    });
-    await docClient.send(command);
+        const newItem = {
+            productId: productId,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+            ...body,
+        };
 
-    // History 테이블에 기록
-    const historyItem = {
-        id: uuidv4(),
-        timestamp: new Date().toISOString(),
-        manager: "시스템 관리자", // TODO: 실제 로그인한 관리자 정보로 대체
-        deviceInfo: "백엔드 API (Product Management)", // TODO: 클라이언트 기기 정보로 대체
-        actionType: "상품 등록",
-        details: `새 상품 '${name}' (SKU: ${sku})이(가) 등록되었습니다.`,
-    };
-    const putHistoryCommand = new PutCommand({
-        TableName: HISTORY_TABLE_NAME,
-        Item: historyItem,
-    });
-    await docClient.send(putHistoryCommand);
+        // 이미지 필드가 문자열이 아닌 경우를 대비한 방어 코드
+        if (typeof newItem.mainImage !== 'string' && newItem.mainImage !== null) {
+            console.warn("mainImage is not a string, converting to null");
+            newItem.mainImage = null;
+        }
+        if (!Array.isArray(newItem.subImages)) {
+            console.warn("subImages is not an array, converting to empty array");
+            newItem.subImages = [];
+        }
 
-    return NextResponse.json({ message: 'Product created successfully', product: body }, { status: 201 });
-  } catch (error) {
-    console.error("Error creating product in DynamoDB:", error);
-    return NextResponse.json({ message: 'Failed to create product', error: error.message }, { status: 500 });
-  }
+        const putCommand = new PutCommand({
+            TableName: PRODUCTS_TABLE_NAME,
+            Item: newItem,
+        });
+
+        await docClient.send(putCommand);
+
+        // [수정됨] History 테이블 기록 부분을 임시로 주석 처리
+        /*
+        const historyItem = {
+            historyId: uuidv4(),
+            productId: productId,
+            timestamp: timestamp,
+            event: 'Product Created',
+            details: `Product '${name}' was created.`,
+            changedBy: 'Admin', // 실제로는 인증된 사용자 정보 사용
+            newState: newItem,
+        };
+
+        const historyCommand = new PutCommand({
+            TableName: HISTORY_TABLE_NAME,
+            Item: historyItem,
+        });
+        await docClient.send(historyCommand);
+        */
+        
+        return NextResponse.json({ message: "Product created successfully", item: newItem }, { status: 201 });
+
+    } catch (error) {
+        console.error("Error creating product in DynamoDB:", error);
+        return NextResponse.json({ message: "Error creating product", error: error.message, type: error.constructor.name }, { status: 500 });
+    }
 }
