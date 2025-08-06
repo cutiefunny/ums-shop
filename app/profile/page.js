@@ -54,8 +54,15 @@ export default function ProfilePage() {
 
   // 전화번호 유효성 검사 (숫자, 하이픈, 괄호, 공백 허용)
   const validatePhoneNumber = (number) => {
-    // 숫자, 하이픈, 괄호, 공백만 허용하는 정규식
-    const phoneRegex = /^[\d\s\-()]+$/; 
+    if (!number) return false; // 번호가 비어있는 경우도 유효하지 않음
+    // 숫자, 하이픈, 괄호, 공백만 허용하는 정규식 "+" 기호도 허용
+    const phoneRegex = /^[\d\s\-()+]+$/;
+    // 전화번호가 10자리 이상인지 확인 (국내 전화번호 기준)
+    if (number.replace(/[\s\-()]/g, '').length < 10) {
+      setPhoneError('Phone number must be at least 10 digits.');
+      showModal('Phone number must be at least 10 digits.');
+      return false;
+    }
     return phoneRegex.test(number);
   };
 
@@ -73,31 +80,21 @@ export default function ProfilePage() {
     setPhoneError('');
 
     let updatedValue = {};
-    let isDataValid = true;
 
     if (field === 'shipName') {
       updatedValue = { shipName: tempShipName.toUpperCase() };
-      setIsEditingShipName(false);
     } else if (field === 'phoneNumber') {
-    //   if (!validatePhoneNumber(tempPhoneNumber)) {
-    //     setPhoneError('Invalid phone number format.');
-    //     showModal('Invalid phone number format.');
-    //     isDataValid = false;
-    //   }
+      // [수정됨] 전화번호 유효성 검사 로직 활성화
+      if (!validatePhoneNumber(tempPhoneNumber)) {
+        setPhoneError('Invalid phone number format.');
+        showModal('Invalid phone number format.');
+        setLoading(false);
+        return; // 유효하지 않으면 여기서 함수 종료
+      }
       updatedValue = { phoneNumber: tempPhoneNumber };
-      setIsEditingPhoneNumber(false);
-    }
-
-    if (!isDataValid) {
-      setLoading(false);
-      return;
     }
 
     try {
-      // /api/users/[seq] 엔드포인트로 PATCH 요청 대신 PUT 요청을 보냅니다.
-      // PUT 요청은 일반적으로 리소스 전체 업데이트에 사용되지만,
-      // 현재 백엔드 API가 부분 업데이트를 지원하도록 구현되어 있다면 PUT으로도 가능합니다.
-      // (기존 users/[seq]/route.js 파일에 PUT 메서드가 구현되어 있습니다.)
       const response = await fetch(`/api/users/${user.seq}`, {
         method: 'PUT',
         headers: {
@@ -113,6 +110,14 @@ export default function ProfilePage() {
 
       const data = await response.json();
       setEditableUser(prev => ({ ...prev, ...updatedValue })); // UI 업데이트
+
+      // 성공 시에만 편집 모드 종료
+      if (field === 'shipName') {
+        setIsEditingShipName(false);
+      } else if (field === 'phoneNumber') {
+        setIsEditingPhoneNumber(false);
+      }
+      
       showModal(`${field === 'shipName' ? 'Ship Name' : 'Phone Number'} updated successfully!`); // 성공 모달
     } catch (err) {
       console.error(`Error updating ${field}:`, err);
@@ -121,6 +126,7 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+
 
   const handleCancelEdit = (field) => {
     if (field === 'shipName') {

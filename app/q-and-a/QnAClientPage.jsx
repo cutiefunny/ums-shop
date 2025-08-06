@@ -418,7 +418,7 @@ export default function QnAClientPage() { // 컴포넌트 이름을 QnAClientPag
                         <span className={styles.qaCategory}>{qna.category}</span>
                       </div>
                       <h3 className={styles.qaTitle}>{qna.title}</h3>
-                      <p className={styles.qaDate}>{qna.date}</p>
+                      <p className={styles.qaDate}>{qna.submittedDate}</p>
                     </div>
                   </Link>
                 ))}

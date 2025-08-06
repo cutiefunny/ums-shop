@@ -53,29 +53,30 @@
   justify-content: space-around;
   padding: 8px 0;
   margin-bottom: 16px;
-  background-color: #f8f8f8; /* Light background for tabs */
+  background-color: #ffffff; /* Light background for tabs */
   border-radius: 12px;
   margin: 0 16px 16px 16px; /* Match padding of mainContent */
+  gap : 8px;
 }
 
 .qaTabButton {
   flex: 1;
-  padding: 10px 0;
+  padding: 16px 0;
   border: none;
-  background: none;
+  background: #f7f7f7;
   font-size: 1rem;
   font-weight: 500;
-  color: #868e96;
+  color: #3f3f3f;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 15px;
   transition: all 0.2s ease;
 }
 
 .qaTabButton.active {
-  background-color: #f5a623; /* Yellow background for active tab */
-  color: white;
+  background-color: #FDF7DD; /* Yellow background for active tab */
+  color: #FBC926;
   font-weight: 700;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 1px solid #FBC926; /* Yellow border for active tab */
 }
 
 .filterChips {
