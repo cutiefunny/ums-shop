@@ -4,7 +4,7 @@
   flex-direction: column;
   min-height: 100vh;
   /* 하단 네비게이션 높이만큼 여백 확보 */
-  padding-bottom: 80px; 
+  padding-bottom: 80px;
 }
 
 .mainContent {
@@ -50,13 +50,11 @@
   font-weight: 500;
 }
 
-
-
 /* .bannerItem {
-  flex: 0 0 80%;
-  max-width: 300px;
-  height: 200px;
-  border-radius: 16px;
+  flex: 0 0 80%;
+  max-width: 300px;
+  height: 200px;
+  border-radius: 16px;
 } */
 
 /* Trending Section */
@@ -193,11 +191,12 @@
 
 /* Banner */
 .bannerContainer {
+  margin: 0 -20px; /* <<-- 수정된 부분 */
   display: flex;
   gap: 16px;
   overflow-x: auto;
   /* 좌우 패딩을 추가하여 첫번째와 마지막 아이템도 중앙에 올 수 있도록 함 */
-  padding: 10px 10%; 
+  padding: 10px 10%;
   /* 스크롤 시 아이템이 중앙에 멈추도록 스냅 기능 추가 */
   scroll-snap-type: x mandatory;
   /* 스크롤바 숨기기 */
@@ -240,7 +239,7 @@
 
 /* [신규] 중앙에 위치한 아이템을 위한 active 클래스 */
 /* .bannerItem.active {
-  transform: scale(1.1);
+  transform: scale(1.1);
 } */
 
 /* [신규] 비활성 아이템에 적용될 어두운 오버레이 */
@@ -319,27 +318,27 @@
 }
 
 .searchCloseIcon {
-    width: 22px;
-    height: 22px;
-    color: #495057;
+  width: 22px;
+  height: 22px;
+  color: #495057;
 }
 
 .bellIconContainer {
-    position: relative;
-    display: flex; /* 내부 이미지를 중앙 정렬하기 위해 */
-    align-items: center;
-    justify-content: center;
-    width: 24px; /* 아이콘 크기에 맞춤 */
-    height: 24px;
+  position: relative;
+  display: flex; /* 내부 이미지를 중앙 정렬하기 위해 */
+  align-items: center;
+  justify-content: center;
+  width: 24px; /* 아이콘 크기에 맞춤 */
+  height: 24px;
 }
 
 .notificationBadge {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 8px;
-    height: 8px;
-    background-color: red; /* 빨간 점 */
-    border-radius: 50%;
-    border: 1px solid white; /* 흰색 테두리 (선택 사항) */
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background-color: red; /* 빨간 점 */
+  border-radius: 50%;
+  border: 1px solid white; /* 흰색 테두리 (선택 사항) */
 }

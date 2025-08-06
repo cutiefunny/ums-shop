@@ -238,10 +238,11 @@ export default function OrdersPage() {
   return (
     <div className={styles.pageContainer}>
       <header className={styles.header}>
-        <button onClick={() => router.back()} className={styles.iconButton}>
+        {/* <button onClick={() => router.back()} className={styles.iconButton}>
           <BackIcon />
-        </button>
+        </button> */}
         <h1 className={styles.title}>My Orders</h1>
+        <p className={styles.subtitle}>Order & Delivery Status</p>
         <div style={{ width: '24px' }}></div>
       </header>
 
@@ -249,16 +250,16 @@ export default function OrdersPage() {
         {/* 상단 주문 상태별 수량 표시 */}
         <div className={styles.statusSummary}>
           <div className={`${styles.statusCard} ${activeStatusTab === 'Order' ? styles.active : ''}`} onClick={() => handleStatusTabClick('Order')}>
-            <span className={styles.statusLabel}>Order</span>
             <span className={styles.statusCount}>{statusCounts.Order}</span>
+            <span className={styles.statusLabel}>Order</span>
           </div>
           <div className={`${styles.statusCard} ${activeStatusTab === 'Payment' ? styles.active : ''}`} onClick={() => handleStatusTabClick('Payment')}>
-            <span className={styles.statusLabel}>Payment</span>
             <span className={styles.statusCount}>{statusCounts.Payment}</span>
+            <span className={styles.statusLabel}>Payment</span>
           </div>
           <div className={`${styles.statusCard} ${activeStatusTab === 'Delivered' ? styles.active : ''}`} onClick={() => handleStatusTabClick('Delivered')}>
-            <span className={styles.statusLabel}>Delivered</span>
             <span className={styles.statusCount}>{statusCounts.Delivered}</span>
+            <span className={styles.statusLabel}>Delivered</span>
           </div>
         </div>
 

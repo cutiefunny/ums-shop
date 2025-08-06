@@ -9,20 +9,24 @@
 }
 
 .header {
-  display: flex;
-  justify-content: space-between;
+  /* display: flex; */
+  /* justify-content: space-between; */
   align-items: center;
   padding: 12px 16px;
   position: sticky;
   top: 0;
   background-color: white;
   z-index: 10;
-  border-bottom: 1px solid #f1f3f5;
 }
 
 .title {
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  margin-top: 15px;
 }
 
 .iconButton {
@@ -114,6 +118,8 @@
 .statusCount {
   font-size: 1.2rem;
   font-weight: bold;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 
 /* Filter Chips */

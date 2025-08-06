@@ -49,12 +49,10 @@ export default function ProductCard({ product, onAddToCart }) {
       </div>
       <div className={styles.info}>
         <h3 className={styles.productName}>{product.name}</h3>
-        {product.discount > 0 && (
           <div className={styles.priceContainer}>
             <span className={styles.discount}>{product.discount}%</span>
             <span className={styles.originalPrice}>${product.price.toFixed(2)}</span>
           </div>
-        )}
         <p className={styles.finalPrice}>${discountedPrice.toFixed(2)}</p>
       </div>
       <button className={styles.addToCartButton} onClick={handleAddToCartClick}>

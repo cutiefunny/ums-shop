@@ -11,6 +11,7 @@ import moment from 'moment'; // 날짜 형식을 위해 moment 사용
 import BottomNav from '@/app/home/components/BottomNav'; // BottomNav 컴포넌트 임포트 추가
 import GuideModal from '@/components/GuideModal'; // GuideModal 임포트
 import PaymentMethodSelectionModal from '@/components/PaymentMethodSelectionModal'; // PaymentMethodSelectionModal 임포트 추가
+import DatePickerModal from '@/components/DatePickerModal'; // [신규] DatePickerModal 임포트
 
 // 아이콘 컴포넌트
 const BackIcon = () => <svg width="24" height="24" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41Z" fill="black"/></svg>;
@@ -44,6 +45,9 @@ export default function CheckoutPage() {
     const [selectedItemsForOrder, setSelectedItemsForOrder] = useState(new Set()); // 주문할 상품 ID Set
     const [messagesForStep1, setMessagesForStep1] = useState([]); // Step 1에서 주고받은 메시지 목록
     const [productDetailsMap, setProductDetailsMap] = useState({}); // 각 상품의 최신 가격 및 할인율을 저장
+    
+    // [신규] Date Picker Modal State
+    const [isDatePickerModalOpen, setIsDatePickerModalOpen] = useState(false);
 
     // Guide Modal related states (kept for initial order guidance, but flow changes)
     const [showGuideModal, setShowGuideModal] = useState(false);
@@ -181,47 +185,31 @@ export default function CheckoutPage() {
 
     // 상품 가격 및 할인율 일치 여부 확인 Memo
     const arePricesAndDiscountsMatching = useMemo(() => {
-        // 로딩 중이거나 데이터가 없거나, 상품 디테일 맵이 아직 채워지지 않았다면 비교 불가능
         if (loading || !orderId || cartItems.length === 0 || Object.keys(productDetailsMap).length === 0) {
             return false;
         }
-
-        // 선택된 모든 상품에 대해 가격 및 할인율 비교
         for (const item of cartItems) {
-            // 선택되지 않은 상품은 비교 대상에서 제외
             if (!selectedItemsForOrder.has(item.productId)) {
                 continue;
             }
-
             const productDetails = productDetailsMap[item.productId];
-
-            // 특정 상품의 최신 정보가 없는 경우, 불일치로 간주
             if (!productDetails) {
                 console.warn(`Product details not found in map for item ${item.productId}. Assuming mismatch.`);
                 return false;
             }
-
-            // 1. 선택된 상품 중에 adminStatus가 Alternative Offer 또는 Out of Stock이 있는 경우
             if (item.adminStatus === 'Alternative Offer' || item.adminStatus === 'Out of Stock') {
                 console.log(`Mismatch detected: Item ${item.productId} has adminStatus ${productDetails.adminStatus}.`);
                 return false;
             }
-
-            // 2. 선택된 상품 중에 adminStatus가 Limited이면서 adminQuantity가 quantity보다 작은 경우
             if (item.adminStatus === 'Limited' && item.adminQuantity < item.quantity) {
                 console.log(`Mismatch detected: Item ${item.productId} has adminStatus Limited and adminQuantity (${productDetails.adminQuantity}) is less than ordered quantity (${item.quantity}).`);
                 return false;
             }
-
-            // 주문 시점의 가격 및 할인율
             const orderedUnitPrice = parseFloat(item.unitPrice?.toFixed(2));
             const orderedDiscount = parseFloat((item.discount || 0)?.toFixed(2));
-
-            // 현재 상품의 가격 및 할인율 (API에서 가져온 최신 정보)
             const currentUnitPrice = parseFloat(productDetails.calculatedPriceUsd?.toFixed(2));
             const currentDiscount = parseFloat((productDetails.discount || 0)?.toFixed(2));
 
-            // 가격 또는 할인율이 일치하지 않으면 false 반환
             if (orderedUnitPrice !== currentUnitPrice || orderedDiscount !== currentDiscount) {
                 console.log(`Mismatch detected for item ${item.productId}:`);
                 console.log(`  Ordered: Price=${orderedUnitPrice}, Discount=${orderedDiscount}`);
@@ -229,16 +217,10 @@ export default function CheckoutPage() {
                 return false;
             }
         }
-        return true; // 모든 선택된 상품이 일치
-    }, [cartItems, productDetailsMap, selectedItemsForOrder, loading, orderId]); // 의존성 추가
+        return true;
+    }, [cartItems, productDetailsMap, selectedItemsForOrder, loading, orderId]);
 
-
-    // 페이지 로드 시 가격 불일치 모달 발생
     useEffect(() => {
-        // 로딩이 완료되고 (loading이 false), orderId가 존재하며,
-        // cartItems와 productDetailsMap이 비어있지 않고,
-        // arePricesAndDiscountsMatching의 계산이 의미를 가질 때 실행
-        // 즉, 데이터 로드가 모두 끝나고 나서야 유효한 비교를 수행
         if (!loading && orderId && cartItems.length > 0 && Object.keys(productDetailsMap).length > 0) {
             if (!arePricesAndDiscountsMatching) {
                 showModal("Order details have changed. Please review again before confirmation");
@@ -246,7 +228,6 @@ export default function CheckoutPage() {
         }
     }, [arePricesAndDiscountsMatching, loading, orderId, cartItems.length, productDetailsMap, showModal]);
 
-    // 새롭게 추가된 함수: 전체 주문을 삭제하는 로직
     const deleteEntireOrder = useCallback(async () => {
         showConfirmationModal(
             "Order Deletion",
@@ -255,16 +236,14 @@ export default function CheckoutPage() {
                 setLoading(true);
                 try {
                     const response = await fetch(`/api/orders/${orderId}`, {
-                        method: 'DELETE', // DELETE 요청으로 전체 주문 삭제
+                        method: 'DELETE',
                     });
-
                     if (!response.ok) {
                         const errorData = await response.json();
                         throw new Error(errorData.message || 'Failed to delete order.');
                     }
-
                     showModal("Order successfully deleted. Redirecting to order list.", () => {
-                        router.replace('/orders'); // router.push 대신 router.replace 사용
+                        router.replace('/orders');
                     });
                 } catch (err) {
                     console.error("Error deleting order:", err);
@@ -286,7 +265,6 @@ export default function CheckoutPage() {
             item.productId === productId ? { ...item, quantity: newQuantity } : item
         );
         setCartItems(updatedCart);
-        // 제품 수량이 변경되면 해당 제품의 체크박스를 해제합니다.
         setSelectedItemsForOrder(prev => {
             const newSet = new Set(prev);
             newSet.delete(productId);
@@ -303,8 +281,8 @@ export default function CheckoutPage() {
         });
 
         if (updatedCart.length === 0) {
-            setCartItems(updatedCart); // 로컬 상태 먼저 업데이트
-            deleteEntireOrder(); // 전체 주문 삭제 트리거
+            setCartItems(updatedCart);
+            deleteEntireOrder();
         } else {
             setCartItems(updatedCart);
             showModal("Selected item removed.");
@@ -341,20 +319,19 @@ export default function CheckoutPage() {
             "Are you sure you want to delete the selected items from your cart?",
             () => {
             const updatedCart = cartItems.filter(item => !selectedItemsForOrder.has(item.productId));
-            setSelectedItemsForOrder(new Set()); // Reset selection
+            setSelectedItemsForOrder(new Set());
 
             if (updatedCart.length === 0) {
-                setCartItems(updatedCart); // Update local state first
-                deleteEntireOrder(); // Trigger entire order deletion
+                setCartItems(updatedCart);
+                deleteEntireOrder();
             } else {
                 setCartItems(updatedCart);
                 showModal("Selected items have been deleted.");
             }
             }
         );
-    }, [cartItems, selectedItemsForOrder, showModal, showConfirmationModal, deleteEntireOrder]); // deleteEntireOrder 의존성 추가
+    }, [cartItems, selectedItemsForOrder, showModal, showConfirmationModal, deleteEntireOrder]);
 
-    // Step 1에서 메시지를 추가하는 함수
     const handleAddMessageForStep1 = async () => {
         if (!userMessage.trim() && !attachedFileForStep1) {
             showModal('Please enter a message or attach a file.');
@@ -362,9 +339,8 @@ export default function CheckoutPage() {
         }
 
         let fileData = null;
-        setLoading(true); // Start loading state for message sending
+        setLoading(true);
 
-        // S3 upload logic
         if (attachedFileForStep1) {
             try {
                 const getSignedUrlResponse = await fetch(`/api/s3-upload-url?filename=${attachedFileForStep1.name}&contentType=${attachedFileForStep1.type}`);
@@ -389,27 +365,17 @@ export default function CheckoutPage() {
                     method: 'POST',
                     body: formData,
                 });
+                if (!uploadFileToS3Response.ok) throw new Error('Failed to upload file to S3.');
 
-                if (!uploadFileToS3Response.ok) {
-                    throw new Error('Failed to upload file to S3.');
-                }
-
-                fileData = {
-                    name: attachedFileForStep1.name,
-                    type: attachedFileForStep1.type,
-                    size: attachedFileForStep1.size,
-                    url: imageUrl,
-                };
-
+                fileData = { name: attachedFileForStep1.name, type: attachedFileForStep1.type, size: attachedFileForStep1.size, url: imageUrl };
             } catch (uploadError) {
                 console.error("S3 upload error:", uploadError);
                 showModal(`S3 upload error: ${uploadError.message}`);
-                setLoading(false); // Stop loading on error
+                setLoading(false);
                 return;
             }
         }
 
-        // Prepare the new message
         const newMessage = {
             id: messagesForStep1.length > 0 ? Math.max(...messagesForStep1.map(m => m.id)) + 1 : 1,
             sender: 'User',
@@ -417,12 +383,9 @@ export default function CheckoutPage() {
             text: userMessage.trim(),
             imageUrl: fileData ? fileData.url : null,
         };
-
-        // Optimistically update local state
         const updatedMessagesLocally = [...messagesForStep1, newMessage];
         setMessagesForStep1(updatedMessagesLocally);
 
-        // Clear input fields immediately
         setUserMessage('');
         setAttachedFileForStep1(null);
         setFilePreviewUrlForStep1(null);
@@ -431,45 +394,34 @@ export default function CheckoutPage() {
         }
 
         try {
-            // Send the entire updated messages array to DynamoDB
-            console.log('userId:', user?.seq, 'orderId:', orderId, 'messages:', updatedMessagesLocally);
             const response = await fetch(`/api/orders/${orderId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: updatedMessagesLocally, userId: user?.seq }), // Send updated messages array
+                body: JSON.stringify({ messages: updatedMessagesLocally, userId: user?.seq }),
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Failed to save message to database.');
             }
-            console.log('Message saved to DynamoDB successfully2!');
-
         } catch (err) {
             console.error("Error saving message:", err);
             setError(`Failed to send message: ${err.message}`);
             showModal(`An error occurred while sending the message: ${err.message}`);
-            // Optionally, revert local state if save fails:
-            // setMessagesForStep1(messagesForStep1); // Revert to previous state
         } finally {
-            setLoading(false); // Stop loading after save attempt
+            setLoading(false);
         }
     };
-
-    // 메시지 입력 필드 변경 핸들러 - 한글 입력 방지
+    
     const handleUserMessageChange = useCallback((e) => {
         const inputValue = e.target.value;
-        // 한글 유니코드 범위: \uAC00-\uD7AF (가-힣), \u1100-\u11FF (자모), \u3130-\u318F (호환용 자모), \uA960-\uA97F (초성), \uD7B0-\uD7FF (종성)
         const koreanRegex = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uD7B0-\uD7FF]/;
         if (koreanRegex.test(inputValue)) {
             showModal('Only English letters are allowed.');
-            // 한글을 제외한 문자열만 설정
             setUserMessage(inputValue.replace(koreanRegex, ''));
         } else {
             setUserMessage(inputValue);
         }
     }, [showModal]);
-
 
     const handleSubmitOrderReview = async () => {
         if (selectedItemsForOrder.size === 0) {
@@ -477,10 +429,9 @@ export default function CheckoutPage() {
             return;
         }
 
-        // 가격 및 할인율 불일치 시 모달 띄우기
         if (!arePricesAndDiscountsMatching) {
             showModal("Order details have changed. Please review again before confirmation");
-            return; // 제출 중단
+            return;
         }
 
         let deliveryDetailsPayload = {};
@@ -489,50 +440,28 @@ export default function CheckoutPage() {
                 showModal("Please enter Port Name and Expected Shipping Date.");
                 return;
             }
-            deliveryDetailsPayload = {
-                option: deliveryOption,
-                portName: portName.trim(),
-                expectedShippingDate: expectedShippingDate,
-            };
-        } else { // alternative
+            deliveryDetailsPayload = { option: deliveryOption, portName: portName.trim(), expectedShippingDate: expectedShippingDate };
+        } else {
             if (!deliveryAddress.trim() || !postalCode.trim()) {
                 showModal("Please enter delivery address and postal code.");
                 return;
             }
-            deliveryDetailsPayload = {
-                option: deliveryOption,
-                address: deliveryAddress.trim(),
-                postalCode: postalCode.trim(),
-            };
+            deliveryDetailsPayload = { option: deliveryOption, address: deliveryAddress.trim(), postalCode: postalCode.trim() };
         }
 
         setLoading(true);
         try {
             const itemsToOrder = cartItems.filter(item => selectedItemsForOrder.has(item.productId));
-
-            // Prepare the updated order payload
             const updatedOrderPayload = {
                 userEmail: user.email,
                 userName: user.name,
-                customer: {
-                    email: user.email,
-                    name: user.name,
-                    phoneNumber: user.phoneNumber // Assuming user.phoneNumber is available from AuthContext
-                },
-                shipInfo: {
-                    shipName: user.shipName, // Assuming user.shipName is available from AuthContext
-                    port: deliveryDetailsPayload.portName,
-                },
-                shippingDetails: {
-                    method: deliveryOption,
-                    estimatedDelivery: deliveryDetailsPayload.expectedShippingDate,
-                    trackingNumber: orderDetail?.shippingDetails?.trackingNumber || null, // Preserve existing
-                    actualDelivery: orderDetail?.shippingDetails?.actualDelivery || null, // Preserve existing
-                },
-                totalAmount: finalTotalPrice, // Recalculated total
+                customer: { email: user.email, name: user.name, phoneNumber: user.phoneNumber },
+                shipInfo: { shipName: user.shipName, port: deliveryDetailsPayload.portName },
+                shippingDetails: { method: deliveryOption, estimatedDelivery: deliveryDetailsPayload.expectedShippingDate, trackingNumber: orderDetail?.shippingDetails?.trackingNumber || null, actualDelivery: orderDetail?.shippingDetails?.actualDelivery || null },
+                totalAmount: finalTotalPrice,
                 subtotal: productPriceTotal,
                 shippingFee: shippingFee,
-                tax: 0, // Assuming tax is always 0 based on current code
+                tax: 0,
                 orderItems: itemsToOrder.map(item => ({
                     productId: item.productId,
                     name: item.name,
@@ -542,27 +471,21 @@ export default function CheckoutPage() {
                     discount: item.discount,
                     mainImage: item.mainImage,
                     sku: item.slug,
-                    adminStatus: item.adminStatus || 'Pending Review', // Preserve or default
-                    adminQuantity: item.adminQuantity || item.quantity, // Preserve or default
+                    adminStatus: item.adminStatus || 'Pending Review',
+                    adminQuantity: item.adminQuantity || item.quantity,
                 })),
                 deliveryDetails: deliveryDetailsPayload,
-                messages: messagesForStep1, // Include all messages
-                status: 'Payment(Request)', // Change status to 'Payment(Request)'
-                date: orderDetail?.date || new Date().toISOString(), // Preserve original order date
+                messages: messagesForStep1,
+                status: 'Payment(Request)',
+                date: orderDetail?.date || new Date().toISOString(),
                 statusHistory: [
-                    ...(orderDetail?.statusHistory || []), // Keep existing history
-                    {
-                        timestamp: new Date().toISOString(),
-                        oldStatus: orderDetail?.status || null,
-                        newStatus: 'Payment(Request)', // Reflect the new status
-                        changedBy: 'User',
-                    }
+                    ...(orderDetail?.statusHistory || []),
+                    { timestamp: new Date().toISOString(), oldStatus: orderDetail?.status || null, newStatus: 'Payment(Request)', changedBy: 'User' }
                 ],
             };
 
-            // Send PUT request to update the order
             const response = await fetch(`/api/orders/${orderId}`, {
-                method: 'PUT', // Change to PUT
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedOrderPayload),
             });
@@ -572,8 +495,6 @@ export default function CheckoutPage() {
                 throw new Error(errorData.message || 'Failed to update order information');
             }
 
-            // After successful update, clear cart (if applicable)
-            // This assumes that after order confirmation, items from the cart are "moved" to the order.
             const userUpdateResponse = await fetch(`/api/users/${user.seq}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -583,9 +504,8 @@ export default function CheckoutPage() {
                 console.error('Failed to clear cart after order confirmation:', await userUpdateResponse.text());
             }
 
-            // Redirect to the new payment page
             showModal("Payment request has been submitted. Redirecting to the payment page.", () => {
-                router.push(`/orders/payment/${orderId}`); // Redirect to the new payment page
+                router.push(`/orders/payment/${orderId}`);
             });
 
         } catch (err) {
@@ -600,9 +520,7 @@ export default function CheckoutPage() {
         showConfirmationModal(
             "Cancel Order",
             "Are you sure you want to cancel the order? (You will be redirected to the cart page)",
-            () => {
-                router.push('/cart'); // 장바구니 페이지로 돌아가기
-            },
+            () => { router.push('/cart'); },
             () => { /* do nothing on cancel */ }
         );
     };
@@ -614,14 +532,11 @@ export default function CheckoutPage() {
             </div>
         );
     }
-
     if (error) {
         return (
             <div className={styles.pageContainer}>
                 <header className={styles.header}>
-                    <button onClick={() => router.back()} className={styles.iconButton}>
-                        <BackIcon />
-                    </button>
+                    <button onClick={() => router.back()} className={styles.iconButton}><BackIcon /></button>
                     <h1 className={styles.title}>Order in Review</h1>
                     <div style={{ width: '24px' }}></div>
                 </header>
@@ -631,27 +546,19 @@ export default function CheckoutPage() {
             </div>
         );
     }
-
-    if (!isLoggedIn) {
-        return null;
-    }
-
+    if (!isLoggedIn) return null;
     if (cartItems.length === 0 && !orderSuccessfullyPlaced) {
         return (
             <div className={styles.pageContainer}>
                 <header className={styles.header}>
-                    <button onClick={() => router.back()} className={styles.iconButton}>
-                        <BackIcon />
-                    </button>
+                    <button onClick={() => router.back()} className={styles.iconButton}><BackIcon /></button>
                     <h1 className={styles.title}>Order in Review</h1>
                     <div style={{ width: '24px' }}></div>
                 </header>
                 <main className={styles.mainContent}>
                     <div className={styles.emptyMessage}>
                         <p>No items in the cart.</p>
-                        <button onClick={() => router.push('/home')} className={styles.shopNowButton}>
-                            Shop Now
-                        </button>
+                        <button onClick={() => router.push('/home')} className={styles.shopNowButton}>Shop Now</button>
                     </div>
                 </main>
                 <BottomNav activePath="/cart" />
@@ -696,7 +603,7 @@ export default function CheckoutPage() {
                                     item={item}
                                     onUpdateQuantity={handleUpdateQuantity}
                                     onRemoveItem={handleRemoveItem}
-                                    showAdminDetails={true} // showAdminDetails prop 추가
+                                    showAdminDetails={true}
                                 />
                             </div>
                         ))}
@@ -709,7 +616,6 @@ export default function CheckoutPage() {
                         <h2>Message</h2>
                         <ChevronDown />
                     </div>
-                    {/* Message Display Area */}
                     <div className={styles.messageDisplayArea}>
                         {messagesForStep1.length === 0 && !attachedFileForStep1 ? (
                             <p className={styles.emptyMessageText}>No messages have been created.</p>
@@ -717,15 +623,11 @@ export default function CheckoutPage() {
                             messagesForStep1.map((msg, index) => (
                                 <div key={msg.id || index} className={`${styles.messageBubble} ${msg.sender === 'User' ? styles.user : styles.admin}`} data-sender={msg.sender}>
                                     {msg.text && <p className={styles.existingMessageText}>{msg.text}</p>}
-                                    {msg.imageUrl && (
-                                        <img src={msg.imageUrl} alt="Attached Preview" className={styles.attachedImagePreview} />
-                                    )}
+                                    {msg.imageUrl && <img src={msg.imageUrl} alt="Attached Preview" className={styles.attachedImagePreview} />}
                                     <span className={styles.messageTimestamp}>{moment(msg.timestamp).format('YYYY-MM-DD HH:mm')}</span>
                                 </div>
                             ))
                         )}
-
-                        {/* New: Display draft image preview within message display area */}
                         {attachedFileForStep1 && (
                             <div className={styles.draftImagePreviewContainer}>
                                 <img src={filePreviewUrlForStep1} alt="Attachment Preview" className={styles.draftImagePreview} />
@@ -735,8 +637,6 @@ export default function CheckoutPage() {
                             </div>
                         )}
                     </div>
-
-                    {/* Message Input Area */}
                     <div className={styles.messageInputContainer}>
                         <input
                             type="file"
@@ -748,37 +648,26 @@ export default function CheckoutPage() {
                                     const file = e.target.files[0];
                                     if (!file.type.startsWith('image/')) {
                                         showModal('Only image files are allowed.');
-                                        setAttachedFileForStep1(null);
-                                        setFilePreviewUrlForStep1(null);
-                                        e.target.value = '';
-                                        return;
+                                        e.target.value = ''; return;
                                     }
-                                    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                                    if (file.size > 5 * 1024 * 1024) {
                                         showModal('Image file size cannot exceed 5MB.');
-                                        setAttachedFileForStep1(null);
-                                        setFilePreviewUrlForStep1(null);
-                                        e.target.value = '';
-                                        return;
+                                        e.target.value = ''; return;
                                     }
                                     setAttachedFileForStep1(file);
                                     setFilePreviewUrlForStep1(URL.createObjectURL(file));
-                                    // userMessage is not cleared here, as text and image can be sent together
                                 }
                             }}
                         />
-                        <button type="button" onClick={() => fileInputRefForStep1.current.click()} className={styles.attachButton}>
-                            <AttachIcon />
-                        </button>
+                        <button type="button" onClick={() => fileInputRefForStep1.current.click()} className={styles.attachButton}><AttachIcon /></button>
                         <textarea
                             className={styles.messageInput}
                             placeholder={"Write a message"}
                             value={userMessage}
-                            onChange={handleUserMessageChange} // 변경된 핸들러 사용
+                            onChange={handleUserMessageChange}
                             rows="1"
                         ></textarea>
-                        <button type="button" onClick={handleAddMessageForStep1} className={styles.sendMessageButton}>
-                            <SendIcon />
-                        </button>
+                        <button type="button" onClick={handleAddMessageForStep1} className={styles.sendMessageButton}><SendIcon /></button>
                     </div>
                 </section>
 
@@ -788,20 +677,14 @@ export default function CheckoutPage() {
                     <div className={styles.deliveryOptions}>
                         <label>
                             <input
-                                type="radio"
-                                name="deliveryOption"
-                                value="onboard"
-                                checked={deliveryOption === 'onboard'}
-                                onChange={(e) => setDeliveryOption(e.target.value)}
+                                type="radio" name="deliveryOption" value="onboard"
+                                checked={deliveryOption === 'onboard'} onChange={(e) => setDeliveryOption(e.target.value)}
                             /> Onboard Delivery
                         </label>
                         <label>
                             <input
-                                type="radio"
-                                name="deliveryOption"
-                                value="alternative"
-                                checked={deliveryOption === 'alternative'}
-                                onChange={(e) => setDeliveryOption(e.target.value)}
+                                type="radio" name="deliveryOption" value="alternative"
+                                checked={deliveryOption === 'alternative'} onChange={(e) => setDeliveryOption(e.target.value)}
                             /> Alternative Pickup Location
                         </label>
                     </div>
@@ -814,13 +697,13 @@ export default function CheckoutPage() {
                                 value={portName}
                                 onChange={(e) => setPortName(e.target.value)}
                             />
-                            <input
-                                type="date"
-                                className={styles.deliveryInput}
-                                placeholder="Expected Shipping Date"
-                                value={expectedShippingDate}
-                                onChange={(e) => setExpectedShippingDate(e.target.value)}
-                            />
+                            {/* [수정됨] Date Input을 Modal을 여는 버튼으로 변경 */}
+                            <div
+                                className={styles.dateInputDisplay}
+                                onClick={() => setIsDatePickerModalOpen(true)}
+                            >
+                                {expectedShippingDate ? moment(expectedShippingDate).format('YYYY-MM-DD') : 'Expected Shipping Date'}
+                            </div>
                         </>
                     ) : (
                         <>
@@ -864,35 +747,36 @@ export default function CheckoutPage() {
                         <span className={`${styles.totalSummaryValue} ${styles.highlightPrice}`}>${finalTotalPrice.toFixed(2)}</span>
                     </div>
                 </div>
-                    {orderDetail?.statusHistory && orderDetail?.statusHistory.length > 0 && orderDetail?.statusHistory.slice(-1)[0]?.newStatus === "Order(Confirmed)" ? (
-                        <button
+                {orderDetail?.statusHistory && orderDetail?.statusHistory.length > 0 && orderDetail?.statusHistory.slice(-1)[0]?.newStatus === "Order(Confirmed)" ? (
+                    <button
                         onClick={handleSubmitOrderReview}
                         className={styles.submitButton}
                         disabled={!arePricesAndDiscountsMatching || selectedItemsForOrder.size !== cartItems.length}
-                        >
-                            Send Order Confirmation
-                        </button>
-                    ) : (
-                        <button 
+                    >
+                        Send Order Confirmation
+                    </button>
+                ) : (
+                    <button 
                         className={`${styles.submitButton} ${styles.disabled}`}
                         disabled={true}
-                        >
-                            Submit
-                        </button>
-                    )}
-                </footer>
+                    >
+                        Submit
+                    </button>
+                )}
+            </footer>
 
-            {showGuideModal && currentGuideStep < guideStepsContent.length && (
-                <GuideModal
-                    isOpen={showGuideModal}
-                    title={guideStepsContent[currentGuideStep].title}
-                    stepText={guideStepsContent[currentGuideStep].stepText}
-                    message={guideStepsContent[currentGuideStep].message}
-                    buttonText={guideStepsContent[currentGuideStep].buttonText}
-                    onNext={guideModalHandlers.onNext}
-                    onGoToMyOrders={guideModalHandlers.onGoToMyOrders}
-                />
-            )}
+            {/* [신규] Date Picker Modal 렌더링 */}
+            <DatePickerModal
+                isOpen={isDatePickerModalOpen}
+                onClose={() => setIsDatePickerModalOpen(false)}
+                onConfirm={(date) => {
+                    setExpectedShippingDate(date);
+                    setIsDatePickerModalOpen(false);
+                }}
+                initialDate={expectedShippingDate}
+            />
+
+            {/* GuideModal and other modals... */}
         </div>
     );
 }

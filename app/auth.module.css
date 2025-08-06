@@ -10,7 +10,7 @@
 .pageWithFixedFooter {
   background-color: #fff;
   /* 하단 고정 푸터의 높이만큼 콘텐츠 아래에 여백을 주어 내용이 가려지지 않게 함 */
-  padding-bottom: 150px; 
+  padding-bottom: 150px;
 }
 
 .scrollableContent {
@@ -36,7 +36,7 @@
   width: 100%;
   max-width: 420px;
   margin: 0 auto; /* 중앙 정렬 */
-  text-align: center;
+  text-align: center; /* <<-- 수정된 부분 */
   position: relative;
 }
 
@@ -109,7 +109,7 @@
 
 .checkboxLabel {
   display: flex;
-  align-items: flex-start; 
+  align-items: flex-start;
   gap: 8px;
   color: #495057;
   cursor: pointer;
@@ -160,7 +160,7 @@
 }
 
 /* .button:hover:not(:disabled) {
-  background-color: #00aaff;
+  background-color: #00aaff;
 } */
 
 /* [수정] footer 스타일 조정 */
@@ -237,21 +237,13 @@
 .pageWithFixedFooter {
   background-color: #fff;
   /* 하단 고정 푸터의 높이만큼 아래쪽 패딩을 주어 내용이 가려지지 않게 함 */
-  padding-bottom: 120px; 
+  padding-bottom: 120px;
 }
 
 /* [신규] 실제 스크롤이 일어나는 콘텐츠 영역 */
 .scrollableContent {
   /* 기존 padding: 20px 제거 -> contentPadding에서 관리 */
   padding: 0;
-}
-
-.formWrapper {
-  width: 100%;
-  max-width: 420px;
-  margin: 0 auto;
-  text-align: left; /* 좌측 정렬로 변경 */
-  position: relative;
 }
 
 /* [신규] 하단 고정 푸터 스타일 */
@@ -263,7 +255,6 @@
   padding: 16px 24px 32px;
   background-color: white;
   box-shadow: none;
-  
   display: flex;
   flex-direction: column;
   align-items: center;

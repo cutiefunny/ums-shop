@@ -223,7 +223,7 @@ export default function ProductDetailPage() {
 
                 <div className={styles.infoSection}>
                     <div className={styles.categoryHeader}>
-                        <button onClick={() => router.push(`/products/${product.categorySlug}`)} className={styles.categoryLink}>
+                        <button onClick={() => router.push(`/category1depth/${product.categorySlug}`)} className={styles.categoryLink}>
                             <span>{product.categoryName}</span>
                             <ChevronRightIcon />
                         </button>
