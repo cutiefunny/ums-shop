@@ -58,8 +58,8 @@
 }
 
 .shopNowButton {
-  background-color: #f5a623;
-  border-color: #f5a623;
+  background-color: #FBC926;
+  border-color: #FBC926;
   color: white;
   padding: 10px 20px;
   border-radius: 8px;
@@ -228,7 +228,7 @@
 }
 
 .deliveryOptions input[type="radio"] {
-  accent-color: #f5a623;
+  accent-color: #FBC926;
 }
 
 .deliveryInput {
@@ -281,7 +281,7 @@
   padding: 14px;
   border: none;
   border-radius: 8px;
-  background-color: #f5a623;
+  background-color: #FBC926;
   color: white;
   font-size: 1.1rem;
   font-weight: bold;
@@ -686,7 +686,7 @@
 
 .paymentButtons .payButton {
   flex: 1;
-  background-color: #f5a623; /* Yellow for Pay/Confirm */
+  background-color: #FBC926; /* Yellow for Pay/Confirm */
   color: white;
   padding: 14px;
   border-radius: 8px;

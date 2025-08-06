@@ -25,7 +25,7 @@
   white-space: nowrap; 
   height: 32px;
 }
-.filterChip.active { background-color: #f5a623; color: white; border-color: #f5a623; }
+.filterChip.active { background-color: #FBC926; color: white; border-color: #FBC926; }
 .mainContent { display: flex; flex-direction: column; gap: 24px; }
 .subCategorySection { margin-top: 24px; }
 .subCategoryHeader { display: flex; justify-content: space-between; align-items: center; padding: 0 16px; margin-bottom: 16px; }

@@ -102,7 +102,7 @@
 }
 
 .filterTab.active {
-    background-color: #f5a623; /* 활성 탭 색상 */
+    background-color: #FBC926; /* 활성 탭 색상 */
     color: #ffffff;
     font-weight: bold;
 }
@@ -187,7 +187,7 @@
 .notificationTitle {
     font-size: 1em;
     margin-bottom: 5px;
-    color: #f5a623;
+    color: #FBC926;
 }
 
 .notificationMessage {

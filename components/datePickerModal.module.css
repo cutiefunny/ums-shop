@@ -80,8 +80,8 @@
 }
 
 .monthButton:hover {
-    background-color: #f5a623;
-    border-color: #f5a623;
+    background-color: #FBC926;
+    border-color: #FBC926;
     color: white;
 }
 
@@ -118,7 +118,7 @@
 
 .dateSelect:focus {
     outline: none;
-    border-color: #f5a623;
+    border-color: #FBC926;
     box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.2);
 }
 
@@ -175,14 +175,14 @@
 
 .dayButton.today {
     font-weight: 700;
-    color: #f5a623; 
-    border: 1px solid #f5a623; 
+    color: #FBC926; 
+    border: 1px solid #FBC926; 
     background-color: #fff;
 }
 
 .dayButton.selected {
-    background-color: #f5a623;
-    border-color: #f5a623;
+    background-color: #FBC926;
+    border-color: #FBC926;
     color: white;
     font-weight: 700;
 }

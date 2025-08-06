@@ -112,15 +112,15 @@
 }
 
 .stepStatusTag.current {
-  background-color: #f5a623; /* Orange for current step */
+  background-color: #FBC926; /* Orange for current step */
 }
 
 .orderStepItem.active .stepNumber {
-  color: #f5a623; /* Active step number color */
+  color: #FBC926; /* Active step number color */
 }
 
 .orderStepItem.active .stepTitle {
-  color: #f5a623; /* Active step title color */
+  color: #FBC926; /* Active step title color */
 }
 
 /* Line connecting steps */

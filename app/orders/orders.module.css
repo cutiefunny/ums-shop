@@ -99,9 +99,9 @@
 }
 
 .statusCard.active {
-  background-color: #f5a623; /* 활성 상태 색상 */
+  background-color: #FBC926; /* 활성 상태 색상 */
   color: white;
-  border-color: #f5a623;
+  border-color: #FBC926;
   box-shadow: 0 2px 8px rgba(245, 166, 35, 0.2);
 }
 
@@ -149,9 +149,9 @@
 }
 
 .filterChip.active {
-  background-color: #f5a623;
+  background-color: #FBC926;
   color: white;
-  border-color: #f5a623;
+  border-color: #FBC926;
 }
 
 /* Order List */
@@ -218,7 +218,7 @@
   border-radius: 15px;
   font-size: 1rem;
   font-weight: 500;
-  background-color: #f5a623;
+  background-color: #FBC926;
   color: white;
 }
 
@@ -231,7 +231,7 @@
 }
 
 .statusPayInCash {
-  background-color: var(--status-pay-in-cash); /* 예: #f5a623 (주황) */
+  background-color: var(--status-pay-in-cash); /* 예: #FBC926 (주황) */
 }
 
 .statusEms {

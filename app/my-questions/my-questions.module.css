@@ -105,9 +105,9 @@
 }
 
 .filterChip.active {
-  background-color: #f5a623;
+  background-color: #FBC926;
   color: white;
-  border-color: #f5a623;
+  border-color: #FBC926;
 }
 
 /* Q&A List Item Styles */
@@ -209,7 +209,7 @@
 .formSelect:focus,
 .formTextarea:focus {
   outline: none;
-  border-color: #f5a623;
+  border-color: #FBC926;
   box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.25);
 }
 
@@ -289,7 +289,7 @@
   padding: 14px;
   border: none;
   border-radius: 8px;
-  background-color: #f5a623;
+  background-color: #FBC926;
   color: white;
   font-size: 1rem;
   font-weight: bold;

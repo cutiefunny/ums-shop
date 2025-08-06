@@ -71,9 +71,9 @@
 }
 
 .filterChip.active {
-    background-color: #f5a623;
+    background-color: #FBC926;
     color: white;
-    border-color: #f5a623;
+    border-color: #FBC926;
 }
 
 .sortContainer {
@@ -245,7 +245,7 @@
 }
 
 .modalCategoryItem.active {
-  color: #f5a623;
+  color: #FBC926;
   font-weight: bold;
 }
 
@@ -274,7 +274,7 @@
 }
 
 .radioLabel input[type="radio"]:checked {
-  border: 6px solid #f5a623;
+  border: 6px solid #FBC926;
   background-color: white;
 }
 
@@ -289,7 +289,7 @@
   padding: 12px;
   border: none;
   border-radius: 8px;
-  background-color: #f5a623;
+  background-color: #FBC926;
   color: white;
   font-size: 1rem;
   font-weight: bold;

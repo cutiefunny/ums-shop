@@ -109,11 +109,11 @@
 }
 
 input:checked + .slider {
-  background-color: #f5a623; /* Yellow on color */
+  background-color: #FBC926; /* Yellow on color */
 }
 
 input:focus + .slider {
-  box-shadow: 0 0 1px #f5a623;
+  box-shadow: 0 0 1px #FBC926;
 }
 
 input:checked + .slider:before {
@@ -147,9 +147,9 @@ input:checked + .slider:before {
 }
 
 .alarmFilterChip.active {
-  background-color: #f5a623;
+  background-color: #FBC926;
   color: white;
-  border-color: #f5a623;
+  border-color: #FBC926;
 }
 
 .alarmListContainer {
@@ -223,7 +223,7 @@ input:checked + .slider:before {
 }
 
 .alarmOkButton {
-  background-color: #f5a623;
+  background-color: #FBC926;
   color: white;
   border: none;
   border-radius: 4px;

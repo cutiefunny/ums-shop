@@ -26,7 +26,7 @@
 .logo {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #f5a623; /* 시안의 노란색 */
+  color: #FBC926; /* 시안의 노란색 */
 }
 
 .headerIcons {
@@ -121,7 +121,7 @@
 }
 
 .navIcon.active {
-  color: #f5a623; /* 활성 아이콘 색상 */
+  color: #FBC926; /* 활성 아이콘 색상 */
 }
 
 /* 팝업 모달 */
@@ -178,7 +178,7 @@
 
 .popupCheckboxLabel input[type="checkbox"] {
   /* 필요하다면 체크박스 스타일 커스터마이징 */
-  accent-color: #f5a623; /* 시안의 노란색 체크 */
+  accent-color: #FBC926; /* 시안의 노란색 체크 */
 }
 
 .popupCloseButton {

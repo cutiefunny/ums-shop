@@ -42,7 +42,7 @@
 .stepIndicator {
     font-size: 1.2rem;
     font-weight: bold;
-    color: #f5a623; /* 강조 색상 */
+    color: #FBC926; /* 강조 색상 */
     margin-bottom: 10px;
 }
 
@@ -80,7 +80,7 @@
 }
 
 .checkboxLabel input[type="checkbox"] {
-    accent-color: #f5a623; /* 체크박스 색상 */
+    accent-color: #FBC926; /* 체크박스 색상 */
     transform: scale(1.1);
 }
 
@@ -124,7 +124,7 @@
 }
 
 .nextButton {
-    background-color: #f5a623;
+    background-color: #FBC926;
     color: white;
 }
 

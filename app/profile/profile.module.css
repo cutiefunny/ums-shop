@@ -204,7 +204,7 @@
 /* Custom styles for ConfirmationModal buttons (Logout) */
 /* These override the default styles in modal.module.css for specific buttons */
 .logoutConfirmButton {
-  background-color: #f5a623 !important; /* Yellow from image */
+  background-color: #FBC926 !important; /* Yellow from image */
   color: white !important;
   border-radius: 8px !important;
   font-weight: bold !important;
