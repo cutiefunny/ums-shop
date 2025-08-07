@@ -18,6 +18,9 @@ export default function AdminHistoryPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
+    // 드롭다운 옵션을 별도로 관리하는 상태
+    const [actionTypeOptions, setActionTypeOptions] = useState(['All']);
+
     const router = useRouter();
     const { showAdminNotificationModal } = useAdminModal();
 
@@ -26,21 +29,59 @@ export default function AdminHistoryPage() {
         try {
             setLoading(true);
             setError(null);
-            const queryParams = new URLSearchParams({
+            
+            // --- 여기부터 수정된 부분 ---
+            const params = {
                 page: currentPage,
                 limit: ITEMS_PER_PAGE,
-                ...(searchTerm && { search: searchTerm }),
-                ...(dateFilter && { date: dateFilter }),
-                ...(actionTypeFilter && actionTypeFilter !== 'All' && { actionType: actionTypeFilter }),
-            }).toString();
+            };
+
+            if (searchTerm) {
+                params.search = searchTerm;
+            }
+            if (actionTypeFilter && actionTypeFilter !== 'All') {
+                params.actionType = actionTypeFilter;
+            }
+            
+            // 날짜 필터가 선택된 경우, KST 기준의 하루를 UTC 시간 범위로 변환하여 전송
+            if (dateFilter) {
+                // 사용자가 선택한 날짜를 KST의 시작 시간(00:00:00)으로 설정
+                const startDate = new Date(`${dateFilter}T00:00:00`); 
+                // 사용자가 선택한 날짜를 KST의 종료 시간(23:59:59)으로 설정
+                const endDate = new Date(`${dateFilter}T23:59:59.999`);
+
+                // KST 기준의 날짜를 UTC ISO 문자열로 변환하여 파라미터에 추가
+                params.startDate = startDate.toISOString();
+                params.endDate = endDate.toISOString();
+            }
+
+            const queryParams = new URLSearchParams(params).toString();
+            // --- 여기까지 수정된 부분 ---
 
             const res = await fetch(`/api/admin/history?${queryParams}`);
             if (!res.ok) {
                 throw new Error(`Error: ${res.status}`);
             }
             const data = await res.json();
-            setHistoryList(data.items || []);
+            const newHistory = data.items || [];
+            
+            setHistoryList(newHistory);
             setTotalPages(data.totalPages || 1);
+
+            // 새로 불러온 데이터에서 Action Type을 추출하여 기존 옵션에 추가
+            if (newHistory.length > 0) {
+                setActionTypeOptions(prevOptions => {
+                    const updatedTypes = new Set(prevOptions);
+                    newHistory.forEach(item => {
+                        if (item.actionType) {
+                            updatedTypes.add(item.actionType);
+                        }
+                    });
+                    const sortedTypes = Array.from(updatedTypes).filter(type => type !== 'All').sort();
+                    return ['All', ...sortedTypes];
+                });
+            }
+
         } catch (err) {
             console.error('Failed to fetch history:', err);
             setError(`활동 내역을 불러오는 데 실패했습니다: ${err.message}`);
@@ -55,18 +96,17 @@ export default function AdminHistoryPage() {
     }, [fetchHistory]); // 필터나 페이지 변경 시 다시 fetch
 
     const handleSearch = () => {
-        setCurrentPage(1); // 검색 시 첫 페이지로 이동
-        fetchHistory(); // 검색 버튼 클릭 시 즉시 데이터 다시 불러옴
+        setCurrentPage(1);
     };
 
     const handleDateChange = (e) => {
         setDateFilter(e.target.value);
-        setCurrentPage(1); // 날짜 변경 시 첫 페이지로 이동
+        setCurrentPage(1);
     };
 
     const handleActionTypeChange = (e) => {
         setActionTypeFilter(e.target.value);
-        setCurrentPage(1); // 필터 변경 시 첫 페이지로 이동
+        setCurrentPage(1);
     };
 
     const handlePageChange = (page) => {
@@ -74,39 +114,26 @@ export default function AdminHistoryPage() {
             setCurrentPage(page);
         }
     };
-
-    // 현재 사용 가능한 Action Type 목록 (백엔드에서 가져오거나 고정된 목록 사용)
-    const actionTypes = useMemo(() => {
-        const types = new Set(historyList.map(item => item.actionType));
-        return ['All', ...Array.from(types).sort()];
-    }, [historyList]);
-
+    
     const renderPagination = () => {
-        //if (totalPages <= 1) return null; // 페이지가 1개 이하면 페이지네이션 숨김
-
         const maxPagesToShow = 5;
         const pages = [];
         let startPage, endPage;
 
         if (totalPages <= maxPagesToShow) {
-            // 전체 페이지 수가 5개 이하이면 모든 페이지 번호를 보여줌
             startPage = 1;
             endPage = totalPages;
         } else {
-            // 전체 페이지 수가 5개보다 많을 경우, 현재 페이지를 중앙에 두려고 시도
             const maxPagesBeforeCurrentPage = Math.floor(maxPagesToShow / 2);
             const maxPagesAfterCurrentPage = Math.ceil(maxPagesToShow / 2) - 1;
 
             if (currentPage <= maxPagesBeforeCurrentPage) {
-                // 현재 페이지가 시작 부분에 가까울 때
                 startPage = 1;
                 endPage = maxPagesToShow;
             } else if (currentPage + maxPagesAfterCurrentPage >= totalPages) {
-                // 현재 페이지가 끝 부분에 가까울 때
                 startPage = totalPages - maxPagesToShow + 1;
                 endPage = totalPages;
             } else {
-                // 현재 페이지가 중간에 있을 때
                 startPage = currentPage - maxPagesBeforeCurrentPage;
                 endPage = currentPage + maxPagesAfterCurrentPage;
             }
@@ -143,10 +170,11 @@ export default function AdminHistoryPage() {
                 <div className={styles.searchGroup}>
                     <input
                         type="text"
-                        placeholder="Name"
+                        placeholder="Name or Details"
                         className={styles.searchInput}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />
                     <button onClick={handleSearch} className={styles.searchButton}>Search</button>
                 </div>
@@ -162,7 +190,7 @@ export default function AdminHistoryPage() {
                         value={actionTypeFilter}
                         onChange={handleActionTypeChange}
                     >
-                        {actionTypes.map(type => (
+                        {actionTypeOptions.map(type => (
                             <option key={type} value={type}>{type}</option>
                         ))}
                     </select>
@@ -182,8 +210,8 @@ export default function AdminHistoryPage() {
                     </thead>
                     <tbody>
                         {historyList.length > 0 ? (
-                            historyList.map((entry) => (
-                                <tr key={entry.id}>
+                            historyList.map((entry, index) => (
+                                <tr key={entry.id || index}>
                                     <td>{new Date(entry.timestamp).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(/\. /g, '.').replace(/\./g, '. ').trim()}</td>
                                     <td>{entry.manager}</td>
                                     <td>{entry.deviceInfo}</td>
@@ -213,7 +241,7 @@ export default function AdminHistoryPage() {
                 {renderPagination()}
                 <button
                     onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
+                    disabled={currentPage >= totalPages}
                     className={styles.paginationButton}
                 >
                     &gt;

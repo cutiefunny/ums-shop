@@ -1,4 +1,3 @@
-// /admin/manager/page.js
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -302,12 +301,17 @@ export default function ManagerPage() {
         try {
             let res;
             if (isEditMode) {
+                // 수정 모드일 때 payload에서 email 필드를 제거합니다.
+                const updatePayload = { ...payload };
+                delete updatePayload.email;
+
                 res = await fetch(`/api/admin/manager/${username}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify(updatePayload),
                 });
             } else {
+                // 추가 모드일 때는 payload를 그대로 사용합니다.
                 res = await fetch('/api/admin/manager', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

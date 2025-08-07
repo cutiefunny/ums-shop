@@ -1,4 +1,3 @@
-// /api/admin/history/route.js
 import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
@@ -24,10 +23,15 @@ export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
         const page = parseInt(searchParams.get('page') || '1', 10);
-        const limit = parseInt(searchParams.get('limit') || '5', 10); // 프론트와 동일하게 5개로 설정
+        const limit = parseInt(searchParams.get('limit') || '10', 10);
         const searchTerm = searchParams.get('search'); // manager 또는 details 검색
-        const dateFilter = searchParams.get('date'); // YYYY-MM-DD
         const actionTypeFilter = searchParams.get('actionType');
+
+        // --- 여기부터 수정된 부분 ---
+        // 기존 dateFilter 대신 startDate와 endDate를 받음
+        const startDate = searchParams.get('startDate');
+        const endDate = searchParams.get('endDate');
+        // --- 여기까지 수정된 부분 ---
 
         let filterExpressions = [];
         let expressionAttributeValues = {};
@@ -41,15 +45,16 @@ export async function GET(request) {
             expressionAttributeNames['#details'] = 'details';
         }
 
-        // 날짜 필터링 (timestamp의 YYYY-MM-DD 부분만 일치하는지 확인)
-        if (dateFilter) {
-            // DynamoDB의 `timestamp`가 ISO 8601 문자열이라고 가정하고,
-            // 해당 문자열이 `dateFilter`로 시작하는지 확인합니다.
-            // 예: timestamp '2025-05-17T14:22:00.000Z' 와 dateFilter '2025-05-17' 비교
-            filterExpressions.push(`begins_with(#timestamp, :dateFilter)`);
-            expressionAttributeValues[':dateFilter'] = dateFilter;
+        // --- 여기부터 수정된 부분 ---
+        // 날짜 범위 필터링 (UTC 기준의 startDate와 endDate 사이의 timestamp)
+        if (startDate && endDate) {
+            // DynamoDB의 BETWEEN 연산자를 사용하여 timestamp가 두 날짜 사이에 있는지 확인
+            filterExpressions.push(`#timestamp BETWEEN :startDate AND :endDate`);
+            expressionAttributeValues[':startDate'] = startDate;
+            expressionAttributeValues[':endDate'] = endDate;
             expressionAttributeNames['#timestamp'] = 'timestamp';
         }
+        // --- 여기까지 수정된 부분 ---
 
         // Action Type 필터링
         if (actionTypeFilter && actionTypeFilter !== 'All') {
@@ -65,14 +70,12 @@ export async function GET(request) {
         if (filterExpressions.length > 0) {
             params.FilterExpression = filterExpressions.join(' AND ');
             params.ExpressionAttributeValues = expressionAttributeValues;
-            // 필요한 경우에만 ExpressionAttributeNames 추가
             if (Object.keys(expressionAttributeNames).length > 0) {
-                 params.ExpressionAttributeNames = expressionAttributeNames;
+                params.ExpressionAttributeNames = expressionAttributeNames;
             }
         }
 
         // DynamoDB Scan은 전체 테이블을 읽기 때문에, 대규모 데이터셋에서는 Query 또는 GSI 사용을 고려해야 합니다.
-        // 현재는 필터링을 위해 Scan을 사용합니다.
         const command = new ScanCommand(params);
         const data = await ddbDocClient.send(command);
 

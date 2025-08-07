@@ -1,4 +1,3 @@
-// app/admin/order-detail/[orderId]/page.js
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -65,7 +64,7 @@ export default function OrderDetailPage() {
             setLoading(true);
             setError(null);
 
-            // Next.js API Route를 호출하여 주문 상세 데이터를 가져옵니다.
+            // 1. Next.js API Route를 호출하여 주문 상세 데이터를 가져옵니다.
             const response = await fetch(`/api/orders/${orderId}`);
             if (!response.ok) {
                 const errorData = await response.json();
@@ -77,7 +76,36 @@ export default function OrderDetailPage() {
                 setError("Order not found.");
                 setOrder(null);
             } else {
-                // orderItems의 packingStatus, adminStatus, adminQuantity, alternativeOffer에 기본값 설정
+                // 2. 메시지 읽음 처리 로직 추가
+                const originalMessages = data.messages || [];
+                let needsDbUpdate = false;
+
+                const updatedMessages = originalMessages.map(msg => {
+                    // isRead가 true가 아니거나 isNew가 true인 메시지를 읽음 처리
+                    if (msg.isRead !== true || msg.isNew === true) {
+                        needsDbUpdate = true;
+                        // isRead는 true로, isNew는 false로 변경하여 반환
+                        return { ...msg, isRead: true, isNew: false };
+                    }
+                    return msg;
+                });
+
+                // 3. 변경사항이 있을 경우에만 데이터베이스에 업데이트 요청
+                if (needsDbUpdate) {
+                    try {
+                        await fetch(`/api/orders/${orderId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            // 메시지 배열만 업데이트하도록 body 구성
+                            body: JSON.stringify({ messages: updatedMessages }),
+                        });
+                    } catch (updateError) {
+                        // DB 업데이트 실패는 콘솔에 기록하고, UI는 계속 진행
+                        console.error('Error occurred while updating message read status:', updateError);
+                    }
+                }
+
+                // 4. 기존 상품 처리 로직
                 const processedOrderItems = data.orderItems?.map(item => ({
                     ...item,
                     packingStatus: item.packingStatus ?? false, // packingStatus가 undefined 또는 null일 경우 false로 설정
@@ -85,7 +113,13 @@ export default function OrderDetailPage() {
                     adminQuantity: item.adminQuantity ?? item.quantity, // adminQuantity 기본값 (주문 수량)
                     alternativeOffer: item.alternativeOffer ?? null, // alternativeOffer 기본값
                 })) || [];
-                setOrder({ ...data, orderItems: processedOrderItems }); // 조회된 항목으로 order 상태 업데이트
+
+                // 5. 최종적으로 읽음 처리된 메시지와 함께 상태 업데이트
+                setOrder({
+                    ...data,
+                    orderItems: processedOrderItems,
+                    messages: updatedMessages // 읽음 처리된 메시지 배열로 설정
+                });
             }
 
         } catch (err) {
@@ -295,46 +329,46 @@ export default function OrderDetailPage() {
         showAdminConfirmationModal(
             "Are you sure you want to delete this message?",
             async () => {
-          // Confirmation 처리 로직
-          setLoading(true);
-          setError(null);
+                // Confirmation 처리 로직
+                setLoading(true);
+                setError(null);
 
-          const currentMessages = order.messages || [];
-          const updatedMessages = currentMessages.filter(msg => msg.id !== messageIdToDelete);
+                const currentMessages = order.messages || [];
+                const updatedMessages = currentMessages.filter(msg => msg.id !== messageIdToDelete);
 
-          // 로컬 상태 먼저 업데이트 (낙관적 업데이트)
-          setOrder(prevOrder => ({
-              ...prevOrder,
-              messages: updatedMessages,
-          }));
+                // 로컬 상태 먼저 업데이트 (낙관적 업데이트)
+                setOrder(prevOrder => ({
+                    ...prevOrder,
+                    messages: updatedMessages,
+                }));
 
-          try {
-              // DynamoDB에 메시지 목록 업데이트 (API Route 호출)
-              const response = await fetch(`/api/orders/${order.orderId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: updatedMessages }), // 업데이트된 messages 배열 전송
-              });
+                try {
+                    // DynamoDB에 메시지 목록 업데이트 (API Route 호출)
+                    const response = await fetch(`/api/orders/${order.orderId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ messages: updatedMessages }), // 업데이트된 messages 배열 전송
+                    });
 
-              if (!response.ok) {
-            const errorData = await response.json();
-            // 오류 발생 시 로컬 상태를 이전으로 되돌릴 수 있음 (선택 사항)
-            // setOrder(prevOrder => ({ ...prevOrder, messages: currentMessages }));
-            throw new Error(errorData.message || 'Failed to delete message.');
-              }
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        // 오류 발생 시 로컬 상태를 이전으로 되돌릴 수 있음 (선택 사항)
+                        // setOrder(prevOrder => ({ ...prevOrder, messages: currentMessages }));
+                        throw new Error(errorData.message || 'Failed to delete message.');
+                    }
 
-              console.log(`Message ${messageIdToDelete} deleted and order updated successfully!`);
-          } catch (err) {
-              console.error("Error deleting message:", err);
-              setError(`Failed to delete message: ${err.message}`);
-              showAdminNotificationModal(`Error deleting message: ${err.message}`);
-          } finally {
-              setLoading(false);
-          }
+                    console.log(`Message ${messageIdToDelete} deleted and order updated successfully!`);
+                } catch (err) {
+                    console.error("Error deleting message:", err);
+                    setError(`Failed to delete message: ${err.message}`);
+                    showAdminNotificationModal(`Error deleting message: ${err.message}`);
+                } finally {
+                    setLoading(false);
+                }
             },
             () => {
-          // Cancel 처리 로직 (선택 사항)
-          console.log('Message deletion cancelled by user.');
+                // Cancel 처리 로직 (선택 사항)
+                console.log('Message deletion cancelled by user.');
             }
         );
     };
@@ -599,78 +633,78 @@ export default function OrderDetailPage() {
         showAdminConfirmationModal(
             `Are you sure you want to set the estimated delivery date to ${date} and change the delivery status to 'Delivered'?`,
             async () => {
-            setLoading(true);
-            try {
-                const updatedShippingDetails = {
-                ...order.shippingDetails,
-                estimatedDelivery: date, // Update estimatedDelivery with the date from the modal
-                actualDelivery: moment().format('YYYY-MM-DD'), // Record actual delivery date as today
-                };
+                setLoading(true);
+                try {
+                    const updatedShippingDetails = {
+                        ...order.shippingDetails,
+                        estimatedDelivery: date, // Update estimatedDelivery with the date from the modal
+                        actualDelivery: moment().format('YYYY-MM-DD'), // Record actual delivery date as today
+                    };
 
-                const updatedStatusHistory = [
-                ...(order.statusHistory || []),
-                {
-                    timestamp: new Date().toISOString(),
-                    oldStatus: order.status,
-                    newStatus: 'Delivered', // New status: Delivered
-                    changedBy: 'Admin',
+                    const updatedStatusHistory = [
+                        ...(order.statusHistory || []),
+                        {
+                            timestamp: new Date().toISOString(),
+                            oldStatus: order.status,
+                            newStatus: 'Delivered', // New status: Delivered
+                            changedBy: 'Admin',
+                        }
+                    ];
+
+                    const updatedOrderData = {
+                        shippingDetails: updatedShippingDetails,
+                        status: 'Delivered', // Change overall order status to Delivered
+                        statusHistory: updatedStatusHistory,
+                    };
+
+                    const response = await fetch(`/api/orders/${order.orderId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedOrderData),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Failed to update delivery status.');
+                    }
+
+                    // *** Use the useNotification hook to add a notification item (Delivered notification) ***
+                    // Use different notification messages depending on shippingDetails.method
+                    const notificationMessage = order.shippingDetails?.method === 'onboard'
+                        ? {
+                            code: 'Delivered',
+                            category: 'Delivery',
+                            title: 'Order Delivered',
+                            en: 'Your order has been delivered successfully to your vessel.',
+                            kr: '주문 상품이 선박으로 성공적으로 배송되었습니다.',
+                        }
+                        : {
+                            code: 'Payment(EMS)', // Or unify to Delivered and only change the message? Here, assume Payment(EMS) according to the request
+                            category: 'Delivery',
+                            title: 'Shipping in progress',
+                            en: 'Your EMS shipment is in transit.',
+                            kr: 'EMS를 통해 배송 중입니다.',
+                        };
+
+                    await addNotification(notificationMessage);
+
+                    // Update local state
+                    setOrder(prevOrder => ({
+                        ...prevOrder,
+                        shippingDetails: updatedShippingDetails,
+                        status: 'Delivered',
+                        statusHistory: updatedStatusHistory,
+                    }));
+                    showAdminNotificationModal('Delivery status updated to "Delivered" successfully!');
+                } catch (err) {
+                    console.error("Error updating delivery status:", err);
+                    showAdminNotificationModal(`Failed to update delivery status: ${err.message}`);
+                } finally {
+                    setLoading(false);
                 }
-                ];
-
-                const updatedOrderData = {
-                shippingDetails: updatedShippingDetails,
-                status: 'Delivered', // Change overall order status to Delivered
-                statusHistory: updatedStatusHistory,
-                };
-
-                const response = await fetch(`/api/orders/${order.orderId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedOrderData),
-                });
-
-                if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to update delivery status.');
-                }
-
-                // *** Use the useNotification hook to add a notification item (Delivered notification) ***
-                // Use different notification messages depending on shippingDetails.method
-                const notificationMessage = order.shippingDetails?.method === 'onboard'
-                ? {
-                    code: 'Delivered',
-                    category: 'Delivery',
-                    title: 'Order Delivered',
-                    en: 'Your order has been delivered successfully to your vessel.',
-                    kr: '주문 상품이 선박으로 성공적으로 배송되었습니다.',
-                }
-                : {
-                    code: 'Payment(EMS)', // Or unify to Delivered and only change the message? Here, assume Payment(EMS) according to the request
-                    category: 'Delivery',
-                    title: 'Shipping in progress',
-                    en: 'Your EMS shipment is in transit.',
-                    kr: 'EMS를 통해 배송 중입니다.',
-                };
-
-                await addNotification(notificationMessage);
-
-                // Update local state
-                setOrder(prevOrder => ({
-                ...prevOrder,
-                shippingDetails: updatedShippingDetails,
-                status: 'Delivered',
-                statusHistory: updatedStatusHistory,
-                }));
-                showAdminNotificationModal('Delivery status updated to "Delivered" successfully!');
-            } catch (err) {
-                console.error("Error updating delivery status:", err);
-                showAdminNotificationModal(`Failed to update delivery status: ${err.message}`);
-            } finally {
-                setLoading(false);
-            }
             },
             () => {
-            console.log('Delivery confirmation cancelled by user.'); // Log if cancelled
+                console.log('Delivery confirmation cancelled by user.'); // Log if cancelled
             }
         );
     };
@@ -814,103 +848,103 @@ export default function OrderDetailPage() {
                     {/* <div className={styles.totalsSection}>...</div> */}
                 </section>
 
-                    {/* 메시지 영역 */}
-                    <section className={`${styles.section} ${styles.messageSection}`}>
-                        <h2 className={styles.sectionTitle}>MESSAGE</h2>
-                        <div className={styles.messageArea}>
-                            <div className={styles.messageThread}>
-                                {order.messages?.map(msg => ( // messages가 없을 경우를 대비하여 ?. 추가
-                                    <div key={msg.id} className={`${styles.messageItem} ${msg.sender === 'Admin' ? styles.admin : styles.user}`}>
-                                        <span className={styles.messageSender}>
-                                            {/* 발신자 텍스트 '관리자' 제거 (단순히 sender 표시) */}
-                                            {msg.sender} {msg.isNew && <span className={styles.newBadge}>NEW</span>}
-                                        </span>
-                                        {msg.text && <div className={styles.messageBubble}>{msg.text}
-                                            {msg.sender === 'Admin' && ( // 관리자 메시지에만 삭제 아이콘 표시
-                                                <button onClick={() => handleDeleteMessage(msg.id)} className={styles.deleteMessageButton}>
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'red' }}>
-                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                                                    </svg>
-                                                </button>
-                                            )}
-                                            </div>}
-                                            {msg.imageUrl && (
-                                                <img src={msg.imageUrl} alt="Attached" className={styles.messageImage} />
-                                            )}
-                                    </div>
-                                ))}
-                                <div ref={messagesEndRef} /> {/* 메시지 하단으로 자동 스크롤을 위한 엘리먼트 */}
-                            </div>
-                            <div className={styles.messageInputArea}>
-                                <input
-                                    type="file"
-                                    accept="image/jpeg, image/png, image/webp"
-                                    ref={fileInputRef}
-                                    style={{ display: 'none' }} // 숨김
-                                    onChange={handleImageChange}
-                                />
-                                <button onClick={handleImageAttachClick} className={styles.attachButton}>
-                                    <img src="/images/imageBox.png" alt="Attach" />
-                                </button>
-                                <input
-                                    type="text"
-                                    placeholder={attachedImage ? `Image attached: ${attachedImage.name}` : "메시지를 작성해주세요."}
-                                    value={newMessageText}
-                                    onChange={(e) => setNewMessageText(e.target.value)}
-                                    className={styles.messageInput}
-                                    disabled={!!attachedImage} // 이미지가 첨부되면 텍스트 입력 비활성화
-                                />
-                                <button onClick={handleSendMessage} className={styles.sendButton}>
-                                    전송
-                                </button>
-                            </div>
-                            {attachedImage && (
-                                <div style={{ padding: '10px', backgroundColor: '#f0f0f0', borderTop: '1px solid #ddd' }}>
-                                    <p style={{ margin: '0', fontSize: '0.85rem' }}>첨부 이미지: {attachedImage.name}
-                                        <button onClick={() => setAttachedImage(null)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', marginLeft: '10px' }}>x</button>
-                                    </p>
+                {/* 메시지 영역 */}
+                <section className={`${styles.section} ${styles.messageSection}`}>
+                    <h2 className={styles.sectionTitle}>MESSAGE</h2>
+                    <div className={styles.messageArea}>
+                        <div className={styles.messageThread}>
+                            {order.messages?.map(msg => ( // messages가 없을 경우를 대비하여 ?. 추가
+                                <div key={msg.id} className={`${styles.messageItem} ${msg.sender === 'Admin' ? styles.admin : styles.user}`}>
+                                    <span className={styles.messageSender}>
+                                        {/* 발신자 텍스트 '관리자' 제거 (단순히 sender 표시) */}
+                                        {msg.sender} {msg.isNew && <span className={styles.newBadge}>NEW</span>}
+                                    </span>
+                                    {msg.text && <div className={styles.messageBubble}>{msg.text}
+                                        {msg.sender === 'Admin' && ( // 관리자 메시지에만 삭제 아이콘 표시
+                                            <button onClick={() => handleDeleteMessage(msg.id)} className={styles.deleteMessageButton}>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'red' }}>
+                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>}
+                                    {msg.imageUrl && (
+                                        <img src={msg.imageUrl} alt="Attached" className={styles.messageImage} />
+                                    )}
                                 </div>
-                            )}
+                            ))}
+                            <div ref={messagesEndRef} /> {/* 메시지 하단으로 자동 스크롤을 위한 엘리먼트 */}
                         </div>
-                    </section>
-
-                    {/* Status History 영역 */}
-                        <section className={`${styles.section} ${styles.statusHistorySection}`}>
-                            <h2 className={styles.sectionTitle}>Status History</h2>
-                            {order.statusHistory && order.statusHistory.length > 0 ? (
-                                <div className={styles.statusHistoryList}>
-                                    {order.statusHistory.map((history, index) => (
-                                        <div key={index} className={styles.statusHistoryItem}>
-                                            <p className={styles.statusHistoryTimestamp}>{moment(history.timestamp).format('YYYY-MM-DD HH:mm')}</p>
-                                            <p className={styles.statusHistoryChange}>
-                                                <span className={styles.oldStatus}>{history.oldStatus || 'N/A'}</span>
-                                                <span className={styles.arrow}> &#8594; </span>
-                                                <span className={styles.newStatus}>{history.newStatus}</span>
-                                            </p>
-                                            <p className={styles.statusHistoryChangedBy}>by {history.changedBy || 'System'}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p>No status history available.</p>
-                            )}
-                        </section>
-
-                        {/* 배송 메모 영역 (NOTE) */}
-                        <section className={`${styles.section} ${styles.noteSection}`}>
-                            <h2 className={styles.sectionTitle}>NOTE</h2>
-                            <textarea
-                                value={order.note || ''} // note가 null일 경우 빈 문자열로 설정
-                                onChange={handleNoteChange}
-                                maxLength={500}
-                                placeholder="최대 500자까지 입력 가능합니다."
-                                className={styles.noteArea}
+                        <div className={styles.messageInputArea}>
+                            <input
+                                type="file"
+                                accept="image/jpeg, image/png, image/webp"
+                                ref={fileInputRef}
+                                style={{ display: 'none' }} // 숨김
+                                onChange={handleImageChange}
                             />
-                            <p style={{ textAlign: 'right', fontSize: '0.8rem', color: '#666' }}>
-                                {order.note ? order.note.length : 0}/500 {/* order.note가 undefined일 경우 0으로 표시 */}
-                            </p>
-                        </section>
+                            <button onClick={handleImageAttachClick} className={styles.attachButton}>
+                                <img src="/images/imageBox.png" alt="Attach" />
+                            </button>
+                            <input
+                                type="text"
+                                placeholder={attachedImage ? `Image attached: ${attachedImage.name}` : "메시지를 작성해주세요."}
+                                value={newMessageText}
+                                onChange={(e) => setNewMessageText(e.target.value)}
+                                className={styles.messageInput}
+                                disabled={!!attachedImage} // 이미지가 첨부되면 텍스트 입력 비활성화
+                            />
+                            <button onClick={handleSendMessage} className={styles.sendButton}>
+                                전송
+                            </button>
+                        </div>
+                        {attachedImage && (
+                            <div style={{ padding: '10px', backgroundColor: '#f0f0f0', borderTop: '1px solid #ddd' }}>
+                                <p style={{ margin: '0', fontSize: '0.85rem' }}>첨부 이미지: {attachedImage.name}
+                                    <button onClick={() => setAttachedImage(null)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', marginLeft: '10px' }}>x</button>
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                {/* Status History 영역 */}
+                <section className={`${styles.section} ${styles.statusHistorySection}`}>
+                    <h2 className={styles.sectionTitle}>Status History</h2>
+                    {order.statusHistory && order.statusHistory.length > 0 ? (
+                        <div className={styles.statusHistoryList}>
+                            {order.statusHistory.map((history, index) => (
+                                <div key={index} className={styles.statusHistoryItem}>
+                                    <p className={styles.statusHistoryTimestamp}>{moment(history.timestamp).format('YYYY-MM-DD HH:mm')}</p>
+                                    <p className={styles.statusHistoryChange}>
+                                        <span className={styles.oldStatus}>{history.oldStatus || 'N/A'}</span>
+                                        <span className={styles.arrow}> &#8594; </span>
+                                        <span className={styles.newStatus}>{history.newStatus}</span>
+                                    </p>
+                                    <p className={styles.statusHistoryChangedBy}>by {history.changedBy || 'System'}</p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p>No status history available.</p>
+                    )}
+                </section>
+
+                {/* 배송 메모 영역 (NOTE) */}
+                <section className={`${styles.section} ${styles.noteSection}`}>
+                    <h2 className={styles.sectionTitle}>NOTE</h2>
+                    <textarea
+                        value={order.note || ''} // note가 null일 경우 빈 문자열로 설정
+                        onChange={handleNoteChange}
+                        maxLength={500}
+                        placeholder="최대 500자까지 입력 가능합니다."
+                        className={styles.noteArea}
+                    />
+                    <p style={{ textAlign: 'right', fontSize: '0.8rem', color: '#666' }}>
+                        {order.note ? order.note.length : 0}/500 {/* order.note가 undefined일 경우 0으로 표시 */}
+                    </p>
+                </section>
             </div> {/* bottomSectionGroup 끝 */}
 
             {/* 하단 액션 버튼들 - Totals Section이 이 안으로 들어옴 */}
@@ -971,26 +1005,26 @@ export default function OrderDetailPage() {
                         >
                             Download
                         </button>
-                    {latestStatus === 'Order(Request)' && (
-                                <button
-                            onClick={handleOrderConfirmation}
-                            className={styles.saveButton}
-                            disabled={latestStatus !== 'Order(Request)'} // latestStatus가 'Order(Request)'일 때만 활성화
-                            title={latestStatus === 'Order(Request)' ? "주문 확정" : "주문 확정은 Order(Request) 상태에서만 가능합니다."} // 툴팁 추가
-                        >
-                            Order Confirmation
-                        </button>
-                    )}
-                    {latestStatus === 'Payment(Request)' && (
-                        <button
-                            onClick={handlePaymentConfirmation}
-                            className={styles.saveButton}
-                            disabled={latestStatus !== 'Payment(Request)'} // latestStatus가 'Payment(Request)'일 때만 활성화
-                            title={latestStatus === 'Payment(Request)' ? "결제 확정" : "결제 확정은 Payment(Request) 상태에서만 가능합니다."} // 툴팁 추가
-                        >
-                            Payment Confirmation
-                        </button>
-                    )}
+                        {latestStatus === 'Order(Request)' && (
+                            <button
+                                onClick={handleOrderConfirmation}
+                                className={styles.saveButton}
+                                disabled={latestStatus !== 'Order(Request)'} // latestStatus가 'Order(Request)'일 때만 활성화
+                                title={latestStatus === 'Order(Request)' ? "주문 확정" : "주문 확정은 Order(Request) 상태에서만 가능합니다."} // 툴팁 추가
+                            >
+                                Order Confirmation
+                            </button>
+                        )}
+                        {latestStatus === 'Payment(Request)' && (
+                            <button
+                                onClick={handlePaymentConfirmation}
+                                className={styles.saveButton}
+                                disabled={latestStatus !== 'Payment(Request)'} // latestStatus가 'Payment(Request)'일 때만 활성화
+                                title={latestStatus === 'Payment(Request)' ? "결제 확정" : "결제 확정은 Payment(Request) 상태에서만 가능합니다."} // 툴팁 추가
+                            >
+                                Payment Confirmation
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

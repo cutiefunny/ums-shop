@@ -356,6 +356,17 @@
   background-color: #0056b3;
 }
 
+.noteArea {
+  width: 100%; /* 너비는 100%로 설정 */
+  height: 90%; /* 고정 높이 */
+  flex-grow: 1; /* 부모 컨테이너 내에서 세로 공간을 꽉 채우도록 설정 */
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 4px;
+  resize: none; /* 사용자가 크기를 조절할 수 없도록 설정 (선택 사항) */
+  box-sizing: border-box; /* 패딩과 테두리를 너비/높이에 포함 */
+}
+
 /* Note Area */
 .noteArea textarea {
   width: 100%;

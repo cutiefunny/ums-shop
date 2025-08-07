@@ -745,3 +745,10 @@
     background-color: #dc3545; /* Bootstrap danger color */
     color: white;
 }
+
+.newMessageBadge {
+    width: 40px;
+    height: 25px;
+    margin-left: 10px;
+    vertical-align: middle;
+}
