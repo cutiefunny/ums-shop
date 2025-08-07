@@ -1,4 +1,3 @@
-// components/admin/category-management/modals/AddSurve2CategoryModal.js
 import React, { useState, useEffect } from 'react';
 import styles from './modal.module.css';
 
@@ -6,28 +5,27 @@ export default function AddSurve2CategoryModal({ onClose, onAddCategory, mainCat
   const [selectedMainCategory, setSelectedMainCategory] = useState('');
   const [selectedSurve1Category, setSelectedSurve1Category] = useState('');
   const [surve2Name, setSurve2Name] = useState('');
-  const [categoryCode, setCategoryCode] = useState('');
+  const [categoryCode, setCategoryCode] = useState(''); // 코드 상태
 
   const [surve1Options, setSurve1Options] = useState([]);
 
   // 수정 모드일 때 초기 데이터로 폼 채우기
   useEffect(() => {
     if (isEditMode && initialData) {
-
       setSelectedMainCategory(initialData.mainCategoryId || '');
       setSelectedSurve1Category(initialData.surve1CategoryId || '');
       setSurve2Name(initialData.name || '');
-      setCategoryCode(initialData.code || '');
+      setCategoryCode(initialData.code || ''); // 코드 필드 채우기
     } else {
-      // 추가 모드일 때 폼 초기화 및 첫 번째 Main Category 선택
+      // 추가 모드일 때 폼 초기화
       setSurve2Name('');
-      setCategoryCode('');
+      setCategoryCode(''); // 코드 필드 초기화
       if (mainCategories && mainCategories.length > 0) {
         setSelectedMainCategory(mainCategories[0].categoryId);
       } else {
         setSelectedMainCategory('');
       }
-      setSelectedSurve1Category(''); // Surve1도 초기화
+      setSelectedSurve1Category('');
     }
   }, [isEditMode, initialData, mainCategories]);
 
@@ -39,10 +37,12 @@ export default function AddSurve2CategoryModal({ onClose, onAddCategory, mainCat
                 const response = await fetch(`/api/categories?level=surve1&parentId=${selectedMainCategory}`);
                 const data = await response.json();
                 setSurve1Options(data);
-                // 수정 모드일 때는 initialData의 surve1CategoryId를 기본 선택값으로, 아니면 첫 번째 항목
+                
+                // 수정 모드이면서 initialData에 subCategory1Id가 있고, 옵션 목록에 해당 ID가 존재할 때
                 if (isEditMode && initialData?.subCategory1Id && data.some(item => item.categoryId === initialData.subCategory1Id)) {
                     setSelectedSurve1Category(initialData.subCategory1Id);
                 } else if (data.length > 0) {
+                    // 수정 모드가 아니거나, 조건에 맞지 않을 때 목록의 첫 번째 항목을 기본값으로 설정
                     setSelectedSurve1Category(data[0].categoryId);
                 } else {
                     setSelectedSurve1Category('');
@@ -64,24 +64,24 @@ export default function AddSurve2CategoryModal({ onClose, onAddCategory, mainCat
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedMainCategory || !selectedSurve1Category || !surve2Name) {
-      alert('All fields are required.');
+      alert('All fields except code are required.');
       return;
     }
 
     if (isEditMode && initialData?.categoryId) { // 수정 모드
         onEditCategory({
-            categoryId: initialData.categoryId, // subCategory2Id가 categoryId로 매핑됨
+            categoryId: initialData.categoryId,
             name: surve2Name,
-            code: categoryCode,
-            subCategory1Id: selectedSurve1Category // 부모 ID도 업데이트될 수 있도록 포함
+            code: categoryCode, // 코드 값 포함
+            subCategory1Id: selectedSurve1Category
         });
     } else { // 추가 모드
         const formData = new FormData();
         formData.append('type', 'surve2');
-        formData.append('mainCategoryId', selectedMainCategory); // 백엔드에서 필요시 사용
+        formData.append('mainCategoryId', selectedMainCategory);
         formData.append('surve1CategoryId', selectedSurve1Category);
         formData.append('name', surve2Name);
-        formData.append('code', categoryCode);
+        formData.append('code', categoryCode); // 코드 값 포함
         onAddCategory(formData);
     }
     onClose();
@@ -116,7 +116,7 @@ export default function AddSurve2CategoryModal({ onClose, onAddCategory, mainCat
               value={selectedSurve1Category}
               onChange={(e) => setSelectedSurve1Category(e.target.value)}
               required
-              disabled={isEditMode || !selectedMainCategory || surve1Options.length === 0} // 수정 모드, 또는 Main 선택 없거나 옵션 없으면 비활성화
+              disabled={isEditMode || !selectedMainCategory || surve1Options.length === 0}
             >
               {surve1Options.length > 0 ? (
                 surve1Options.map((cat) => (
@@ -140,6 +140,18 @@ export default function AddSurve2CategoryModal({ onClose, onAddCategory, mainCat
               required
             />
           </div>
+          {/* --- 여기부터 수정된 부분 --- */}
+          <div className={styles.formGroup}>
+            <label htmlFor="surve2CategoryCode">Category Code (Optional)</label>
+            <input
+              type="text"
+              id="surve2CategoryCode"
+              value={categoryCode}
+              onChange={(e) => setCategoryCode(e.target.value)}
+              placeholder="e.g., C001"
+            />
+          </div>
+          {/* --- 여기까지 수정된 부분 --- */}
           <button type="submit" className={styles.modalButton}>{isEditMode ? 'Save Changes' : 'Add'}</button>
         </form>
       </div>
