@@ -67,16 +67,41 @@ export default function AdminQandAPage() {
         setCurrentPage(1); // 필터 변경 시 첫 페이지로 이동
     };
 
+    // --- Pagination logic from /admin/history/page.js ---
+    const handlePageChange = (page) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
+    };
+
     const renderPagination = () => {
+        //if (totalPages <= 1) return null;
+        const maxPagesToShow = 5;
         const pages = [];
-        for (let i = 1; i <= totalPages; i++) {
+        let startPage, endPage;
+        if (totalPages <= maxPagesToShow) {
+            startPage = 1;
+            endPage = totalPages;
+        } else {
+            const maxPagesBeforeCurrentPage = Math.floor(maxPagesToShow / 2);
+            const maxPagesAfterCurrentPage = Math.ceil(maxPagesToShow / 2) - 1;
+            if (currentPage <= maxPagesBeforeCurrentPage) {
+                startPage = 1;
+                endPage = maxPagesToShow;
+            } else if (currentPage + maxPagesAfterCurrentPage >= totalPages) {
+                startPage = totalPages - maxPagesToShow + 1;
+                endPage = totalPages;
+            } else {
+                startPage = currentPage - maxPagesBeforeCurrentPage;
+                endPage = currentPage + maxPagesAfterCurrentPage;
+            }
+        }
+        for (let i = startPage; i <= endPage; i++) {
             pages.push(
                 <button
                     key={i}
-                    onClick={() => setCurrentPage(i)}
-                    className={`${styles.paginationButton} ${
-                        currentPage === i ? styles.paginationButtonActive : ''
-                    }`}
+                    onClick={() => handlePageChange(i)}
+                    className={`${styles.paginationButton} ${currentPage === i ? styles.paginationButtonActive : ''}`}
                 >
                     {i}
                 </button>
@@ -172,9 +197,9 @@ export default function AdminQandAPage() {
                     </table>
 
                     {/* Pagination */}
-                    <div className={styles.paginationContainer}>
+                    <div className={styles.pagination}>
                         <button
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            onClick={() => handlePageChange(currentPage - 1)}
                             disabled={currentPage === 1}
                             className={styles.paginationButton}
                         >
@@ -182,7 +207,7 @@ export default function AdminQandAPage() {
                         </button>
                         {renderPagination()}
                         <button
-                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            onClick={() => handlePageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
                             className={styles.paginationButton}
                         >

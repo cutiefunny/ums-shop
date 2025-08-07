@@ -140,7 +140,45 @@ export default function PaymentTrackingPage() {
 
   // 페이지 변경 핸들러
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const renderPagination = () => {
+    // //if (totalPages <= 1) return null;
+    const maxPagesToShow = 5;
+    const pages = [];
+    let startPage, endPage;
+    if (totalPages <= maxPagesToShow) {
+      startPage = 1;
+      endPage = totalPages;
+    } else {
+      const maxPagesBeforeCurrentPage = Math.floor(maxPagesToShow / 2);
+      const maxPagesAfterCurrentPage = Math.ceil(maxPagesToShow / 2) - 1;
+      if (currentPage <= maxPagesBeforeCurrentPage) {
+        startPage = 1;
+        endPage = maxPagesToShow;
+      } else if (currentPage + maxPagesAfterCurrentPage >= totalPages) {
+        startPage = totalPages - maxPagesToShow + 1;
+        endPage = totalPages;
+      } else {
+        startPage = currentPage - maxPagesBeforeCurrentPage;
+        endPage = currentPage + maxPagesAfterCurrentPage;
+      }
+    }
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`${styles.paginationButton} ${currentPage === i ? styles.paginationButtonActive : ''}`}
+        >
+          {i}
+        </button>
+      );
+    }
+    return pages;
   };
 
   // 상세보기 버튼 클릭 핸들러
@@ -243,15 +281,21 @@ export default function PaymentTrackingPage() {
       </table>
 
       <div className={styles.pagination}>
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-          <button
-            key={`page-${page}`}
-            onClick={() => handlePageChange(page)}
-            className={`${styles.paginationButton} ${currentPage === page ? styles.active : ''}`}
-          >
-            {page}
-          </button>
-        ))}
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className={styles.paginationButton}
+        >
+          &lt;
+        </button>
+        {renderPagination()}
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className={styles.paginationButton}
+        >
+          &gt;
+        </button>
       </div>
     </div>
   );

@@ -85,8 +85,47 @@ export default function UserManagementPage() {
     setCurrentPage(1);
   };
 
+  // --- Pagination logic from /admin/history/page.js ---
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const renderPagination = () => {
+    //if (totalPages <= 1) return null;
+    const maxPagesToShow = 5;
+    const pages = [];
+    let startPage, endPage;
+    if (totalPages <= maxPagesToShow) {
+      startPage = 1;
+      endPage = totalPages;
+    } else {
+      const maxPagesBeforeCurrentPage = Math.floor(maxPagesToShow / 2);
+      const maxPagesAfterCurrentPage = Math.ceil(maxPagesToShow / 2) - 1;
+      if (currentPage <= maxPagesBeforeCurrentPage) {
+        startPage = 1;
+        endPage = maxPagesToShow;
+      } else if (currentPage + maxPagesAfterCurrentPage >= totalPages) {
+        startPage = totalPages - maxPagesToShow + 1;
+        endPage = totalPages;
+      } else {
+        startPage = currentPage - maxPagesBeforeCurrentPage;
+        endPage = currentPage + maxPagesAfterCurrentPage;
+      }
+    }
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`${styles.paginationButton} ${currentPage === i ? styles.paginationButtonActive : ''}`}
+        >
+          {i}
+        </button>
+      );
+    }
+    return pages;
   };
 
   // 'Approval' 버튼 클릭 시 모달을 여는 함수
@@ -223,23 +262,22 @@ export default function UserManagementPage() {
         </tbody>
       </table>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-          <button
-            key={page}
-            onClick={() => handlePageChange(page)}
-            style={{
-              padding: '8px 12px',
-              border: `1px solid ${currentPage === page ? '#000' : '#ccc'}`,
-              borderRadius: '4px',
-              backgroundColor: currentPage === page ? '#f0f0f0' : 'white',
-              cursor: 'pointer',
-              fontWeight: currentPage === page ? 'bold' : 'normal',
-            }}
-          >
-            {page}
-          </button>
-        ))}
+      <div className={styles.pagination}>
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className={styles.paginationButton}
+        >
+          &lt;
+        </button>
+        {renderPagination()}
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className={styles.paginationButton}
+        >
+          &gt;
+        </button>
       </div>
 
       {showApprovalModal && selectedUserForApproval && (

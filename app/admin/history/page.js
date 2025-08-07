@@ -1,4 +1,3 @@
-// /admin/history/page.js
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -71,7 +70,9 @@ export default function AdminHistoryPage() {
     };
 
     const handlePageChange = (page) => {
-        setCurrentPage(page);
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
     };
 
     // 현재 사용 가능한 Action Type 목록 (백엔드에서 가져오거나 고정된 목록 사용)
@@ -81,12 +82,41 @@ export default function AdminHistoryPage() {
     }, [historyList]);
 
     const renderPagination = () => {
+        //if (totalPages <= 1) return null; // 페이지가 1개 이하면 페이지네이션 숨김
+
+        const maxPagesToShow = 5;
         const pages = [];
-        for (let i = 1; i <= totalPages; i++) {
+        let startPage, endPage;
+
+        if (totalPages <= maxPagesToShow) {
+            // 전체 페이지 수가 5개 이하이면 모든 페이지 번호를 보여줌
+            startPage = 1;
+            endPage = totalPages;
+        } else {
+            // 전체 페이지 수가 5개보다 많을 경우, 현재 페이지를 중앙에 두려고 시도
+            const maxPagesBeforeCurrentPage = Math.floor(maxPagesToShow / 2);
+            const maxPagesAfterCurrentPage = Math.ceil(maxPagesToShow / 2) - 1;
+
+            if (currentPage <= maxPagesBeforeCurrentPage) {
+                // 현재 페이지가 시작 부분에 가까울 때
+                startPage = 1;
+                endPage = maxPagesToShow;
+            } else if (currentPage + maxPagesAfterCurrentPage >= totalPages) {
+                // 현재 페이지가 끝 부분에 가까울 때
+                startPage = totalPages - maxPagesToShow + 1;
+                endPage = totalPages;
+            } else {
+                // 현재 페이지가 중간에 있을 때
+                startPage = currentPage - maxPagesBeforeCurrentPage;
+                endPage = currentPage + maxPagesAfterCurrentPage;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
             pages.push(
                 <button
                     key={i}
-                    onClick={() => setCurrentPage(i)}
+                    onClick={() => handlePageChange(i)}
                     className={`${styles.paginationButton} ${
                         currentPage === i ? styles.paginationButtonActive : ''
                     }`}
@@ -97,6 +127,7 @@ export default function AdminHistoryPage() {
         }
         return pages;
     };
+
 
     if (loading) {
         return <div className={styles.container}>Loading history...</div>;
