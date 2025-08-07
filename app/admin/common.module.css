@@ -235,9 +235,10 @@
   font-weight: normal;
 }
 
-.paginationButton.active {
+.paginationButtonActive {
   background-color: #f0f0f0;
   border-color: #000;
+  border-width: 2px;
   font-weight: bold;
 }
 
