@@ -1,4 +1,3 @@
-// app/api/products/route.js
 import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
@@ -16,19 +15,35 @@ const docClient = DynamoDBDocumentClient.from(client);
 const PRODUCTS_TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_PRODUCTS || 'product-management';
 const HISTORY_TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_PRODUCT_HISTORY || 'product-history';
 
-// GET all products
+// [수정] GET 요청 시 searchTerm 쿼리 파라미터를 사용하여 필터링
 export async function GET(request) {
+    const { searchParams } = new URL(request.url);
+    const searchTerm = searchParams.get('searchTerm');
+
     try {
         const command = new ScanCommand({
             TableName: PRODUCTS_TABLE_NAME,
         });
         const response = await docClient.send(command);
-        return NextResponse.json(response.Items);
+        let items = response.Items || [];
+
+        // searchTerm이 있는 경우, 서버에서 결과를 필터링합니다.
+        if (searchTerm) {
+            const lowercasedSearchTerm = searchTerm.toLowerCase();
+            items = items.filter(item =>
+                (item.productName && item.productName.toLowerCase().includes(lowercasedSearchTerm)) ||
+                (item.mainCategory && item.mainCategory.toLowerCase().includes(lowercasedSearchTerm)) ||
+                (item.sku && item.sku.toLowerCase().includes(lowercasedSearchTerm))
+            );
+        }
+
+        return NextResponse.json(items);
     } catch (error) {
         console.error("Error fetching products from DynamoDB:", error);
         return NextResponse.json({ message: "Error fetching products", error: error.message }, { status: 500 });
     }
 }
+
 
 // POST a new product
 export async function POST(request) {
@@ -70,7 +85,6 @@ export async function POST(request) {
 
         await docClient.send(putCommand);
 
-        // [수정됨] History 테이블 기록 부분을 임시로 주석 처리
         /*
         const historyItem = {
             historyId: uuidv4(),

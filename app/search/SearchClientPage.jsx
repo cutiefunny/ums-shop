@@ -57,6 +57,7 @@ export default function SearchClientPage() { // 컴포넌트 이름 변경
         slug: product.sku, // Link용 slug 또는 productId
         // 기타 필요한 필드 추가
       }));
+      console.log("Fetched products:", mappedProducts); // 디버깅용 로그
       setProducts(mappedProducts || []);
     } catch (err) {
       console.error("Error fetching search results:", err);
