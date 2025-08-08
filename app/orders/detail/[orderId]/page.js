@@ -1,4 +1,3 @@
-// app/orders/detail/[orderId]/page.js
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -6,12 +5,12 @@ import { useRouter, useParams } from 'next/navigation';
 import styles from './order-detail.module.css';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModal } from '@/contexts/ModalContext';
-import CartItem from '@/components/ProductCardOrderDetail'; // ProductCardOrderDetail 컴포넌트 임포트
-import moment from 'moment'; // 날짜 형식을 위해 moment 사용
-import BottomNav from '@/app/home/components/BottomNav'; // BottomNav 컴포넌트 임포트 추가
-import GuideModal from '@/components/GuideModal'; // GuideModal 임포트
-import PaymentMethodSelectionModal from '@/components/PaymentMethodSelectionModal'; // PaymentMethodSelectionModal 임포트 추가
-import DatePickerModal from '@/components/DatePickerModal'; // [신규] DatePickerModal 임포트
+import CartItem from '@/components/ProductCardOrderDetail';
+import moment from 'moment';
+import BottomNav from '@/app/home/components/BottomNav';
+import GuideModal from '@/components/GuideModal';
+import PaymentMethodSelectionModal from '@/components/PaymentMethodSelectionModal';
+import DatePickerModal from '@/components/DatePickerModal';
 
 // 아이콘 컴포넌트
 const BackIcon = () => <svg width="24" height="24" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41Z" fill="black"/></svg>;
@@ -25,36 +24,32 @@ export default function CheckoutPage() {
     const { user, isLoggedIn, logout } = useAuth();
     const { showModal, showConfirmationModal } = useModal();
     const params = useParams();
-    const { orderId } = params; // URL에서 orderId 값 가져오기
+    const { orderId } = params;
 
-    // Step 1: Order Review & Details State
-    const [orderDetail, setOrderDetail] = useState(null); // 현재 주문 상세 정보 (초기값 null로 변경)
-    const [cartItems, setCartItems] = useState([]); // 장바구니 아이템 목록
+    const [orderDetail, setOrderDetail] = useState(null);
+    const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const [deliveryOption, setDeliveryOption] = useState('onboard'); // 'onboard' or 'alternative'
+    const [deliveryOption, setDeliveryOption] = useState('onboard');
     const [deliveryAddress, setDeliveryAddress] = useState('');
     const [postalCode, setPostalCode] = useState('');
     const [portName, setPortName] = useState('');
     const [expectedShippingDate, setExpectedShippingDate] = useState('');
-    const [userMessage, setUserMessage] = useState(''); // 현재 입력 중인 메시지 (텍스트)
-    const [attachedFileForStep1, setAttachedFileForStep1] = useState(null); // 현재 첨부된 파일
-    const [filePreviewUrlForStep1, setFilePreviewUrlForStep1] = useState(null); // 현재 첨부된 파일 미리보기 URL
+    const [userMessage, setUserMessage] = useState('');
+    const [attachedFileForStep1, setAttachedFileForStep1] = useState(null);
+    const [filePreviewUrlForStep1, setFilePreviewUrlForStep1] = useState(null);
     const fileInputRefForStep1 = useRef(null);
-    const [selectedItemsForOrder, setSelectedItemsForOrder] = useState(new Set()); // 주문할 상품 ID Set
-    const [messagesForStep1, setMessagesForStep1] = useState([]); // Step 1에서 주고받은 메시지 목록
-    const [productDetailsMap, setProductDetailsMap] = useState({}); // 각 상품의 최신 가격 및 할인율을 저장
+    const [selectedItemsForOrder, setSelectedItemsForOrder] = useState(new Set());
+    const [messagesForStep1, setMessagesForStep1] = useState([]);
+    const [productDetailsMap, setProductDetailsMap] = useState({});
     
-    // [신규] Date Picker Modal State
     const [isDatePickerModalOpen, setIsDatePickerModalOpen] = useState(false);
 
-    // Guide Modal related states (kept for initial order guidance, but flow changes)
     const [showGuideModal, setShowGuideModal] = useState(false);
     const [currentGuideStep, setCurrentGuideStep] = useState(0);
     const [orderSuccessfullyPlaced, setOrderSuccessfullyPlaced] = useState(false);
 
-    // Derived State for totals
     const totalItemsCount = useMemo(() => {
         return cartItems.reduce((sum, item) => selectedItemsForOrder.has(item.productId) ? sum + item.quantity : sum, 0);
     }, [cartItems, selectedItemsForOrder]);
@@ -62,23 +57,22 @@ export default function CheckoutPage() {
     const productPriceTotal = useMemo(() => {
         return cartItems.reduce((sum, item) => {
             if (selectedItemsForOrder.has(item.productId)) {
-                return sum + (item.unitPrice || 0) * (item.quantity || 0) * (1 - (item.discount || 0) / 100); // 할인 적용
+                return sum + (item.unitPrice || 0) * (item.quantity || 0) * (1 - (item.discount || 0) / 100);
             }
             return sum;
         }, 0);
     }, [cartItems, selectedItemsForOrder]);
 
-    const shippingFee = 20; // Fixed shipping fee for now
+    const shippingFee = 20;
 
     const finalTotalPrice = useMemo(() => {
         return productPriceTotal + shippingFee;
     }, [productPriceTotal, shippingFee]);
 
-    // 사용자 주문 상세 정보를 DB에서 가져오는 함수
     const fetchOrderDetail = useCallback(async () => {
         if (!orderId) return;
 
-        setLoading(true); // 메시지 초기화 이전에 로딩 시작
+        setLoading(true);
         setError(null);
         try {
             const orderResponse = await fetch(`/api/orders/${orderId}`);
@@ -86,34 +80,31 @@ export default function CheckoutPage() {
                 throw new Error(`HTTP error! status: ${orderResponse.status}`);
             }
             const orderData = await orderResponse.json();
-            setOrderDetail(orderData); // orderDetail 상태 업데이트
+            setOrderDetail(orderData);
             const items = orderData.orderItems || [];
             const messages = orderData.messages || [];
-            const deliveryDetails = orderData.deliveryDetails || {}; // deliveryDetails 추가
+            const deliveryDetails = orderData.deliveryDetails || {};
 
-            // 메시지를 순회하며 필요한 필드를 포함하고 기존 ID를 사용
             const processedMessages = messages.map(msg => ({
-                id: msg.id, // 기존 ID를 그대로 사용
+                id: msg.id,
                 sender: msg.sender || 'User',
                 timestamp: msg.timestamp || new Date().toISOString(),
                 text: msg.text || '',
-                imageUrl: msg.imageUrl || null, // 이미지 URL이 있을 경우
+                imageUrl: msg.imageUrl || null,
             }));
             setMessagesForStep1(processedMessages);
 
-            // 각 주문 상품에 대한 최신 상품 정보 fetch
             const productDetailsPromises = items.map(async item => {
                 try {
                     const productResponse = await fetch(`/api/products/${item.productId}`);
                     if (!productResponse.ok) {
-                        // 상품 정보를 가져오지 못하면 경고를 출력하고 주문 시점의 가격 정보로 대체
                         console.warn(`Failed to fetch product details for ${item.productId}. Using order item data.`);
                         return {
                             productId: item.productId,
-                            calculatedPriceUsd: item.unitPrice, // 주문 시점의 unitPrice 사용
-                            discount: item.discount || 0, // 주문 시점의 discount 사용
-                            adminStatus: item.adminStatus || 'Unknown', // 주문 시점의 adminStatus 사용
-                            adminQuantity: item.adminQuantity || item.quantity, // 주문 시점의 adminQuantity 사용
+                            calculatedPriceUsd: item.unitPrice,
+                            discount: item.discount || 0,
+                            adminStatus: item.adminStatus || 'Unknown',
+                            adminQuantity: item.adminQuantity || item.quantity,
                         };
                     }
                     const productData = await productResponse.json();
@@ -126,7 +117,6 @@ export default function CheckoutPage() {
                     };
                 } catch (productFetchError) {
                     console.error(`Error fetching product ${item.productId} details:`, productFetchError);
-                    // 네트워크 오류 등 발생 시 주문 시점의 가격 정보로 대체
                     return {
                         productId: item.productId,
                         calculatedPriceUsd: item.unitPrice,
@@ -142,31 +132,28 @@ export default function CheckoutPage() {
             fetchedProductDetails.forEach(detail => {
                 newProductDetailsMap[detail.productId] = detail;
             });
-            setProductDetailsMap(newProductDetailsMap); // 최신 상품 정보 맵 업데이트
-
+            setProductDetailsMap(newProductDetailsMap);
 
             items.forEach(item => {
-                item.unitPrice = item.originalUnitPrice || item.unitPrice; // 원본 가격을 unitPrice로 설정
+                item.unitPrice = item.originalUnitPrice || item.unitPrice;
             });
             setCartItems(items);
             setSelectedItemsForOrder(new Set(items.map(item => item.productId)));
 
-            // deliveryDetails 세팅
             if (deliveryDetails.option) {
                 setDeliveryOption(deliveryDetails.option);
                 if (deliveryDetails.option === 'onboard') {
                     setPortName(deliveryDetails.portName || '');
                     setExpectedShippingDate(deliveryDetails.expectedShippingDate || '');
-                    setDeliveryAddress(''); // 다른 옵션 필드 초기화
-                    setPostalCode(''); // 다른 옵션 필드 초기화
-                } else { // 'alternative'
+                    setDeliveryAddress('');
+                    setPostalCode('');
+                } else {
                     setDeliveryAddress(deliveryDetails.address || '');
                     setPostalCode(deliveryDetails.postalCode || '');
-                    setPortName(''); // 다른 옵션 필드 초기화
-                    setExpectedShippingDate(''); // 다른 옵션 필드 초기화
+                    setPortName('');
+                    setExpectedShippingDate('');
                 }
             }
-
 
         } catch (err) {
             console.error("Error fetching order or product details:", err);
@@ -183,7 +170,6 @@ export default function CheckoutPage() {
         fetchOrderDetail();
     }, [fetchOrderDetail]);
 
-    // 상품 가격 및 할인율 일치 여부 확인 Memo
     const arePricesAndDiscountsMatching = useMemo(() => {
         if (loading || !orderId || cartItems.length === 0 || Object.keys(productDetailsMap).length === 0) {
             return false;
@@ -352,14 +338,14 @@ export default function CheckoutPage() {
 
                 const S3_BUCKET_NAME_PUBLIC = process.env.NEXT_PUBLIC_S3_BUCKET_NAME || 'ums-shop-storage';
                 const AWS_REGION_PUBLIC = process.env.NEXT_PUBLIC_AWS_REGION || 'ap-southeast-2';
-                const objectKey = fields.Key;
+                const objectKey = fields.key;
                 const imageUrl = `https://${S3_BUCKET_NAME_PUBLIC}.s3.${AWS_REGION_PUBLIC}.amazonaws.com/${objectKey}`;
 
                 const formData = new FormData();
                 Object.entries(fields).forEach(([key, value]) => {
                     formData.append(key, value);
                 });
-                formData.append(fields.Key, attachedFileForStep1);
+                formData.append('file', attachedFileForStep1);
 
                 const uploadFileToS3Response = await fetch(url, {
                     method: 'POST',
@@ -768,7 +754,7 @@ export default function CheckoutPage() {
                 )}
             </footer>
 
-            {/* [신규] Date Picker Modal 렌더링 */}
+            {/* Date Picker Modal */}
             <DatePickerModal
                 isOpen={isDatePickerModalOpen}
                 onClose={() => setIsDatePickerModalOpen(false)}
@@ -778,8 +764,6 @@ export default function CheckoutPage() {
                 }}
                 initialDate={expectedShippingDate}
             />
-
-            {/* GuideModal and other modals... */}
         </div>
     );
 }
