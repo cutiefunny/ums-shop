@@ -14,7 +14,7 @@ const client = new DynamoDBClient({
 const docClient = DynamoDBDocumentClient.from(client);
 
 // 주문 데이터를 관리할 테이블 (order-management)
-const TABLE_ORDERS = process.env.DYNAMODB_TABLE_ORDERS || 'ums-shop-orders';
+const TABLE_ORDERS = process.env.DYNAMODB_TABLE_ORDERS || 'order-management';
 
 /**
  * GET handler for /api/admin/delivery-status

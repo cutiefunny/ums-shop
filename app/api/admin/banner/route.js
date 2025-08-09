@@ -2,9 +2,7 @@
 import { NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { S3Client } from '@aws-sdk/client-s3';
-import { createPresignedPost } from '@aws-sdk/s3-presigned-post'; // Presigned POST URL 생성용
-import { v4 as uuidv4 } from 'uuid'; // UUID 생성용
+import { v4 as uuidv4 } from 'uuid';
 
 const client = new DynamoDBClient({
     region: process.env.AWS_REGION || 'ap-northeast-2',
@@ -15,22 +13,10 @@ const client = new DynamoDBClient({
 });
 
 const ddbDocClient = DynamoDBDocumentClient.from(client);
-
-const s3Client = new S3Client({
-    region: process.env.AWS_REGION || 'ap-northeast-2',
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-});
-
 const TABLE_NAME = process.env.DYNAMODB_TABLE_BANNER || 'banner';
-const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || 'ums-shop-storage'; // S3 버킷 이름, 환경 변수로 설정 가능
 
 /**
- * GET 요청 처리: 모든 배너 데이터를 조회하고 필터링합니다.
- * @param {Request} request
- * @returns {NextResponse} 배너 데이터 목록 또는 오류 응답
+ * GET 요청: 모든 배너 데이터를 조회하고 필터링합니다.
  */
 export async function GET(request) {
     try {
@@ -42,17 +28,17 @@ export async function GET(request) {
         let expressionAttributeValues = {};
         let expressionAttributeNames = {};
 
+        // ✨ 검색 필드를 link 뿐만 아니라 다른 필드도 포함하도록 확장할 수 있습니다.
         if (searchTerm) {
-            filterExpressions.push(`contains(#link, :searchTerm) OR contains(#location, :searchTerm)`); // 링크 또는 위치로 검색
+            filterExpressions.push(`contains(#link, :searchTerm)`);
             expressionAttributeValues[':searchTerm'] = searchTerm;
             expressionAttributeNames['#link'] = 'link';
-            expressionAttributeNames['#location'] = 'location';
         }
 
         if (locationFilter && locationFilter !== 'All') {
             filterExpressions.push(`#location = :locationFilter`);
             expressionAttributeValues[':locationFilter'] = locationFilter;
-            expressionAttributeNames['#location'] = 'location'; // 이미 정의됨
+            expressionAttributeNames['#location'] = 'location';
         }
 
         const params = {
@@ -76,27 +62,34 @@ export async function GET(request) {
 }
 
 /**
- * POST 요청 처리: 새 배너를 추가합니다. 이미지 S3 업로드도 처리합니다.
- * @param {Request} request
- * @returns {NextResponse} 생성된 배너 데이터 또는 오류 응답
+ * POST 요청: 새 배너를 추가합니다.
  */
 export async function POST(request) {
     try {
-        const body = await request.json(); // JSON 본문 파싱
-        const { order, link, location, status, imageUrl } = body;
+        const body = await request.json();
+        // ✨ 새로운 모달의 모든 필드를 받도록 수정
+        const { 
+            order, link, location, status, imageUrl, 
+            startDate, endDate, exposureType, isPriority 
+        } = body;
 
-        if (!order || !link || !location || !status || !imageUrl) {
+        if (!order || !link || !location || !status || !imageUrl || !startDate || !endDate) {
             return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
         }
 
         const newBanner = {
             bannerId: uuidv4(),
-            order: Number(order), // 숫자로 저장
-            imageUrl: imageUrl, // S3 업로드 후 받은 URL
+            order: Number(order),
+            imageUrl: imageUrl,
             link: link,
             location: location,
-            uploadedDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+            uploadedDate: new Date().toISOString(), // 전체 ISO 문자열로 저장
             status: status,
+            // ✨ 새로운 필드 추가
+            startDate: startDate,
+            endDate: endDate,
+            exposureType: exposureType,
+            isPriority: isPriority,
         };
 
         const command = new PutCommand({

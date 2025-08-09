@@ -18,8 +18,8 @@ const TABLE_ORDERS = process.env.DYNAMODB_TABLE_ORDERS || 'order-management';
 
 /**
  * GET handler for /api/admin/delivery-status
- * DynamoDB의 order-management 테이블에서 'Delivered' 상태인 주문 데이터만 가져옵니다.
- * status는 statusHistory 배열의 마지막 항목에서 가져옵니다.
+ * order-management 테이블에서 배송 관련 데이터를 가져옵니다.
+ * 최신 상태(status)와 운송장 번호(trackingNumber)는 statusHistory 배열의 마지막 항목에서 가져옵니다.
  *
  * @param {Request} request
  * @returns {NextResponse} - JSON 응답
@@ -35,25 +35,26 @@ export async function GET(request) {
     });
     const { Items: orderItems } = await docClient.send(ordersCommand);
 
-    // Warning: ScanCommand는 테이블이 클 경우 매우 비효율적입니다.
-    // 실제 운영 환경에서는 GSI를 활용한 QueryCommand를 사용하는 것이 좋습니다.
-
     // 2. 필요한 데이터 형식으로 가공
     let processedData = orderItems.map(order => {
       const customerName = order.customer?.name || order.userName || 'N/A';
+      let latestStatus = 'N/A';
+      let latestTrackingNumber = order.trackingNumber || '-'; // 기본값은 최상위 필드를 사용
 
-      // statusHistory 배열이 존재하고 비어있지 않으면 마지막 항목의 newStatus를 사용
-      const latestStatus =
-        order.statusHistory && Array.isArray(order.statusHistory) && order.statusHistory.length > 0
-          ? order.statusHistory[order.statusHistory.length - 1].newStatus
-          : 'N/A'; // 기본값
+      // statusHistory 배열이 존재하고 비어있지 않으면 마지막 항목의 정보를 사용
+      if (order.statusHistory && Array.isArray(order.statusHistory) && order.statusHistory.length > 0) {
+        const lastEntry = order.statusHistory[order.statusHistory.length - 1];
+        latestStatus = lastEntry.newStatus || latestStatus;
+        // ✨ statusHistory의 마지막 항목에 trackingNumber가 있으면 그 값을 사용
+        latestTrackingNumber = lastEntry.trackingNumber || latestTrackingNumber;
+      }
 
       return {
         orderId: order.orderId,
         name: customerName,
         date: order.date?.split('T')[0] || 'N/A',
-        status: latestStatus, // statusHistory에서 가져온 최신 상태
-        trackingNumber: order.trackingNumber || '-',
+        status: latestStatus,
+        trackingNumber: latestTrackingNumber,
       };
     });
 
@@ -89,15 +90,16 @@ export async function GET(request) {
 }
 
 /**
- * PATCH handler for /api/admin/delivery-status/update
- * 특정 주문의 statusHistory 목록에 새로운 상태를 추가합니다.
+ * PATCH handler for /api/admin/delivery-status
+ * 특정 주문의 statusHistory에 새 상태와 운송장 번호를 추가하고, 최상위 운송장 번호도 업데이트합니다.
  *
  * @param {Request} request
  * @returns {NextResponse} - JSON 응답
  */
 export async function PATCH(request) {
   try {
-    const { orderId, status } = await request.json();
+    // ✨ body에서 trackingNumber도 함께 받습니다.
+    const { orderId, status, trackingNumber } = await request.json();
 
     if (!orderId || !status) {
       return NextResponse.json({ message: 'Order ID and status are required' }, { status: 400 });
@@ -107,6 +109,8 @@ export async function PATCH(request) {
     const newStatusEntry = {
       newStatus: status,
       timestamp: new Date().toISOString(),
+      // ✨ 운송장 번호가 있으면 객체에 추가, 없으면 추가하지 않음
+      ...(trackingNumber && { trackingNumber: trackingNumber }),
     };
 
     const updateParams = {
@@ -114,17 +118,18 @@ export async function PATCH(request) {
       Key: {
         orderId: orderId,
       },
-      // statusHistory 배열에 newStatusEntry를 추가합니다.
-      // 만약 statusHistory 필드가 없다면 새로 생성합니다.
-      UpdateExpression: 'SET #history = list_append(if_not_exists(#history, :empty_list), :new_entry)',
+      // ✨ SET 표현식 수정: statusHistory 추가와 최상위 trackingNumber 업데이트를 동시에 수행
+      UpdateExpression: 'SET #history = list_append(if_not_exists(#history, :empty_list), :new_entry), #tracking = :tracking_val',
       ExpressionAttributeNames: {
         '#history': 'statusHistory',
+        '#tracking': 'trackingNumber', // 최상위 trackingNumber 필드
       },
       ExpressionAttributeValues: {
-        ':new_entry': [newStatusEntry], // list_append는 리스트를 인자로 받습니다.
-        ':empty_list': [], // statusHistory가 없을 경우 사용할 빈 리스트
+        ':new_entry': [newStatusEntry],
+        ':empty_list': [],
+        ':tracking_val': trackingNumber || null, // 빈 문자열 대신 null로 저장
       },
-      ReturnValues: 'ALL_NEW', // 업데이트된 항목의 모든 속성 반환
+      ReturnValues: 'ALL_NEW',
     };
 
     const command = new UpdateCommand(updateParams);

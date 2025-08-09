@@ -17,10 +17,6 @@ const TABLE_NAME = process.env.DYNAMODB_TABLE_BANNER || 'banner';
 
 /**
  * GET 요청 처리: 특정 배너 상세 데이터를 조회합니다.
- * URL: /api/admin/banner/[bannerId]
- * @param {Request} request
- * @param {{params: {bannerId: string}}} context - Next.js 동적 라우트 파라미터
- * @returns {NextResponse} 배너 상세 데이터 또는 오류 응답
  */
 export async function GET(request, { params }) {
     try {
@@ -33,7 +29,7 @@ export async function GET(request, { params }) {
         const command = new GetCommand({
             TableName: TABLE_NAME,
             Key: {
-                bannerId: bannerId, // 배너 테이블의 파티션 키: bannerId (String)
+                bannerId: bannerId,
             },
         });
 
@@ -52,50 +48,53 @@ export async function GET(request, { params }) {
 
 /**
  * PUT 요청 처리: 특정 배너 데이터를 업데이트합니다.
- * @param {Request} request
- * @param {{params: {bannerId: string}}} context - Next.js 동적 라우트 파라미터
- * @returns {NextResponse} 업데이트된 배너 데이터 또는 오류 응답
+ * ✨ 새로운 모달의 모든 필드(startDate, endDate, exposureType, isPriority 등)를 처리하도록 수정되었습니다.
  */
 export async function PUT(request, { params }) {
     try {
         const { bannerId } = params;
-        const body = await request.json(); // 업데이트할 데이터 (order, imageUrl, link, location, status 등)
+        const body = await request.json();
 
         if (!bannerId) {
             return NextResponse.json({ message: 'Missing banner ID' }, { status: 400 });
         }
-
-        let UpdateExpression = 'SET';
-        const ExpressionAttributeNames = {};
-        const ExpressionAttributeValues = {};
-        let first = true;
-
-        for (const key in body) {
-            if (key === 'bannerId') continue; // PK는 업데이트 대상에서 제외
-
-            if (!first) {
-                UpdateExpression += ',';
-            }
-            UpdateExpression += ` #${key} = :${key}`;
-            ExpressionAttributeNames[`#${key}`] = key;
-            
-            // 'order' 필드는 숫자로 변환하여 저장
-            ExpressionAttributeValues[`:${key}`] = key === 'order' ? Number(body[key]) : body[key];
-            first = false;
-        }
-
+        
+        // 업데이트할 필드가 하나도 없으면 에러 처리
         if (Object.keys(body).length === 0) {
             return NextResponse.json({ message: 'No fields provided for update' }, { status: 400 });
         }
+        
+        // DynamoDB UpdateExpression 동적 생성
+        let updateExpression = 'SET';
+        const expressionAttributeNames = {};
+        const expressionAttributeValues = {};
+
+        // body에 포함된 모든 키에 대해 업데이트 구문 생성
+        Object.keys(body).forEach((key, index) => {
+            if (key === 'bannerId') return; // 파티션 키는 업데이트하지 않음
+
+            const attributeKey = `#${key}`;
+            const valueKey = `:${key}`;
+            
+            updateExpression += ` ${attributeKey} = ${valueKey}`;
+            if (index < Object.keys(body).filter(k => k !== 'bannerId').length - 1) {
+                updateExpression += ',';
+            }
+
+            expressionAttributeNames[attributeKey] = key;
+
+            // 'order' 필드는 숫자로, 그 외 필드는 받은 값 그대로 사용 (JSON이 boolean 등 타입 처리)
+            expressionAttributeValues[valueKey] = key === 'order' ? Number(body[key]) : body[key];
+        });
 
         const updateCommand = new UpdateCommand({
             TableName: TABLE_NAME,
             Key: {
                 bannerId: bannerId,
             },
-            UpdateExpression,
-            ExpressionAttributeNames,
-            ExpressionAttributeValues,
+            UpdateExpression: updateExpression,
+            ExpressionAttributeNames: expressionAttributeNames,
+            ExpressionAttributeValues: expressionAttributeValues,
             ReturnValues: "ALL_NEW", // 업데이트된 항목의 모든 속성을 반환
         });
 
@@ -109,9 +108,6 @@ export async function PUT(request, { params }) {
 
 /**
  * DELETE 요청 처리: 특정 배너 데이터를 삭제합니다.
- * @param {Request} request
- * @param {{params: {bannerId: string}}} context - Next.js 동적 라우트 파라미터
- * @returns {NextResponse} 삭제 결과 또는 오류 응답
  */
 export async function DELETE(request, { params }) {
     try {

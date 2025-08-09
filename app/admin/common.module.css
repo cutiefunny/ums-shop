@@ -752,3 +752,179 @@
     margin-left: 10px;
     vertical-align: middle;
 }
+
+/* --- New Modal Styles for Banner --- */
+.modalContentWide {
+  background-color: white;
+  padding: 0;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px; /* 더 넓은 모달 */
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.modalTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.modalBody {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* 각 행 사이의 간격 */
+}
+
+.formRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.formLabel {
+  width: 100px; /* 라벨 너비 고정 */
+  font-weight: 500;
+  padding-top: 8px;
+  flex-shrink: 0;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  height: 40px; /* input 높이와 맞춤 */
+}
+
+.radioGroup label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.dateRangePicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dateInputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dateInputWrapper input[type="date"] {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  width: 150px;
+}
+
+.dateInputWrapper svg {
+  position: absolute;
+  right: 10px;
+  pointer-events: none; /* 아이콘 클릭 방지 */
+}
+
+.imageUploadSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.imagePreviewBox {
+  width: 300px;
+  height: 150px;
+  border: 1px dashed #ced4da;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f8f9fa;
+  color: #868e96;
+}
+
+.imagePreviewBox img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.uploadButton {
+  background-color: #495057;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+}
+
+.formInputFull {
+  flex-grow: 1;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+}
+
+.formHint {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin: 0;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-top: 1px solid #dee2e6;
+  margin-top: 16px;
+}
+
+.cancelButton, .saveButton {
+  padding: 10px 24px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.cancelButton {
+  background-color: #f8f9fa;
+  color: #495057;
+}
+
+.saveButton {
+  background-color: #343a40;
+  color: white;
+  border-color: #343a40;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.formRowOpen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
