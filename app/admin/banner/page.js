@@ -153,6 +153,12 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                     <div className={styles.formRow}>
                         <label className={styles.formLabel}>배너 이미지</label>
                         <div className={styles.imageUploadSection}>
+                            {location === 'Home' && (
+                                <p className={styles.formHint}>300*260로 업로드 권장. 이외의 부분은 잘려서 보여집니다.</p>
+                            )}
+                            {location === 'Open' && (
+                                <p className={styles.formHint}>300*450로 업로드 권장. 이외의 부분은 잘려서 보여집니다.</p>
+                            )}
                             <div className={styles.imagePreviewBox}>
                                 {previewUrl ? (
                                     <img src={previewUrl} alt="Banner preview" />
@@ -165,7 +171,6 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                                 이미지 업로드
                             </button>
                             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
-                            <p className={styles.formHint}>300*260로 업로드 권장. 이외의 부분은 잘려서 보여집니다.</p>
                         </div>
                     </div>
                     
