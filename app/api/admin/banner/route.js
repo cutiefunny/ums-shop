@@ -28,7 +28,7 @@ export async function GET(request) {
         let expressionAttributeValues = {};
         let expressionAttributeNames = {};
 
-        // ✨ 검색 필드를 link 뿐만 아니라 다른 필드도 포함하도록 확장할 수 있습니다.
+        // 검색 필드를 link 뿐만 아니라 다른 필드도 포함하도록 확장할 수 있습니다.
         if (searchTerm) {
             filterExpressions.push(`contains(#link, :searchTerm)`);
             expressionAttributeValues[':searchTerm'] = searchTerm;
@@ -67,29 +67,38 @@ export async function GET(request) {
 export async function POST(request) {
     try {
         const body = await request.json();
-        // ✨ 새로운 모달의 모든 필드를 받도록 수정
-        const { 
-            order, link, location, status, imageUrl, 
-            startDate, endDate, exposureType, isPriority 
+        const {
+            order, link, location, status, imageUrl,
+            startDate, endDate, exposureType, isPriority,
+            pageType, productId, categoryId // 추가된 필드
         } = body;
 
-        if (!order || !link || !location || !status || !imageUrl || !startDate || !endDate) {
+        // 필수 필드 유효성 검사 수정
+        if (!order || !location || !status || !imageUrl || !startDate || !endDate) {
             return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
+        }
+        
+        // 노출 방식에 따른 링크 유효성 검사
+        if ((exposureType === '외부 링크' || exposureType === '내부 페이지') && !link) {
+            return NextResponse.json({ message: 'Link is required for the selected exposure type.' }, { status: 400 });
         }
 
         const newBanner = {
             bannerId: uuidv4(),
             order: Number(order),
             imageUrl: imageUrl,
-            link: link,
+            link: link || '', // "없음"일 경우 빈 문자열로 저장
             location: location,
-            uploadedDate: new Date().toISOString(), // 전체 ISO 문자열로 저장
+            uploadedDate: new Date().toISOString(),
             status: status,
-            // ✨ 새로운 필드 추가
             startDate: startDate,
             endDate: endDate,
             exposureType: exposureType,
             isPriority: isPriority,
+            // 추가된 필드 저장
+            pageType: pageType,
+            productId: productId,
+            categoryId: categoryId
         };
 
         const command = new PutCommand({

@@ -34,10 +34,28 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
     const [pageType, setPageType] = useState('product'); // 기본값 설정
     const [productId, setProductId] = useState('');
     const [categoryId, setCategoryId] = useState('');
+    const [mainCategories, setMainCategories] = useState([]); // 메인 카테고리 목록 상태
     const fileInputRef = useRef(null);
 
     useEffect(() => {
+        const fetchMainCategories = async () => {
+            try {
+                // 수정된 API 경로: /api/categories?level=main
+                const res = await fetch('/api/categories?level=main');
+                if (!res.ok) {
+                    throw new Error('카테고리 목록을 불러오는 데 실패했습니다.');
+                }
+                const data = await res.json();
+                setMainCategories(data);
+            } catch (error) {
+                console.error(error);
+                alert(error.message);
+            }
+        };
+
         if (isOpen) {
+            fetchMainCategories(); // 모달이 열릴 때 카테고리 목록을 가져옵니다.
+
             if (isEditMode && initialData) {
                 setLocation(initialData.location || 'Home');
                 setStartDate(initialData.startDate?.split('T')[0] || '');
@@ -62,7 +80,7 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                 setLink('');
                 setStatus('노출중');
                 setIsPriority(false);
-                setPageType('Notice'); // 추가 시 초기값
+                setPageType('product'); // 추가 시 초기값
             }
         }
     }, [isOpen, isEditMode, initialData]);
@@ -104,7 +122,9 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
             imageUrl: previewUrl,
             exposureType,
             link,
-            pageType, // 페이지 유형 상태 전달
+            pageType,
+            productId,
+            categoryId,
             status,
             isPriority,
         };
@@ -139,12 +159,10 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                         <div className={styles.dateRangePicker}>
                             <div className={styles.dateInputWrapper}>
                                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                                <CalendarIcon />
                             </div>
                             <span>-</span>
                             <div className={styles.dateInputWrapper}>
                                 <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                                <CalendarIcon />
                             </div>
                         </div>
                     </div>
@@ -159,7 +177,10 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                             {location === 'Open' && (
                                 <p className={styles.formHint}>300*450로 업로드 권장. 이외의 부분은 잘려서 보여집니다.</p>
                             )}
-                            <div className={styles.imagePreviewBox}>
+                            <div 
+                                className={`${styles.imagePreviewBox} ${location === 'Open' ? styles.open : ''}`}
+                                style={location === 'Open' ? { height: '450px' } : {}}
+                            >
                                 {previewUrl ? (
                                     <img src={previewUrl} alt="Banner preview" />
                                 ) : (
@@ -174,7 +195,6 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                         </div>
                     </div>
                     
-                    {/* 노출 방식 (항상 표시) */}
                     <div className={styles.formRow}>
                         <label className={styles.formLabel}>노출 방식</label>
                         <div className={styles.radioGroup}>
@@ -188,33 +208,35 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                     {location === 'Home' ? (
                         <div className={styles.formRow}>
                             <label className={styles.formLabel}>링크 주소</label>
-                            <input type="text" className={styles.formInputFull} placeholder="https://" value={link} onChange={(e) => setLink(e.target.value)} disabled={exposureType === '없음'}/>
+                            <input type="text" className={styles.formInputFull} placeholder="https://" value={link} onChange={(e) => setLink(e.target.value)} disabled={exposureType !== '외부 링크'}/>
                         </div>
                     ) : ( // location === 'Open'
                         <div className={styles.formRowOpen}>
                             <div className={styles.formRow}>
                                 <label className={styles.formLabel}>페이지 유형</label>
                             
-                                <select className={styles.formInputFull} value={pageType} onChange={(e) => setPageType(e.target.value)} disabled={exposureType === '없음'}>
+                                <select className={styles.formInputFull} value={pageType} onChange={(e) => setPageType(e.target.value)} disabled={exposureType !== '내부 페이지'}>
                                     <option value="product">상품</option>
                                     <option value="category">카테고리</option>
                                     {/* 필요에 따라 다른 페이지 유형 추가 */}
                                 </select>
                             </div>
                             <div className={styles.formRow}>
-                                {/* pageType='product'일 경우 input, pageType='category'일 경우 select */}
                                 <label className={styles.formLabel}></label>
                                 {pageType === 'product' ? (
-                                    <input type="text" className={styles.formInputFull} placeholder="상품 ID" value={productId} onChange={(e) => setProductId(e.target.value)} disabled={exposureType === '없음'} />
+                                    <input type="text" className={styles.formInputFull} placeholder="상품 ID" value={productId} onChange={(e) => setProductId(e.target.value)} disabled={exposureType !== '내부 페이지'} />
                                 ) : (
-                                    <select className={styles.formInputFull} value={categoryId} onChange={(e) => setCategoryId(e.target.value)} disabled={exposureType === '없음'}>
+                                    <select className={styles.formInputFull} value={categoryId} onChange={(e) => setCategoryId(e.target.value)} disabled={exposureType !== '내부 페이지'}>
                                         <option value="">카테고리 선택</option>
-                                        {/* 카테고리 옵션 추가 */}
+                                        {mainCategories.map(category => (
+                                            <option key={category.categoryId} value={category.categoryId}>
+                                                {category.name}
+                                            </option>
+                                        ))}
                                     </select>
                                 )}
                             </div>
                         </div>
-                        
                     )}
 
                     {/* 배너 상태 (항상 표시) */}
@@ -299,14 +321,13 @@ export default function BannerManagementPage() {
         try {
             let imageUrlToSave = bannerData.imageUrl;
             
-            // 'Open' 위치일 경우, pageType에 따라 link를 생성
-            if (bannerData.location === 'Open' && bannerData.pageType) {
-                const pageLinks = {
-                    'Notice': '/notice',
-                    'Q&A': '/q-and-a',
-                    'Event': '/events'
-                };
-                bannerData.link = pageLinks[bannerData.pageType] || '';
+            // 'Open' 위치이고 '내부 페이지' 노출 방식일 경우, pageType에 따라 link를 생성
+            if (bannerData.location === 'Open' && bannerData.exposureType === '내부 페이지') {
+                if (bannerData.pageType === 'product' && bannerData.productId) {
+                    bannerData.link = `/product/${bannerData.productId}`;
+                } else if (bannerData.pageType === 'category' && bannerData.categoryId) {
+                    bannerData.link = `/products?categoryId=${bannerData.categoryId}`;
+                }
             }
             
             const { imageFile, ...otherData } = bannerData;
