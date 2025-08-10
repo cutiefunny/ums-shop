@@ -10,7 +10,7 @@ export default function MainBanner({ items }) {
   const containerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const isJumpingRef = useRef(false);
-  const intervalRef = useRef(null); // [신규] 자동 스크롤 인터벌을 위한 ref
+  const intervalRef = useRef(null);
   const router = useRouter();
 
   const updateScale = useCallback(() => {
@@ -49,9 +49,12 @@ export default function MainBanner({ items }) {
 
   useEffect(() => {
     if (items && items.length > 0) {
+      // ✨ [수정됨] id가 고유하도록 clone 생성 방식 변경
       const startClone = { ...items[items.length - 1], id: `clone-start-${items[items.length - 1].id}` };
       const endClone = { ...items[0], id: `clone-end-${items[0].id}` };
       setDisplayItems([startClone, ...items, endClone]);
+    } else {
+        setDisplayItems([]); // 아이템이 없으면 비워줌
     }
   }, [items]);
 
@@ -80,7 +83,6 @@ export default function MainBanner({ items }) {
     const secondItem = container.children[1];
     const itemWidthWithGap = secondItem ? (secondItem.offsetLeft - firstItem.offsetLeft) : firstItem.offsetWidth;
 
-    // A more reliable way to calculate currentIndex
     const currentIndex = Math.round((container.scrollLeft + container.offsetWidth / 2 - firstItem.offsetWidth / 2) / itemWidthWithGap);
     
     const atEndClone = currentIndex >= displayItems.length - 1;
@@ -100,15 +102,11 @@ export default function MainBanner({ items }) {
     }
   }, [items, displayItems, updateScale]);
 
-  // [신규] 다음 배너로 스크롤하는 함수
   const autoScroll = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !containerRef.current.children[1] || !containerRef.current.children[2]) return;
     const container = containerRef.current;
-    const firstItem = container.children[1];
-    if (!firstItem) return;
-
-    const itemWidthWithGap = container.children[2] ? (container.children[2].offsetLeft - container.children[1].offsetLeft) : firstItem.offsetWidth;
-
+    
+    const itemWidthWithGap = container.children[2].offsetLeft - container.children[1].offsetLeft;
     const newScrollLeft = container.scrollLeft + itemWidthWithGap;
 
     container.scrollTo({
@@ -117,9 +115,7 @@ export default function MainBanner({ items }) {
     });
   }, []);
   
-  // [수정] 스크롤 핸들러: 자동 스크롤 제어 로직 추가
   const handleScroll = useCallback(() => {
-    // 사용자가 스크롤하면 자동 스크롤 중지
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -132,36 +128,44 @@ export default function MainBanner({ items }) {
       clearTimeout(scrollTimeoutRef.current);
     }
   
-    // 스크롤이 멈춘 후 handleJump 실행 및 자동 스크롤 재시작
     scrollTimeoutRef.current = setTimeout(() => {
       handleJump();
-      if (!intervalRef.current) { // 다른 곳에서 인터벌이 재시작되지 않았다면
+      if (!intervalRef.current && items.length > 1) { // 아이템이 2개 이상일 때만 자동 스크롤 재시작
         intervalRef.current = setInterval(autoScroll, 3000);
       }
-    }, 150); // 150ms 동안 스크롤 없으면 멈춘 것으로 간주
-  }, [updateScale, handleJump, autoScroll]);
+    }, 150);
+  }, [updateScale, handleJump, autoScroll, items]);
 
-  // [신규] 자동 스크롤 시작 및 정리를 위한 useEffect
   useEffect(() => {
-    // 컴포넌트가 마운트되고 아이템이 준비되면 자동 스크롤 시작
-    if (displayItems.length > 2) { // 아이템과 클론이 모두 준비되었는지 확인
+    if (displayItems.length > 2 && items.length > 1) { // 원본 아이템이 2개 이상일 때만 자동 스크롤 시작
         intervalRef.current = setInterval(autoScroll, 3000);
     }
 
-    // 컴포넌트 언마운트 시 인터벌 정리
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
     };
-  }, [displayItems, autoScroll]);
+  }, [displayItems, autoScroll, items]);
 
-
+  // ✨ [수정됨] exposureType에 따라 링크를 다르게 처리하는 함수
   const handleBannerClick = (item) => {
     if (item.id.startsWith('clone-')) {
-      return;
+      return; // 복제된 아이템은 클릭 무시
     }
-    router.push(`/products/detail/${item.id}`);
+
+    if (!item.linkUrl || item.exposureType === '없음') {
+      return; // 링크가 없거나, 노출 방식이 '없음'이면 무시
+    }
+    
+    if (item.exposureType === '외부 링크') {
+      window.open(item.linkUrl, '_blank', 'noopener,noreferrer');
+    } else if (item.exposureType === '내부 페이지') {
+      router.push(item.linkUrl);
+    }
   };
 
   return (
@@ -174,16 +178,19 @@ export default function MainBanner({ items }) {
         <div 
           key={item.id} 
           className={styles.bannerItem}
-          style={{ backgroundColor: item.color }}
+          style={{ 
+              backgroundColor: item.color || '#f0f0f0',
+              cursor: item.linkUrl && !item.id.startsWith('clone-') ? 'pointer' : 'default' // 링크가 있을 때만 포인터
+            }}
           onClick={() => handleBannerClick(item)}
         >
           {item.imageUrl && (
             <Image
               src={item.imageUrl}
-              alt={item.id.startsWith('clone-') ? `Banner item ${item.id.replace('clone-', '')}` : `Product banner for ${item.id}`}
+              alt={item.id.startsWith('clone-') ? `Banner item ${item.id.replace('clone-start-', '').replace('clone-end-', '')}` : `Product banner for ${item.id}`}
               fill={true}
               style={{ objectFit: 'cover' }}
-              priority={item.id === 2}
+              priority={!item.id.startsWith('clone-')} // 원본 이미지만 우선순위 로딩
             />
           )}
         </div>

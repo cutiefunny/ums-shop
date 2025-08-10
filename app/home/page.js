@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styles from './home.module.css';
 import HomeHeader from './components/HomeHeader';
 import SearchComponent from './components/SearchComponent';
@@ -12,113 +12,117 @@ import { useModal } from '@/contexts/ModalContext';
 
 export default function HomePage() {
   const [showPopup, setShowPopup] = useState(false);
+  const [popupBanner, setPopupBanner] = useState(null); // 팝업 배너 데이터 상태
   const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   // 카테고리 데이터 상태
   const [mainCategories, setMainCategories] = useState([]);
-  const [loadingCategories, setLoadingCategories] = useState(true); // 개별 로딩 상태 유지
-  const [errorCategories, setErrorCategories] = useState(null); // 개별 에러 상태 유지
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [errorCategories, setErrorCategories] = useState(null);
 
-  // 배너 제품 데이터 상태
-  const [bannerProducts, setBannerProducts] = useState([]);
-  const [loadingBannerProducts, setLoadingBannerProducts] = useState(true); // 개별 로딩 상태 유지
-  const [errorBannerProducts, setErrorBannerProducts] = useState(null); // 개별 에러 상태 유지
+  // 메인 배너 데이터 상태
+  const [mainBanners, setMainBanners] = useState([]);
+  const [loadingMainBanners, setLoadingMainBanners] = useState(true);
+  const [errorMainBanners, setErrorMainBanners] = useState(null);
 
-  const { showModal } = useModal(); // 알림 모달 훅
+  const { showModal } = useModal();
 
-  useEffect(() => {
-    const dontShowUntil = localStorage.getItem('popupDontShowUntil');
-    const today = new Date().toISOString().split('T')[0];
-
-    if (dontShowUntil !== today) {
-      setShowPopup(true);
-    }
-  }, []);
-
-  // 두 API 호출을 통합한 단일 데이터 페칭 함수
+  // 데이터 페칭 함수 (배너, 카테고리)
   const fetchHomeData = useCallback(async () => {
     setLoadingCategories(true);
-    setLoadingBannerProducts(true);
+    setLoadingMainBanners(true);
     setErrorCategories(null);
-    setErrorBannerProducts(null);
+    setErrorMainBanners(null);
 
     try {
-      // 1. 메인 카테고리 데이터 가져오기
+      // 1. 배너 데이터 가져오기 (모든 배너를 가져옴)
+      const bannersResponse = await fetch('/api/admin/banner');
+      if (!bannersResponse.ok) {
+        console.error(`Banner fetch error: ${bannersResponse.status}`);
+      } else {
+        const allBannersData = await bannersResponse.json();
+        
+        // 클라이언트 측에서 활성화된 배너 필터링
+        const now = new Date();
+        const activeBanners = allBannersData.filter(banner => 
+          banner.status === 'active' &&
+          now >= new Date(banner.startDate) &&
+          now <= new Date(banner.endDate)
+        );
+
+        // 'Open' 배너에 대한 우선순위 로직 적용
+        const openBanners = activeBanners.filter(b => b.location === 'Open');
+        const priorityOpenBanners = openBanners.filter(b => b.isPriority === true);
+
+        if (priorityOpenBanners.length > 0) {
+            // 우선순위 팝업 배너가 있으면, 가장 최신 1개만 선택
+            priorityOpenBanners.sort((a, b) => new Date(b.uploadedDate) - new Date(a.uploadedDate));
+            const finalPopupBanner = priorityOpenBanners[0];
+            
+            setPopupBanner(finalPopupBanner);
+            const dontShowUntil = localStorage.getItem('popupDontShowUntil');
+            const today = new Date().toISOString().split('T')[0];
+            if (dontShowUntil !== today) {
+                setShowPopup(true);
+            }
+        } else {
+            // 우선순위 팝업이 없으면 아무것도 표시하지 않음
+            setPopupBanner(null);
+            setShowPopup(false);
+        }
+
+        // ✨ [수정됨] 'Home' 배너 로직: 유효한 모든 배너를 order 순으로 정렬
+        const homeBanners = activeBanners
+          .filter(b => b.location === 'Home')
+          .sort((a, b) => a.order - b.order);
+        
+        const mappedBannerItems = homeBanners.map(banner => ({
+          id: banner.bannerId,
+          imageUrl: banner.imageUrl,
+          linkUrl: banner.link,
+          exposureType: banner.exposureType, // exposureType 추가
+        }));
+        setMainBanners(mappedBannerItems);
+      }
+      setLoadingMainBanners(false);
+
+      // 2. 메인 카테고리 데이터 가져오기
       const categoriesResponse = await fetch('/api/categories?level=main');
       if (!categoriesResponse.ok) {
         throw new Error(`HTTP error! status: ${categoriesResponse.status} fetching categories`);
       }
       const categoriesData = await categoriesResponse.json();
-      // categoryId를 id로 복사하여 TrendingSection에서 사용 가능하도록 함
       const processedCategories = (categoriesData || []).map(category => ({
         ...category,
         id: category.categoryId,
       }));
       setMainCategories(processedCategories);
-      setLoadingCategories(false); // 카테고리 로딩 완료
-
-      // 배너 제품 필터링을 위한 카테고리 ID 목록 추출
-      const fetchedMainCategoryIds = processedCategories.map(cat => cat.name);
-
-      // 2. 배너 제품 데이터 가져오기 (메인 카테고리 ID에 따라 필터링)
-      const productsResponse = await fetch('/api/products?limit=50'); // 충분한 제품을 가져오기 위해 limit 증가
-      if (!productsResponse.ok) {
-        throw new Error(`HTTP error! status: ${productsResponse.status} fetching products`);
-      }
-      const allProducts = await productsResponse.json();
-
-      // 이미지가 있고, 유효한 URL 패턴을 가지며, 메인 카테고리 ID에 포함된 상품만 필터링
-      const validImageProducts = allProducts.filter(p =>
-        p.mainImage && (p.mainImage.startsWith('http://') || p.mainImage.startsWith('https://')) &&
-        fetchedMainCategoryIds.includes(p.mainCategory) // 제품의 categoryId가 메인 카테고리 ID 목록에 있는지 확인
-      );
-
-      // 필터링된 제품 중 무작위로 5개 선택
-      const shuffledProducts = validImageProducts.sort(() => 0.5 - Math.random());
-      const selectedProducts = shuffledProducts.slice(0, 5);
-
-      const mappedBannerItems = selectedProducts.map((product, index) => ({
-        id: product.productId,
-        color: index % 2 === 0 ? 'gray' : 'lightgray',
-        imageUrl: product.mainImage,
-      }));
-      setBannerProducts(mappedBannerItems);
-      setLoadingBannerProducts(false); // 배너 제품 로딩 완료
 
     } catch (err) {
       console.error("Error fetching home data:", err);
-      setErrorCategories(`Failed to load home data: ${err.message}`);
-      setErrorBannerProducts(`Failed to load home data: ${err.message}`);
-      setLoadingCategories(false); // 에러 발생 시 로딩 상태 해제
-      setLoadingBannerProducts(false); // 에러 발생 시 로딩 상태 해제
+      setErrorCategories(`Failed to load data: ${err.message}`);
+      setErrorMainBanners(`Failed to load data: ${err.message}`);
       showModal(`An error occurred while loading home data: ${err.message}`);
+    } finally {
+      setLoadingCategories(false);
+      setLoadingMainBanners(false);
     }
-  }, [showModal]); // showModal만 의존성으로 가짐
+  }, [showModal]);
 
-  // 컴포넌트 마운트 시 통합된 데이터 로드 함수 호출
+  // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     fetchHomeData();
   }, [fetchHomeData]);
-
-  // MainBanner에 전달할 아이템 (Swiper loop를 위해 3배로 늘림)
-  const triplicatedBannerItems = useMemo(() => {
-    if (!bannerProducts.length) return []; // 제품이 없으면 빈 배열 반환
-    return [
-      ...bannerProducts,
-      ...bannerProducts.map(item => ({ ...item, id: `${item.id}-duplicate-1` })),
-      ...bannerProducts.map(item => ({ ...item, id: `${item.id}-duplicate-2` }))
-    ];
-  }, [bannerProducts]);
-
+  
   // 전체 로딩 및 에러 상태
-  const isLoading = loadingCategories || loadingBannerProducts;
-  const hasError = errorCategories || errorBannerProducts;
+  const isLoading = loadingCategories || loadingMainBanners;
+  const hasError = errorCategories || errorMainBanners;
 
   return (
     <div className={styles.pageContainer}>
-      {showPopup && (
+      {showPopup && popupBanner && (
         <PopupModal
-          imageUrl="/images/notice-popup.png"
+          banner={popupBanner} // 전체 배너 객체 전달
           onClose={() => setShowPopup(false)}
         />
       )}
@@ -133,7 +137,6 @@ export default function HomePage() {
         onClose={() => setIsSearchVisible(false)}
       />
 
-      {/* 카테고리 또는 배너 제품 로딩 중이거나 에러 발생 시 메시지 표시 */}
       {isLoading ? (
         <img src="/images/loading.gif" alt="Loading..." style={{ width: '48px', height: '48px', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
       ) : hasError ? (
@@ -145,8 +148,7 @@ export default function HomePage() {
           <div className={styles.titleSection}>
             <h1 className={styles.mainTitle}>Tap to Start Private Shopping</h1>
           </div>
-          <MainBanner items={bannerProducts} />
-          {/* API에서 가져온 mainCategories를 TrendingSection에 전달 */}
+          <MainBanner items={mainBanners} />
           <TrendingSection categories={mainCategories} />
         </main>
       )}

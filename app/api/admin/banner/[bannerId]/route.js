@@ -19,9 +19,8 @@ const TABLE_NAME = process.env.DYNAMODB_TABLE_BANNER || 'banner';
  * GET 요청 처리: 특정 배너 상세 데이터를 조회합니다.
  */
 export async function GET(request, { params }) {
+    const { bannerId } = params; // 함수 시작 시 bannerId 추출
     try {
-        const { bannerId } = params;
-
         if (!bannerId) {
             return NextResponse.json({ message: 'Missing banner ID' }, { status: 400 });
         }
@@ -41,51 +40,44 @@ export async function GET(request, { params }) {
 
         return NextResponse.json(Item, { status: 200 });
     } catch (error) {
-        console.error(`Error fetching banner ${params.bannerId} from DynamoDB:`, error);
+        // 추출된 bannerId 변수 사용
+        console.error(`Error fetching banner ${bannerId} from DynamoDB:`, error);
         return NextResponse.json({ message: 'Failed to fetch banner details', error: error.message }, { status: 500 });
     }
 }
 
 /**
  * PUT 요청 처리: 특정 배너 데이터를 업데이트합니다.
- * ✨ 새로운 모달의 모든 필드(startDate, endDate, exposureType, isPriority 등)를 처리하도록 수정되었습니다.
  */
 export async function PUT(request, { params }) {
+    const { bannerId } = params; // 함수 시작 시 bannerId 추출
     try {
-        const { bannerId } = params;
         const body = await request.json();
 
         if (!bannerId) {
             return NextResponse.json({ message: 'Missing banner ID' }, { status: 400 });
         }
         
-        // 업데이트할 필드가 하나도 없으면 에러 처리
-        if (Object.keys(body).length === 0) {
+        // 업데이트할 필드 키 목록 (파티션 키 제외)
+        const updateKeys = Object.keys(body).filter(k => k !== 'bannerId');
+
+        if (updateKeys.length === 0) {
             return NextResponse.json({ message: 'No fields provided for update' }, { status: 400 });
         }
         
-        // DynamoDB UpdateExpression 동적 생성
-        let updateExpression = 'SET';
+        // ✨ [수정됨] 안전하게 UpdateExpression 생성
         const expressionAttributeNames = {};
         const expressionAttributeValues = {};
-
-        // body에 포함된 모든 키에 대해 업데이트 구문 생성
-        Object.keys(body).forEach((key, index) => {
-            if (key === 'bannerId') return; // 파티션 키는 업데이트하지 않음
-
-            const attributeKey = `#${key}`;
+        
+        const updateExpressions = updateKeys.map(key => {
+            const nameKey = `#${key}`;
             const valueKey = `:${key}`;
-            
-            updateExpression += ` ${attributeKey} = ${valueKey}`;
-            if (index < Object.keys(body).filter(k => k !== 'bannerId').length - 1) {
-                updateExpression += ',';
-            }
-
-            expressionAttributeNames[attributeKey] = key;
-
-            // 'order' 필드는 숫자로, 그 외 필드는 받은 값 그대로 사용 (JSON이 boolean 등 타입 처리)
+            expressionAttributeNames[nameKey] = key;
             expressionAttributeValues[valueKey] = key === 'order' ? Number(body[key]) : body[key];
+            return `${nameKey} = ${valueKey}`;
         });
+
+        const updateExpression = `SET ${updateExpressions.join(', ')}`;
 
         const updateCommand = new UpdateCommand({
             TableName: TABLE_NAME,
@@ -95,13 +87,14 @@ export async function PUT(request, { params }) {
             UpdateExpression: updateExpression,
             ExpressionAttributeNames: expressionAttributeNames,
             ExpressionAttributeValues: expressionAttributeValues,
-            ReturnValues: "ALL_NEW", // 업데이트된 항목의 모든 속성을 반환
+            ReturnValues: "ALL_NEW",
         });
 
         const { Attributes } = await ddbDocClient.send(updateCommand);
         return NextResponse.json({ message: 'Banner updated successfully', banner: Attributes }, { status: 200 });
     } catch (error) {
-        console.error(`Error updating banner ${params.bannerId} in DynamoDB:`, error);
+        // ✨ [수정됨] 추출된 bannerId 변수 사용
+        console.error(`Error updating banner ${bannerId} in DynamoDB:`, error);
         return NextResponse.json({ message: 'Failed to update banner', error: error.message }, { status: 500 });
     }
 }
@@ -110,9 +103,8 @@ export async function PUT(request, { params }) {
  * DELETE 요청 처리: 특정 배너 데이터를 삭제합니다.
  */
 export async function DELETE(request, { params }) {
+    const { bannerId } = params; // 함수 시작 시 bannerId 추출
     try {
-        const { bannerId } = params;
-
         if (!bannerId) {
             return NextResponse.json({ message: 'Missing banner ID' }, { status: 400 });
         }
@@ -127,7 +119,8 @@ export async function DELETE(request, { params }) {
 
         return NextResponse.json({ message: 'Banner deleted successfully' }, { status: 200 });
     } catch (error) {
-        console.error(`Error deleting banner ${params.bannerId} from DynamoDB:`, error);
+        // 추출된 bannerId 변수 사용
+        console.error(`Error deleting banner ${bannerId} from DynamoDB:`, error);
         return NextResponse.json({ message: 'Failed to delete banner', error: error.message }, { status: 500 });
     }
 }

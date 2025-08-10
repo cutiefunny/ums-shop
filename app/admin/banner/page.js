@@ -63,7 +63,7 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                 setPreviewUrl(initialData.imageUrl || null);
                 setExposureType(initialData.exposureType || '외부 링크');
                 setLink(initialData.link || '');
-                setStatus(initialData.status || '노출중');
+                setStatus(initialData.status === 'active' ? '노출중' : '숨김'); // API 상태값에 맞게 변경
                 setIsPriority(initialData.isPriority || false);
                 setPageType(initialData.pageType || 'product'); // 수정 시 초기값
                 setProductId(initialData.productId || '');
@@ -81,6 +81,8 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                 setStatus('노출중');
                 setIsPriority(false);
                 setPageType('product'); // 추가 시 초기값
+                setProductId('');
+                setCategoryId('');
             }
         }
     }, [isOpen, isEditMode, initialData]);
@@ -99,19 +101,26 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        let requiredFieldsMet = true;
-        // 'Home' 위치일 때는 링크 주소가 필수 (단, 노출 방식이 '없음'이 아닐 때)
-        if (location === 'Home' && exposureType !== '없음' && !link) {
-            requiredFieldsMet = false;
-        }
-        // 공통 필수 필드
+        // 유효성 검사
         if (!startDate || !endDate || (!imageFile && !previewUrl)) {
-            requiredFieldsMet = false;
+            alert('필수 항목(노출 기간, 배너 이미지)을 모두 입력해주세요.');
+            return;
         }
 
-        if (!requiredFieldsMet) {
-            alert('필수 항목을 모두 입력해주세요.');
+        if (exposureType === '외부 링크' && !link) {
+            alert('외부 링크를 선택한 경우 링크 주소를 입력해야 합니다.');
             return;
+        }
+        
+        if (exposureType === '내부 페이지') {
+            if (pageType === 'product' && !productId) {
+                alert('내부 페이지(상품)를 선택한 경우 상품 ID를 입력해야 합니다.');
+                return;
+            }
+            if (pageType === 'category' && !categoryId) {
+                alert('내부 페이지(카테고리)를 선택한 경우 카테고리를 선택해야 합니다.');
+                return;
+            }
         }
 
         const bannerData = {
@@ -125,7 +134,7 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
             pageType,
             productId,
             categoryId,
-            status,
+            status: status === '노출중' ? 'active' : 'hidden', // API에 맞는 값으로 변환
             isPriority,
         };
         onSave(bannerData, isEditMode, initialData?.bannerId);
@@ -195,6 +204,7 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                         </div>
                     </div>
                     
+                    {/* 노출 방식 */}
                     <div className={styles.formRow}>
                         <label className={styles.formLabel}>노출 방식</label>
                         <div className={styles.radioGroup}>
@@ -204,29 +214,29 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                         </div>
                     </div>
                     
-                    {/* location 값에 따라 '링크 주소' 또는 '페이지 유형' 표시 */}
-                    {location === 'Home' ? (
+                    {/* ✨ [수정됨] exposureType 값에 따라 '링크 주소' 또는 '페이지 유형' 표시 */}
+                    {exposureType === '외부 링크' && (
                         <div className={styles.formRow}>
                             <label className={styles.formLabel}>링크 주소</label>
-                            <input type="text" className={styles.formInputFull} placeholder="https://" value={link} onChange={(e) => setLink(e.target.value)} disabled={exposureType !== '외부 링크'}/>
+                            <input type="text" className={styles.formInputFull} placeholder="https://" value={link} onChange={(e) => setLink(e.target.value)} />
                         </div>
-                    ) : ( // location === 'Open'
+                    )}
+
+                    {exposureType === '내부 페이지' && (
                         <div className={styles.formRowOpen}>
                             <div className={styles.formRow}>
                                 <label className={styles.formLabel}>페이지 유형</label>
-                            
-                                <select className={styles.formInputFull} value={pageType} onChange={(e) => setPageType(e.target.value)} disabled={exposureType !== '내부 페이지'}>
+                                <select className={styles.formInputFull} value={pageType} onChange={(e) => setPageType(e.target.value)}>
                                     <option value="product">상품</option>
                                     <option value="category">카테고리</option>
-                                    {/* 필요에 따라 다른 페이지 유형 추가 */}
                                 </select>
                             </div>
                             <div className={styles.formRow}>
                                 <label className={styles.formLabel}></label>
                                 {pageType === 'product' ? (
-                                    <input type="text" className={styles.formInputFull} placeholder="상품 ID" value={productId} onChange={(e) => setProductId(e.target.value)} disabled={exposureType !== '내부 페이지'} />
+                                    <input type="text" className={styles.formInputFull} placeholder="상품 ID" value={productId} onChange={(e) => setProductId(e.target.value)} />
                                 ) : (
-                                    <select className={styles.formInputFull} value={categoryId} onChange={(e) => setCategoryId(e.target.value)} disabled={exposureType !== '내부 페이지'}>
+                                    <select className={styles.formInputFull} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                                         <option value="">카테고리 선택</option>
                                         {mainCategories.map(category => (
                                             <option key={category.categoryId} value={category.categoryId}>
@@ -239,7 +249,7 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                         </div>
                     )}
 
-                    {/* 배너 상태 (항상 표시) */}
+                    {/* 배너 상태 */}
                     <div className={styles.formRow}>
                         <label className={styles.formLabel}>배너 상태</label>
                         <div className={styles.radioGroup}>
@@ -248,7 +258,7 @@ function AddEditBannerModal({ isOpen, onClose, onSave, isEditMode, initialData }
                         </div>
                     </div>
 
-                    {/* 우선 노출 (항상 표시) */}
+                    {/* 우선 노출 */}
                     <div className={styles.formRow}>
                         <label className={styles.formLabel}>우선 노출</label>
                         <div className={styles.radioGroup}>
@@ -321,12 +331,12 @@ export default function BannerManagementPage() {
         try {
             let imageUrlToSave = bannerData.imageUrl;
             
-            // 'Open' 위치이고 '내부 페이지' 노출 방식일 경우, pageType에 따라 link를 생성
-            if (bannerData.location === 'Open' && bannerData.exposureType === '내부 페이지') {
+            // ✨ [수정됨] 노출 방식이 '내부 페이지'일 경우, pageType에 따라 link를 생성
+            if (bannerData.exposureType === '내부 페이지') {
                 if (bannerData.pageType === 'product' && bannerData.productId) {
-                    bannerData.link = `/product/${bannerData.productId}`;
+                    bannerData.link = `/products/detail/${bannerData.productId}`;
                 } else if (bannerData.pageType === 'category' && bannerData.categoryId) {
-                    bannerData.link = `/products?categoryId=${bannerData.categoryId}`;
+                    bannerData.link = `/category1depth/${bannerData.categoryId}`;
                 }
             }
             
@@ -351,10 +361,13 @@ export default function BannerManagementPage() {
                 imageUrlToSave = `${s3BaseUrl}${fields.key}`;
             }
 
+            // 'order' 필드는 신규 생성 시에만 banners 길이를 사용
+            const newOrder = isEditMode ? initialBannerData?.order : banners.length + 1;
+
             const payload = {
                 ...otherData,
                 imageUrl: imageUrlToSave,
-                order: initialBannerData?.order || 99, 
+                order: newOrder,
             };
             delete payload.imageFile;
 
@@ -435,10 +448,11 @@ export default function BannerManagementPage() {
     };
     
     const handleStatusToggle = async (banner) => {
-        const newStatus = banner.status === '노출중' ? '숨김' : '노출중';
+        const newStatus = banner.status === 'active' ? 'hidden' : 'active';
         setLoading(true);
         try {
-            const payload = { ...banner, status: newStatus };
+            // 상태만 변경하여 PUT 요청
+            const payload = { status: newStatus };
             const res = await fetch(`/api/admin/banner/${banner.bannerId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -531,6 +545,7 @@ export default function BannerManagementPage() {
                                                 width={100}
                                                 height={60}
                                                 className={styles.thumbnailImage}
+                                                priority
                                             />
                                         ) : (
                                             <span>이미지 없음</span>
@@ -543,10 +558,10 @@ export default function BannerManagementPage() {
                                         <button
                                             onClick={() => handleStatusToggle(banner)}
                                             className={`${styles.statusButton} ${
-                                                banner.status === '노출중' ? styles.statusActive : styles.statusHidden
+                                                banner.status === 'active' ? styles.statusActive : styles.statusHidden
                                             }`}
                                         >
-                                            {banner.status}
+                                            {banner.status === 'active' ? '노출중' : '숨김'}
                                         </button>
                                     </td>
                                     <td>
