@@ -18,6 +18,7 @@
     "@ducanh2912/next-pwa": "^10.2.9",
     "@paypal/checkout-server-sdk": "^1.0.3",
     "@paypal/react-paypal-js": "^8.8.3",
+    "@sendgrid/mail": "^8.1.5",
     "bcryptjs": "^3.0.2",
     "cookie": "^1.0.2",
     "exceljs": "^4.4.0",
