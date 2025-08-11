@@ -17,7 +17,7 @@ const PayPalPaymentModal = ({ isOpen, onClose, orderDetail, orderId, finalTotalP
   const createOrder = useCallback(async (data, actions) => {
     if (!orderId || !finalTotalPrice || !currency) {
       console.error('Missing order details for PayPal order creation.');
-      showModal("결제 정보가 부족합니다. 다시 시도해주세요.");
+      showModal("Missing payment information. Please try again.");
       return null;
     }
     try {
@@ -37,15 +37,15 @@ const PayPalPaymentModal = ({ isOpen, onClose, orderDetail, orderId, finalTotalP
       if (!response.ok) {
         const errorData = await response.json();
         console.error('PayPal create order API failed in modal:', errorData);
-        throw new Error(errorData.message || 'PayPal 주문 생성 실패.');
-      }
-      const responseData = await response.json();
-      console.log('PayPal order created successfully in modal:', responseData);
-      return responseData.paypalOrderId; // PayPal Buttons SDK에 PayPal Order ID 반환
-    } catch (err) {
-      console.error("Error creating PayPal order in modal:", err);
-      showModal(`PayPal 주문 생성에 실패했습니다: ${err.message}`);
-      return null;
+        throw new Error(errorData.message || 'Failed to create PayPal order.');
+            }
+            const responseData = await response.json();
+            console.log('PayPal order created successfully in modal:', responseData);
+            return responseData.paypalOrderId; // Return PayPal Order ID to PayPal Buttons SDK
+          } catch (err) {
+            console.error("Error creating PayPal order in modal:", err);
+            showModal(`Failed to create PayPal order: ${err.message}`);
+            return null;
     }
   }, [orderId, finalTotalPrice, currency, showModal]);
 
@@ -71,7 +71,7 @@ const PayPalPaymentModal = ({ isOpen, onClose, orderDetail, orderId, finalTotalP
   const onError = useCallback((err) => {
     console.error("PayPal Buttons onError in modal:", err);
     onClose(); // 모달 닫기
-    showModal("PayPal 결제 중 오류가 발생했습니다. 콘솔을 확인해주세요.");
+    showModal("An error occurred during PayPal payment. Please check the console.");
     if (onPaymentError) onPaymentError(err);
   }, [onClose, showModal, onPaymentError]);
 
@@ -79,7 +79,7 @@ const PayPalPaymentModal = ({ isOpen, onClose, orderDetail, orderId, finalTotalP
   const onCancel = useCallback((data) => {
     console.log("PayPal Buttons onCancel in modal:", data);
     onClose(); // 모달 닫기
-    showModal("PayPal 결제가 취소되었습니다.");
+    showModal("PayPal payment has been cancelled.");
     if (onPaymentCancel) onPaymentCancel(data);
   }, [onClose, showModal, onPaymentCancel]);
 

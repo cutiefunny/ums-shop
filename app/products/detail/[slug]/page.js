@@ -118,7 +118,7 @@ export default function ProductDetailPage() {
 
     const handleConfirmAddToCart = async (productName, quantity) => {
         if (!isLoggedIn || !user?.seq) {
-            showModal("장바구니에 상품을 추가하려면 로그인해야 합니다.");
+            showModal("You must be logged in to add items to the cart.");
             router.push('/');
             return;
         }
@@ -164,8 +164,8 @@ export default function ProductDetailPage() {
             }
 
             showConfirmationModal(
-                "장바구니 추가 완료",
-                `${productName} 제품이 장바구니에 추가되었습니다. 장바구니로 가시겠습니까?`,
+                "Added to Cart",
+                `${productName} has been added to your cart. Would you like to go to the cart?`,
                 () => {
                     router.push('/cart');
                 },
@@ -173,8 +173,8 @@ export default function ProductDetailPage() {
             );
 
         } catch (error) {
-            console.error("장바구니에 상품 추가 실패:", error);
-            showModal(`장바구니에 상품을 추가하지 못했습니다: ${error.message}`);
+            console.error("Failed to add product to cart:", error);
+            showModal(`Failed to add product to cart: ${error.message}`);
         }
     };
 

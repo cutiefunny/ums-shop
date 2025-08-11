@@ -33,7 +33,7 @@ export default function ConfirmationModal({ isOpen, title, message, buttonText, 
             {buttonText}
           </button>
           <button onClick={onCancel} className={styles.cancelButton}>
-            취소
+            cancel
           </button>
         </div>
       </div>
